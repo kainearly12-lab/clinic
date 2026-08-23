@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function TopScrollProgressBar() {
+export function TopScrollProgressBar({ className = '' }: { className?: string }) {
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
@@ -31,11 +31,11 @@ export function TopScrollProgressBar() {
 
   return (
     <div
-      className="w-full h-1 bg-charcoal-900/10 rounded-full overflow-hidden pointer-events-none"
+      className={`w-full h-[3px] bg-charcoal-900/10 dark:bg-white/10 overflow-hidden pointer-events-none ${className}`}
       aria-hidden="true"
     >
       <div
-        className="h-full bg-gradient-to-r from-sage-600 via-charcoal-900 to-sage-600 transition-all duration-75 ease-out rounded-full shadow-sm"
+        className="h-full bg-gradient-to-r from-sage-500 via-sage-400 to-emerald-400 dark:from-sage-400 dark:via-emerald-400 dark:to-sage-300 transition-all duration-75 ease-out shadow-sm"
         style={{ width: `${scrollProgress}%` }}
       />
     </div>

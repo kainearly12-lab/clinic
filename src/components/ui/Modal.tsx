@@ -36,11 +36,11 @@ export function Modal({ open, onClose, children, labelledBy }: ModalProps) {
           aria-labelledby={labelledBy}
         >
           <div
-            className="absolute inset-0 bg-charcoal-950/45 backdrop-blur-sm"
+            className="absolute inset-0 bg-charcoal-950/60 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl bg-ivory-50 shadow-2xl ring-1 ring-charcoal-900/10 sm:rounded-3xl"
+            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl bg-ivory-50 dark:bg-[#15181e] text-charcoal-900 dark:text-gray-100 shadow-2xl ring-1 ring-charcoal-900/10 dark:ring-white/10 sm:rounded-3xl"
             initial={{ y: 30, scale: 0.95, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
             exit={{ y: 20, scale: 0.96, opacity: 0 }}
@@ -49,7 +49,7 @@ export function Modal({ open, onClose, children, labelledBy }: ModalProps) {
             <button
               onClick={onClose}
               aria-label="إغلاق"
-              className="absolute left-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-ivory-200/80 text-charcoal-800 transition-colors hover:bg-ivory-300"
+              className="absolute left-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-ivory-200/80 dark:bg-gray-800 text-charcoal-800 dark:text-gray-200 transition-colors hover:bg-ivory-300 dark:hover:bg-gray-700"
             >
               <X className="h-4 w-4" />
             </button>

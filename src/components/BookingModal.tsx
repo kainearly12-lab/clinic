@@ -70,13 +70,13 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
     <Modal open={open} onClose={handleClose} labelledBy="booking-title">
       {submitted ? (
         <div className="px-7 py-14 text-center sm:px-10">
-          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-sage-100 text-sage-600">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-sage-100 dark:bg-sage-900/60 text-sage-600 dark:text-sage-300">
             <Check className="h-7 w-7" />
           </div>
-          <h2 id="booking-title" className="mb-3 text-2xl font-bold text-charcoal-950">
+          <h2 id="booking-title" className="mb-3 text-2xl font-bold text-charcoal-950 dark:text-white">
             تم استلام وتجهيز طلبك بنجاح
           </h2>
-          <p className="mx-auto mb-8 max-w-xs text-sm leading-relaxed text-charcoal-800/70">
+          <p className="mx-auto mb-8 max-w-xs text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
             تم تحويل تفاصيل الحجز إلى واتساب الفرع المختار مباشرة، وسيتواصل معك فريقنا لتأكيد الموعد فوراً.
           </p>
           <button onClick={handleClose} className="btn-primary w-full">
@@ -86,11 +86,11 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
       ) : (
         <div className="max-h-[90vh] overflow-y-auto px-6 pb-7 pt-12 sm:px-8">
           <div className="mb-6">
-            <span className="eyebrow">BOOK AN APPOINTMENT</span>
-            <h2 id="booking-title" className="mt-2 text-2xl font-bold text-charcoal-950">
+            <span className="eyebrow dark:text-sage-400">BOOK AN APPOINTMENT</span>
+            <h2 id="booking-title" className="mt-2 text-2xl font-bold text-charcoal-950 dark:text-white">
               احجز استشارتك
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-charcoal-800/70">
+            <p className="mt-2 text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
               اترك بياناتك وسيتواصل معك فريقنا لتأكيد الوقت والفرع الأنسب لك.
             </p>
           </div>
@@ -105,7 +105,7 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
                 className="field-input font-medium"
               >
                 {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
+                  <option key={b.id} value={b.id} className="dark:bg-gray-800 dark:text-white">
                     {b.nameAr} ({b.cityAr})
                   </option>
                 ))}
@@ -162,7 +162,7 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
             </div>
             <div>
               <label htmlFor="notes" className="field-label">
-                ملاحظات <span className="font-normal text-charcoal-800/40">(اختياري)</span>
+                ملاحظات <span className="font-normal text-charcoal-800/40 dark:text-gray-400">(اختياري)</span>
               </label>
               <textarea
                 id="notes"
@@ -179,7 +179,7 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
             >
               إرسال طلب الحجز <ChevronLeft className="h-4 w-4" />
             </button>
-            <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-charcoal-800/50">
+            <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-charcoal-800/50 dark:text-gray-400">
               <Clock3 className="h-3 w-3" /> الطلب يحولك مباشرة للفرع المختار عبر واتساب
             </p>
           </form>
@@ -212,6 +212,3 @@ export function BookingButton({
 export function BookingIcon() {
   return <Sparkles className="h-4 w-4" />;
 }
-
-
-

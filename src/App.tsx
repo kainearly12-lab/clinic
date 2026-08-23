@@ -36,9 +36,9 @@ function TrustBar() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="border-y border-ivory-300/80 bg-ivory-50"
+      className="border-y border-ivory-300/80 dark:border-gray-800/80 bg-ivory-50 dark:bg-[#121419]"
     >
-      <div className="container-px grid grid-cols-2 divide-x divide-x-reverse divide-ivory-300/80 sm:grid-cols-4">
+      <div className="container-px grid grid-cols-2 divide-x divide-x-reverse divide-ivory-300/80 dark:divide-gray-800/80 sm:grid-cols-4">
         {[
           { icon: Star, value: clinic.rating.toFixed(1), label: 'التقييم على Google', suffix: ' / 5' },
           { icon: Quote, value: Math.round(reviewsValue).toString(), label: 'تقييمات Google', suffix: '' },
@@ -56,14 +56,14 @@ function TrustBar() {
               transition={{ delay: i * 0.08, duration: 0.5 }}
               className="flex min-h-[96px] flex-col justify-center gap-1 px-4 py-5 sm:px-7"
             >
-              <div className="flex items-center gap-2 text-sage-600">
+              <div className="flex items-center gap-2 text-sage-600 dark:text-sage-400">
                 <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-lg font-bold text-charcoal-900">
+                <span className="text-lg font-bold text-charcoal-900 dark:text-white">
                   {item.value}
                   <small className="text-xs font-medium">{item.suffix}</small>
                 </span>
               </div>
-              <span className="text-[11px] text-charcoal-800/55">{item.label}</span>
+              <span className="text-[11px] text-charcoal-800/55 dark:text-gray-400">{item.label}</span>
             </motion.div>
           );
         })}
@@ -80,9 +80,9 @@ function Hero({ onBook }: { onBook: () => void }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="relative min-h-[720px] overflow-hidden bg-ivory-100 pt-32 sm:min-h-[800px] sm:pt-40"
+      className="relative min-h-[720px] overflow-hidden bg-ivory-100 dark:bg-[#0c0e12] pt-32 sm:min-h-[800px] sm:pt-40"
     >
-      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-sage-200/25 blur-3xl" />
+      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-sage-200/25 dark:bg-sage-600/10 blur-3xl" />
       <div className="container-px relative grid items-center gap-12 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:pb-28">
         <div className="relative z-10 max-w-xl lg:order-2">
           <motion.div
@@ -98,16 +98,16 @@ function Hero({ onBook }: { onBook: () => void }) {
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-lg text-[2.5rem] font-extrabold leading-[1.45] tracking-normal text-charcoal-950 sm:text-5xl sm:leading-[1.4] lg:text-[3.9rem] lg:leading-[1.35]"
+            className="max-w-lg text-[2.5rem] font-extrabold leading-[1.45] tracking-normal text-charcoal-950 dark:text-white sm:text-5xl sm:leading-[1.4] lg:text-[3.9rem] lg:leading-[1.35]"
           >
             عناية متقدمة ببشرتك،<br className="hidden sm:block" />
-            <span className="text-sage-600 block mt-2 sm:mt-1">تبدأ من التشخيص الصحيح</span>
+            <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">تبدأ من التشخيص الصحيح</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7 }}
-            className="mt-6 max-w-md text-[15px] leading-relaxed text-charcoal-800/75 sm:text-base"
+            className="mt-6 max-w-md text-[15px] leading-relaxed text-charcoal-800/75 dark:text-gray-300 sm:text-base"
           >
             تجربة متكاملة للعناية بالبشرة والليزر بأحدث الأجهزة الطبية في 4 فروع مجهزة لراحتك.
           </motion.p>
@@ -124,19 +124,19 @@ function Hero({ onBook }: { onBook: () => void }) {
               rel="noreferrer"
               className="btn-secondary shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
-              <MessageCircle className="h-4 w-4 text-sage-600" /> تواصل على واتساب
+              <MessageCircle className="h-4 w-4 text-sage-600 dark:text-sage-400" /> تواصل على واتساب
             </a>
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.85, duration: 0.8 }}
-            className="mt-10 flex flex-wrap items-center gap-4 text-xs text-charcoal-800/55 sm:gap-5"
+            className="mt-10 flex flex-wrap items-center gap-4 text-xs text-charcoal-800/55 dark:text-gray-400 sm:gap-5"
           >
-            <span className="flex items-center gap-1.5 font-medium text-charcoal-800">
-              <MapPin className="h-3.5 w-3.5 text-sage-600" /> مدينة نصر • التجمع • المعادي • نيو جيزة
+            <span className="flex items-center gap-1.5 font-medium text-charcoal-800 dark:text-gray-200">
+              <MapPin className="h-3.5 w-3.5 text-sage-600 dark:text-sage-400" /> مدينة نصر • التجمع • المعادي • نيو جيزة
             </span>
-            <span className="hidden h-3 w-px bg-ivory-400 sm:inline-block" />
+            <span className="hidden h-3 w-px bg-ivory-400 dark:bg-gray-700 sm:inline-block" />
             <span className="flex items-center gap-1.5">
               <Star className="h-3.5 w-3.5 fill-champagne-400 text-champagne-400" /> 3.9 • 54 Google Reviews
             </span>
@@ -148,14 +148,13 @@ function Hero({ onBook }: { onBook: () => void }) {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           className="relative mx-auto w-full max-w-[550px] lg:order-1 lg:mx-0"
         >
-          <div className="relative aspect-[0.82] overflow-hidden rounded-[2rem] bg-sage-200 shadow-lift sm:aspect-[0.9]">
-            {/* Upgraded Hero Image: Luxurious, high-end medical clinic interior & aesthetic laser suite */}
+          <div className="relative aspect-[0.82] overflow-hidden rounded-[2rem] bg-sage-200 dark:bg-sage-950 shadow-lift sm:aspect-[0.9]">
             <img
               src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80"
               alt="أجواء فاخرة وتجهيزات طبية متطورة في عيادات Androderma"
               className="h-full w-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/40 via-transparent to-ivory-50/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/40 via-transparent to-ivory-50/10 dark:to-transparent" />
           </div>
           <motion.div
             animate={{ y: [0, -8, 0] }}
@@ -170,19 +169,19 @@ function Hero({ onBook }: { onBook: () => void }) {
               <span className="text-sage-200 font-semibold">بمعايير طبية عالمية</span>
             </p>
           </motion.div>
-          <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 bg-ivory-50 px-4 py-3 shadow-soft sm:block">
+          <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 dark:border-gray-700/60 bg-ivory-50 dark:bg-[#181b22] px-4 py-3 shadow-soft sm:block">
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-charcoal-900">4</span>
+              <span className="text-xl font-bold text-charcoal-900 dark:text-white">4</span>
               <div>
-                <span className="block text-[11px] font-bold text-charcoal-900">فروع معتمدة</span>
-                <span className="text-[9px] text-charcoal-800/50">القاهرة & الجيزة</span>
+                <span className="block text-[11px] font-bold text-charcoal-900 dark:text-white">فروع معتمدة</span>
+                <span className="text-[9px] text-charcoal-800/50 dark:text-gray-400">القاهرة & الجيزة</span>
               </div>
             </div>
           </div>
-          <div className="pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full border border-sage-300/50" />
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full border border-sage-300/50 dark:border-sage-700/50" />
         </motion.div>
       </div>
-      <div className="container-px hidden items-center justify-between border-t border-ivory-300/70 py-4 text-[10px] tracking-[0.25em] text-charcoal-800/35 sm:flex">
+      <div className="container-px hidden items-center justify-between border-t border-ivory-300/70 dark:border-gray-800/80 py-4 text-[10px] tracking-[0.25em] text-charcoal-800/35 dark:text-gray-500 sm:flex">
         <span>SKIN / LASER / CARE</span>
         <span>SCROLL TO DISCOVER ↓</span>
       </div>
@@ -198,18 +197,18 @@ function Services({ onBook }: { onBook: () => void }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-50 py-24 sm:py-32"
+      className="bg-ivory-50 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">WHAT WE DO</span>
-              <h2 className="mt-4 max-w-xl text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-                خدمات تضع <span className="text-sage-600">احتياجاتك</span> أولاً
+              <h2 className="mt-4 max-w-xl text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+                خدمات تضع <span className="text-sage-600 dark:text-sage-400">احتياجاتك</span> أولاً
               </h2>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed text-charcoal-800/70">
+            <p className="max-w-xs text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
               الخدمات المتاحة تُقدم بعناية واهتمام بالتفاصيل، وتبدأ دائمًا من فهم ما تحتاجه بشرتك.
             </p>
           </div>
@@ -220,7 +219,7 @@ function Services({ onBook }: { onBook: () => void }) {
               key={service.id}
               variants={staggerItem}
               whileHover={{ y: -7 }}
-              className={`group relative overflow-hidden rounded-2xl bg-charcoal-900 ${
+              className={`group relative overflow-hidden rounded-2xl bg-charcoal-900 border border-transparent dark:border-gray-800/60 shadow-md ${
                 i === 1 ? 'lg:translate-y-8' : ''
               }`}
             >
@@ -261,7 +260,7 @@ function About() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="overflow-hidden bg-charcoal-900 py-24 text-ivory-50 sm:py-32"
+      className="overflow-hidden bg-charcoal-900 dark:bg-[#0e1014] py-24 text-ivory-50 sm:py-32 border-y border-transparent dark:border-gray-800/80"
     >
       <div className="container-px grid items-center gap-14 lg:grid-cols-[1fr_0.9fr]">
         <Reveal className="relative order-2 lg:order-1">
@@ -321,18 +320,18 @@ function Gallery() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-100 py-24 sm:py-32"
+      className="bg-ivory-100 dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-12 flex items-end justify-between">
             <div>
               <span className="eyebrow">A GLIMPSE INSIDE</span>
-              <h2 className="mt-4 text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-                من داخل <span className="text-sage-600">عيادات Androderma</span>
+              <h2 className="mt-4 text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+                من داخل <span className="text-sage-600 dark:text-sage-400">عيادات Androderma</span>
               </h2>
             </div>
-            <span className="hidden text-xs text-charcoal-800/50 sm:block">اضغط على الصورة للتكبير</span>
+            <span className="hidden text-xs text-charcoal-800/50 dark:text-gray-400 sm:block">اضغط على الصورة للتكبير</span>
           </div>
         </Reveal>
         <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[220px] sm:grid-cols-4 sm:gap-5">
@@ -341,7 +340,7 @@ function Gallery() {
               key={item.id}
               onClick={() => setSelected(item.src)}
               whileHover={{ scale: 0.985 }}
-              className={`group relative overflow-hidden rounded-2xl text-right ${
+              className={`group relative overflow-hidden rounded-2xl text-right border border-transparent dark:border-gray-800/50 ${
                 item.span === 'tall' ? 'row-span-2' : item.span === 'wide' ? 'col-span-2' : ''
               }`}
             >
@@ -352,12 +351,12 @@ function Gallery() {
                 className="h-full w-full object-cover grayscale-[15%] transition duration-700 group-hover:scale-105 group-hover:grayscale-0"
               />
               <div className="absolute inset-0 bg-charcoal-950/0 transition group-hover:bg-charcoal-950/20" />
-              <span className="absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-ivory-50/90 text-charcoal-900 opacity-0 shadow-soft transition group-hover:opacity-100">
+              <span className="absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-ivory-50/90 dark:bg-gray-800 text-charcoal-900 dark:text-white opacity-0 shadow-soft transition group-hover:opacity-100">
                 <ExternalLink className="h-3.5 w-3.5" />
               </span>
             </motion.button>
           ))}
-          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl">
+          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-transparent dark:border-gray-800/50">
             <img
               src="https://images.pexels.com/photos/6899554/pexels-photo-6899554.jpeg?auto=compress&cs=tinysrgb&w=1200"
               alt="مساحة العيادة الداخلية"
@@ -389,13 +388,13 @@ function Gallery() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-charcoal-950/85 p-5"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-charcoal-950/85 backdrop-blur-sm p-5"
             onClick={() => setSelected(null)}
           >
             <button
               aria-label="إغلاق"
               onClick={() => setSelected(null)}
-              className="absolute left-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-ivory-50/10 text-ivory-50"
+              className="absolute left-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-ivory-50/10 text-ivory-50 hover:bg-ivory-50/20"
             >
               <X className="h-5 w-5" />
             </button>
@@ -404,7 +403,7 @@ function Gallery() {
               animate={{ scale: 1 }}
               src={selected}
               alt="صورة مكبرة من العيادة"
-              className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+              className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
             />
           </motion.div>
         )}
@@ -421,21 +420,21 @@ function Reviews() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-50 py-24 sm:py-32"
+      className="bg-ivory-50 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">GOOGLE REVIEWS</span>
-              <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+              <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
                 تجارب حقيقية،<br className="hidden sm:block" />
-                <span className="text-sage-600 block mt-2 sm:mt-1">بكلمات أصحابها</span>
+                <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">بكلمات أصحابها</span>
               </h2>
             </div>
             <div className="flex items-center gap-4">
               <div>
-                <div className="text-4xl font-bold text-charcoal-950">3.9</div>
+                <div className="text-4xl font-bold text-charcoal-950 dark:text-white">3.9</div>
                 <div className="mt-1 flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star
@@ -447,8 +446,8 @@ function Reviews() {
                   ))}
                 </div>
               </div>
-              <div className="h-10 w-px bg-ivory-300" />
-              <span className="max-w-[100px] text-xs leading-relaxed text-charcoal-800/60">54 تقييمًا على Google</span>
+              <div className="h-10 w-px bg-ivory-300 dark:bg-gray-800" />
+              <span className="max-w-[100px] text-xs leading-relaxed text-charcoal-800/60 dark:text-gray-400">54 تقييمًا على Google</span>
             </div>
           </div>
         </Reveal>
@@ -457,14 +456,14 @@ function Reviews() {
             <motion.blockquote
               key={review.id}
               variants={staggerItem}
-              className="relative rounded-2xl border border-ivory-300 bg-ivory-100 p-7 shadow-soft sm:p-9 hover:shadow-md transition-shadow duration-300"
+              className="relative rounded-2xl border border-ivory-300 dark:border-gray-800 bg-ivory-100 dark:bg-[#181b22] p-7 shadow-soft sm:p-9 hover:shadow-md transition-all duration-300"
             >
               <Quote className="mb-5 h-7 w-7 text-sage-400" />
-              <p className="text-base font-medium leading-relaxed text-charcoal-800 sm:text-lg">{review.text}</p>
-              <footer className="mt-7 flex items-center justify-between border-t border-ivory-300 pt-5">
-                <span className="text-xs text-charcoal-800/50">{review.author ?? 'مراجع Google'}</span>
-                <span className="flex items-center gap-1 text-[10px] text-charcoal-800/50">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[9px] font-bold text-blue-500">
+              <p className="text-base font-medium leading-relaxed text-charcoal-800 dark:text-gray-200 sm:text-lg">{review.text}</p>
+              <footer className="mt-7 flex items-center justify-between border-t border-ivory-300 dark:border-gray-800 pt-5">
+                <span className="text-xs text-charcoal-800/50 dark:text-gray-400">{review.author ?? 'مراجع Google'}</span>
+                <span className="flex items-center gap-1 text-[10px] text-charcoal-800/50 dark:text-gray-400">
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-white dark:bg-gray-700 text-[9px] font-bold text-blue-500 dark:text-blue-400">
                     G
                   </span>{' '}
                   Google Reviews
@@ -487,34 +486,36 @@ function FAQ() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-100 py-24 sm:py-32"
+      className="bg-ivory-100 dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px grid gap-12 lg:grid-cols-[0.75fr_1fr] lg:gap-24">
         <Reveal>
           <span className="eyebrow">NEED TO KNOW</span>
-          <h2 className="mt-4 max-w-sm text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+          <h2 className="mt-4 max-w-sm text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
             أسئلة قد<br className="hidden sm:block" />
-            <span className="text-sage-600 block mt-2 sm:mt-1">تخطر ببالك</span>
+            <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">تخطر ببالك</span>
           </h2>
-          <p className="mt-6 max-w-xs text-sm leading-relaxed text-charcoal-800/70">
+          <p className="mt-6 max-w-xs text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
             لم تجد إجابتك؟ تواصل معنا مباشرة وسيسعد فريقنا بمساعدتك في أي من فروعنا.
           </p>
-          <a href={waLink} target="_blank" rel="noreferrer" className="btn-ghost mt-6 -mr-5 text-sage-700">
+          <a href={waLink} target="_blank" rel="noreferrer" className="btn-ghost mt-6 -mr-5 text-sage-700 dark:text-sage-300">
             اسألنا على واتساب <ArrowLeft className="h-4 w-4" />
           </a>
         </Reveal>
         <div>
           {faqs.map((faq, i) => (
             <Reveal key={faq.q} delay={i * 0.06}>
-              <div className="border-b border-ivory-300">
+              <div className="border-b border-ivory-300 dark:border-gray-800">
                 <button
                   onClick={() => setOpen(open === i ? -1 : i)}
                   className="flex w-full items-center justify-between gap-4 py-5 text-right"
                 >
-                  <span className="text-sm font-semibold text-charcoal-900 leading-relaxed">{faq.q}</span>
+                  <span className="text-sm font-semibold text-charcoal-900 dark:text-white leading-relaxed">{faq.q}</span>
                   <span
                     className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
-                      open === i ? 'bg-charcoal-900 text-ivory-50' : 'bg-ivory-200 text-charcoal-800'
+                      open === i
+                        ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white'
+                        : 'bg-ivory-200 dark:bg-gray-800 text-charcoal-800 dark:text-gray-200'
                     }`}
                   >
                     {open === i ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -528,7 +529,7 @@ function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-5 pl-12 text-sm leading-relaxed text-charcoal-800/70">{faq.a}</p>
+                      <p className="pb-5 pl-12 text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">{faq.a}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -552,21 +553,21 @@ function Location({ onBook }: { onBook: () => void }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-sage-100 py-24 sm:py-32"
+      className="bg-sage-100/70 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <div className="mb-12 text-center sm:text-right">
-          <span className="eyebrow text-sage-700">OUR BRANCHES</span>
-          <h2 className="mt-3 text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-            فروعنا <span className="text-sage-600">في خدمتك</span>
+          <span className="eyebrow text-sage-700 dark:text-sage-400">OUR BRANCHES</span>
+          <h2 className="mt-3 text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+            فروعنا <span className="text-sage-600 dark:text-sage-400">في خدمتك</span>
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-charcoal-800/75 max-w-2xl">
+          <p className="mt-3 text-sm leading-relaxed text-charcoal-800/75 dark:text-gray-300 max-w-2xl">
             اختر الفرع الأقرب إليك لعرض العنوان المباشر، أرقام التواصل، وخريطة الوصول التفاعلية
           </p>
         </div>
 
         {/* Branch Selector Tabs */}
-        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-charcoal-900/10 bg-ivory-50/80 p-2 shadow-soft sm:gap-3">
+        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-charcoal-900/10 dark:border-gray-800 bg-ivory-50/80 dark:bg-[#181b22]/90 p-2 shadow-soft sm:gap-3">
           {branches.map((b) => {
             const isActive = b.id === currentBranch.id;
             return (
@@ -575,11 +576,11 @@ function Location({ onBook }: { onBook: () => void }) {
                 onClick={() => setActiveBranchId(b.id)}
                 className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-all duration-300 sm:text-sm ${
                   isActive
-                    ? 'bg-charcoal-900 text-ivory-50 shadow-md scale-[1.02]'
-                    : 'text-charcoal-800 hover:bg-ivory-200/90 hover:-translate-y-0.5'
+                    ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white shadow-md scale-[1.02]'
+                    : 'text-charcoal-800 dark:text-gray-300 hover:bg-ivory-200/90 dark:hover:bg-gray-800 hover:-translate-y-0.5'
                 }`}
               >
-                <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-sage-300' : 'text-sage-600'}`} />
+                <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-sage-300 dark:text-white' : 'text-sage-600 dark:text-sage-400'}`} />
                 <span>{b.nameAr}</span>
               </button>
             );
@@ -587,7 +588,7 @@ function Location({ onBook }: { onBook: () => void }) {
         </div>
 
         {/* Main Branch Details & Interactive Map Card */}
-        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 text-ivory-50 shadow-lift transition-all duration-300 hover:shadow-2xl lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 dark:bg-[#161920] text-ivory-50 border border-transparent dark:border-gray-800 shadow-lift transition-all duration-300 hover:shadow-2xl lg:grid-cols-[1.05fr_0.95fr]">
           <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-12 lg:p-14">
             <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-sage-400/20" />
 
@@ -696,9 +697,9 @@ function Location({ onBook }: { onBook: () => void }) {
               href={currentBranch.mapsUrl}
               target="_blank"
               rel="noreferrer"
-              className="absolute bottom-6 left-6 flex items-center gap-2 rounded-full bg-ivory-50/95 px-4 py-2.5 text-xs font-bold text-charcoal-950 shadow-lift transition hover:bg-white active:scale-95"
+              className="absolute bottom-6 left-6 flex items-center gap-2 rounded-full bg-ivory-50/95 dark:bg-gray-900/95 dark:text-white px-4 py-2.5 text-xs font-bold text-charcoal-950 shadow-lift transition hover:bg-white dark:hover:bg-gray-800 active:scale-95 border border-white/20 dark:border-gray-700"
             >
-              فتح الموقع على الخريطة <ExternalLink className="h-3.5 w-3.5 text-sage-700" />
+              فتح الموقع على الخريطة <ExternalLink className="h-3.5 w-3.5 text-sage-700 dark:text-sage-400" />
             </a>
           </div>
         </div>
@@ -709,15 +710,15 @@ function Location({ onBook }: { onBook: () => void }) {
 
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   return (
-    <div className="glass fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-ivory-300/80 p-2 shadow-lift sm:hidden">
-      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs">
+    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-ivory-300/80 dark:border-gray-800 p-2 shadow-lift sm:hidden">
+      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold">
         <CalendarDays className="h-3.5 w-3.5" /> احجز موعدك
       </button>
       <a
         href={waLink}
         target="_blank"
         rel="noreferrer"
-        className="grid w-14 place-items-center rounded-xl bg-sage-600 text-ivory-50 transition hover:bg-sage-700"
+        className="grid w-14 place-items-center rounded-xl bg-sage-600 text-ivory-50 transition hover:bg-sage-700 shadow-sm"
         aria-label="واتساب"
       >
         <MessageCircle className="h-5 w-5" />
@@ -729,7 +730,7 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 function App() {
   const [bookingOpen, setBookingOpen] = useState(false);
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden bg-ivory-100 dark:bg-[#0c0e12] text-charcoal-900 dark:text-gray-100 min-h-screen">
       <SplashScreen />
       <Header />
       <main>
@@ -759,4 +760,3 @@ function App() {
 }
 
 export default App;
-
