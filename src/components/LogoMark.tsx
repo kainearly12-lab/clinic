@@ -1,33 +1,57 @@
-import { Sparkles } from 'lucide-react';
-
 interface LogoMarkProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
 export function LogoMark({ size = 'md', className = '' }: LogoMarkProps) {
   const dimensions = {
-    sm: 'h-8 w-8 rounded-lg',
-    md: 'h-10 w-10 rounded-xl',
-    lg: 'h-12 w-12 rounded-2xl',
+    sm: 'h-9 w-9 rounded-xl',
+    md: 'h-11 w-11 rounded-2xl',
+    lg: 'h-13 w-13 rounded-2xl',
+    xl: 'h-16 w-16 rounded-3xl',
   }[size];
 
-  const iconSize = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+  const svgSize = {
+    sm: 'w-5 h-5',
+    md: 'w-6 h-6',
+    lg: 'w-7 h-7',
+    xl: 'w-9 h-9',
   }[size];
 
   return (
     <div
-      className={`relative grid shrink-0 place-items-center bg-gradient-to-br from-charcoal-900 via-charcoal-950 to-charcoal-900 text-sage-300 shadow-sm ring-1 ring-sage-400/30 ${dimensions} ${className}`}
+      className={`relative grid shrink-0 place-items-center bg-gradient-to-br from-charcoal-900 via-charcoal-950 to-charcoal-900 text-sage-300 shadow-md ring-1.5 ring-sage-400/40 ${dimensions} ${className}`}
     >
-      <div className="absolute inset-0 rounded-inherit bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sage-400/20 via-transparent to-transparent" />
+      <div className="absolute inset-0 rounded-inherit bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sage-400/25 via-transparent to-transparent" />
       <div className="relative flex items-center justify-center">
-        {/* Medical Dermatology Aesthetic Vector Icon */}
-        <Sparkles className={`${iconSize} text-sage-300 transition-transform duration-300 group-hover:scale-110`} />
+        {/* Modern luxury clinical vector icon (Medical Shield + Cross) */}
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className={`${svgSize} text-sage-300 transition-transform duration-300 group-hover:scale-105`}
+        >
+          {/* Outer Medical Shield */}
+          <path
+            d="M12 3.5C8 5.8 4.5 6.4 4.5 12C4.5 17.8 8.2 21.2 12 22.5C15.8 21.2 19.5 17.8 19.5 12C19.5 6.4 16 5.8 12 3.5Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-sage-400/80"
+          />
+          {/* Inner Clinical Medical Cross */}
+          <path
+            d="M12 8.5V15.5M8.5 12H15.5"
+            stroke="#faf8f5"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
-      <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-sage-500 ring-2 ring-ivory-50" />
+      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-ivory-50 shadow-sm" />
     </div>
   );
 }
+

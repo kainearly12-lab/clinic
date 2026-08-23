@@ -40,11 +40,11 @@ export function Modal({ open, onClose, children, labelledBy }: ModalProps) {
             onClick={onClose}
           />
           <motion.div
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl bg-ivory-50 shadow-lift sm:rounded-3xl"
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 30, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl bg-ivory-50 shadow-2xl ring-1 ring-charcoal-900/10 sm:rounded-3xl"
+            initial={{ y: 30, scale: 0.95, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 20, scale: 0.96, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <button
               onClick={onClose}

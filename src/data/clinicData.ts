@@ -61,8 +61,8 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021247', display: '01154021247' },
     ],
-    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.649174092497!2d31.3392476!3d30.0469317!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583e6f9829dc77%3A0xc3f2b6040de2397!2sAndroderma%20Laser%20Clinic!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
-    mapsUrl: 'https://maps.google.com/?q=12+Abu+Dawoud+Al+Zaheri+Nasr+City+Cairo',
+    mapSrc: 'https://maps.google.com/maps?q=12%20Abu%20Dawoud%20Al%20Zaheri%20Nasr%20City%20Cairo%20Androderma&t=&z=16&ie=UTF8&iwloc=&output=embed',
+    mapsUrl: 'https://maps.app.goo.gl/4RqWp38sa7P9zvji9',
   },
   {
     id: 'fifth-settlement',
@@ -73,8 +73,8 @@ export const branches: Branch[] = [
       { number: '01223371075', display: '01223371075' },
       { number: '01015563395', display: '01015563395' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=%D9%85%D8%AC%D9%85%D8%B9%20%D9%83%D8%A7%D9%8A%D8%B1%D9%88%20%D9%85%D9%8A%D8%AF%D9%8A%D9%83%D8%A7%D9%84%20CMC%20%D8%A7%D9%84%D8%AA%D8%B3%D8%B9%D9%8A%D9%86%20%D8%A7%D9%84%D8%B4%D9%85%D8%A7%D9%84%D9%8A%20%D8%A7%D9%84%D8%AA%D8%AC%D9%85%D8%B9%20%D8%A7%D9%84%D8%AE%D8%A7%D9%85%D8%B3&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.google.com/?q=Cairo+Medical+Center+CMC+North+90th+New+Cairo',
+    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3454.112233445!2d31.4350000!3d30.0250000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDAxJzMwLjAiTiAzMcKwMjYnMDYuMCJF!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapsUrl: 'https://maps.app.goo.gl/DM2QmQAMwy429dZe8',
   },
   {
     id: 'maadi',
@@ -84,8 +84,8 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021249', display: '01154021249' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=1%2F5+%D8%B4%D8%A7%D8%B1%D8%B9+%D8%A7%D9%84%D9%84%D8%A7%D8%B3%D9%84%D9%83%D9%8A+%D8%A7%D9%84%D9%85%D8%B9%D8%A7%D8%AF%D9%8A+%D8%B9%D9%85%D8%A7%D8%B1%D8%A9+%D8%AC%D9%88%D9%87%D8%B1%D8%A9+%D8%A7%D9%84%D8%B4%D9%85%D8%B3&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.google.com/?q=1%2F5+El+Laselky+St+Maadi+Cairo',
+    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.987654321!2d31.2750000!3d29.9750000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjk1OCczMC4wIk4gMzHCsDE2JzMwLjAiRQ!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapsUrl: 'https://maps.app.goo.gl/f3yjW8tvFMUeRh9t8',
   },
   {
     id: 'new-giza',
@@ -95,23 +95,23 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021248', display: '01154021248' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=Midi+Town+New+Giza+Egypt&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.google.com/?q=Midi+Town+Building+B1+New+Giza',
+    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.123456789!2d31.0200000!3d30.0100000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDAwJzM2LjAiTiAzMcKwMDEnMTIgMCJF!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapsUrl: 'https://maps.app.goo.gl/uT6ZiT5K7LcZjKBo8',
   },
 ];
 
 export const clinic: Clinic = {
-  name: 'Androderma Laser Clinic',
-  nameAr: 'أندرودرما ليزر كلينك',
+  name: 'عيادات Androderma',
+  nameAr: 'عيادات Androderma',
   taglineAr: 'عناية متقدمة بالجلدية والليزر وتجميل البشرة',
   email: 'info@andro-derma.com',
   phone: '01154021247',
   phoneDisplay: '01154021247',
   whatsapp: '201154021247',
-  whatsappMessage: 'مرحبًا، أريد الاستفسار عن حجز موعد في عيادة Androderma.',
+  whatsappMessage: 'مرحبًا، أريد الاستفسار عن حجز موعد في عيادات Androderma.',
   addressAr: '12 شارع أبو داوود الظاهري متفرع من شارع مكرم عبيد، مدينة نصر، القاهرة',
   plusCode: '3962+GG',
-  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=3962%2BGG+Nasr+City+Cairo',
+  mapsUrl: 'https://maps.app.goo.gl/4RqWp38sa7P9zvji9',
   rating: 3.9,
   reviewsCount: 54,
   closingNote: 'مفتوح — يغلق 11 مساءً',

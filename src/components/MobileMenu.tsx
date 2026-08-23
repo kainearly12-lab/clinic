@@ -28,10 +28,10 @@ export function MobileMenu({ open, onClose, active }: MobileMenuProps) {
       >
         <div className="flex items-center justify-between border-b border-ivory-300 px-6 py-5">
           <div className="flex items-center gap-3">
-            <LogoMark size="sm" />
+            <LogoMark size="md" />
             <div className="flex flex-col">
-              <span className="font-display font-bold leading-none text-charcoal-950">Androderma</span>
-              <span className="text-[10px] font-medium tracking-widest text-sage-600 uppercase">Laser Clinic</span>
+              <span className="font-display text-xl font-extrabold leading-tight text-charcoal-950">عيادات Androderma</span>
+              <span className="text-[10px] font-bold tracking-wider text-sage-700">عناية متقدمة بالجلدية والليزر</span>
             </div>
           </div>
           <button

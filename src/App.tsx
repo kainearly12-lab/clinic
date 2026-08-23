@@ -15,12 +15,11 @@ import {
   Sparkles,
   Star,
   X,
-  Facebook,
-  Instagram,
   Building2,
 } from 'lucide-react';
 import { Header } from '@/components/Header';
-import { LogoMark } from '@/components/LogoMark';
+import { LuxuryFooter } from '@/components/LuxuryFooter';
+import { SplashScreen } from '@/components/SplashScreen';
 import { BookingButton, BookingModal } from '@/components/BookingModal';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
 import { branches, clinic, faqs, galleryItems, reviews, services } from '@/data/clinicData';
@@ -32,7 +31,13 @@ function TrustBar() {
   const [visible, setVisible] = useState(false);
   const reviewsValue = useCountUp(clinic.reviewsCount, 1100, visible);
   return (
-    <section className="border-y border-ivory-300/80 bg-ivory-50">
+    <motion.section
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="border-y border-ivory-300/80 bg-ivory-50"
+    >
       <div className="container-px grid grid-cols-2 divide-x divide-x-reverse divide-ivory-300/80 sm:grid-cols-4">
         {[
           { icon: Star, value: clinic.rating.toFixed(1), label: 'التقييم على Google', suffix: ' / 5' },
@@ -48,7 +53,7 @@ function TrustBar() {
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
               className="flex min-h-[96px] flex-col justify-center gap-1 px-4 py-5 sm:px-7"
             >
               <div className="flex items-center gap-2 text-sage-600">
@@ -63,13 +68,20 @@ function TrustBar() {
           );
         })}
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Hero({ onBook }: { onBook: () => void }) {
   return (
-    <section id="home" className="relative min-h-[720px] overflow-hidden bg-ivory-100 pt-28 sm:min-h-[780px] sm:pt-36">
+    <motion.section
+      id="home"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="relative min-h-[720px] overflow-hidden bg-ivory-100 pt-32 sm:min-h-[800px] sm:pt-40"
+    >
       <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-sage-200/25 blur-3xl" />
       <div className="container-px relative grid items-center gap-12 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:pb-28">
         <div className="relative z-10 max-w-xl lg:order-2">
@@ -80,22 +92,22 @@ function Hero({ onBook }: { onBook: () => void }) {
             className="mb-6 flex items-center gap-3"
           >
             <span className="h-px w-8 bg-sage-500" />
-            <span className="eyebrow">DERMATOLOGY & LASER CLINIC</span>
+            <span className="eyebrow">DERMATOLOGY & LASER CLINICS</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-lg text-[2.65rem] font-bold leading-[1.22] tracking-[-0.04em] text-charcoal-950 sm:text-6xl lg:text-[4.2rem]"
+            className="max-w-lg text-[2.5rem] font-extrabold leading-[1.45] tracking-normal text-charcoal-950 sm:text-5xl sm:leading-[1.4] lg:text-[3.9rem] lg:leading-[1.35]"
           >
-            عناية متقدمة ببشرتك،<br />
-            <span className="text-sage-600">تبدأ من التشخيص الصحيح</span>
+            عناية متقدمة ببشرتك،<br className="hidden sm:block" />
+            <span className="text-sage-600 block mt-2 sm:mt-1">تبدأ من التشخيص الصحيح</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7 }}
-            className="mt-6 max-w-md text-[15px] leading-8 text-charcoal-800/65 sm:text-base"
+            className="mt-6 max-w-md text-[15px] leading-relaxed text-charcoal-800/75 sm:text-base"
           >
             تجربة متكاملة للعناية بالبشرة والليزر بأحدث الأجهزة الطبية في 4 فروع مجهزة لراحتك.
           </motion.p>
@@ -106,7 +118,12 @@ function Hero({ onBook }: { onBook: () => void }) {
             className="mt-8 flex flex-wrap items-center gap-3"
           >
             <BookingButton onClick={onBook} />
-            <a href={waLink} target="_blank" rel="noreferrer" className="btn-secondary">
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+            >
               <MessageCircle className="h-4 w-4 text-sage-600" /> تواصل على واتساب
             </a>
           </motion.div>
@@ -135,7 +152,7 @@ function Hero({ onBook }: { onBook: () => void }) {
             {/* Upgraded Hero Image: Luxurious, high-end medical clinic interior & aesthetic laser suite */}
             <img
               src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80"
-              alt="أجواء فاخرة وتجهيزات طبية متطورة في Androderma"
+              alt="أجواء فاخرة وتجهيزات طبية متطورة في عيادات Androderma"
               className="h-full w-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/40 via-transparent to-ivory-50/10" />
@@ -148,9 +165,9 @@ function Hero({ onBook }: { onBook: () => void }) {
             <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-sage-300/20">
               <Sparkles className="h-3.5 w-3.5 text-sage-200" />
             </span>
-            <p className="text-xs leading-5 text-ivory-100/90">
+            <p className="text-xs leading-relaxed text-ivory-100/90">
               أحدث تقنيات الليزر<br />
-              <span className="text-sage-200">بمعايير طبية عالمية</span>
+              <span className="text-sage-200 font-semibold">بمعايير طبية عالمية</span>
             </p>
           </motion.div>
           <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 bg-ivory-50 px-4 py-3 shadow-soft sm:block">
@@ -169,28 +186,35 @@ function Hero({ onBook }: { onBook: () => void }) {
         <span>SKIN / LASER / CARE</span>
         <span>SCROLL TO DISCOVER ↓</span>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Services({ onBook }: { onBook: () => void }) {
   return (
-    <section id="services" className="bg-ivory-50 py-24 sm:py-32">
+    <motion.section
+      id="services"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="bg-ivory-50 py-24 sm:py-32"
+    >
       <div className="container-px">
         <Reveal>
-          <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">WHAT WE DO</span>
-              <h2 className="mt-3 max-w-md text-3xl font-bold leading-tight sm:text-5xl">
+              <h2 className="mt-4 max-w-xl text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
                 خدمات تضع <span className="text-sage-600">احتياجاتك</span> أولاً
               </h2>
             </div>
-            <p className="max-w-xs text-sm leading-7 text-charcoal-800/60">
+            <p className="max-w-xs text-sm leading-relaxed text-charcoal-800/70">
               الخدمات المتاحة تُقدم بعناية واهتمام بالتفاصيل، وتبدأ دائمًا من فهم ما تحتاجه بشرتك.
             </p>
           </div>
         </Reveal>
-        <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
+        <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
           {services.map((service, i) => (
             <motion.article
               key={service.id}
@@ -210,9 +234,9 @@ function Services({ onBook }: { onBook: () => void }) {
                 <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/35 to-transparent" />
               </div>
               <div className="absolute inset-x-0 bottom-0 p-5 text-ivory-50">
-                <span className="mb-3 block text-xs font-medium text-sage-200">0{i + 1}</span>
-                <h3 className="text-xl font-bold">{service.titleAr}</h3>
-                <p className="mt-2 text-xs leading-6 text-ivory-100/70">{service.descriptionAr}</p>
+                <span className="mb-2 block text-xs font-medium text-sage-200">0{i + 1}</span>
+                <h3 className="text-xl font-bold leading-relaxed">{service.titleAr}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-ivory-100/70">{service.descriptionAr}</p>
                 <button
                   onClick={onBook}
                   className="mt-4 flex items-center gap-2 text-xs font-semibold text-sage-200 transition-all group-hover:gap-3"
@@ -225,76 +249,90 @@ function Services({ onBook }: { onBook: () => void }) {
           ))}
         </Stagger>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function About() {
   return (
-    <section id="about" className="overflow-hidden bg-charcoal-900 py-24 text-ivory-50 sm:py-32">
+    <motion.section
+      id="about"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="overflow-hidden bg-charcoal-900 py-24 text-ivory-50 sm:py-32"
+    >
       <div className="container-px grid items-center gap-14 lg:grid-cols-[1fr_0.9fr]">
         <Reveal className="relative order-2 lg:order-1">
           <div className="relative mx-auto max-w-md">
             <div className="aspect-[0.82] overflow-hidden rounded-[2rem] bg-sage-700">
               <img
                 src="https://images.pexels.com/photos/3738348/pexels-photo-3738348.jpeg?auto=compress&cs=tinysrgb&w=1000"
-                alt="مساحة هادئة للعناية"
+                alt="مساحة هادئة للعناية في عيادات Androderma"
                 loading="lazy"
                 className="h-full w-full object-cover opacity-80"
               />
             </div>
             <div className="absolute -bottom-6 -left-5 hidden w-44 rounded-2xl border border-ivory-50/15 bg-charcoal-800 p-4 sm:block">
               <span className="eyebrow text-sage-300">THE EXPERIENCE</span>
-              <p className="mt-2 text-sm leading-6 text-ivory-100/80">احترافية تبدأ من أول لحظة.</p>
+              <p className="mt-2 text-sm leading-relaxed text-ivory-100/80">احترافية تبدأ من أول لحظة.</p>
             </div>
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-sage-500/40" />
           </div>
         </Reveal>
         <Reveal delay={0.15} className="order-1 lg:order-2">
           <span className="eyebrow text-sage-300">A DIFFERENT APPROACH</span>
-          <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.35] sm:text-5xl">
-            لأن العناية الحقيقية<br />
-            <span className="text-sage-300">تبدأ بالاستماع</span>
+          <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-ivory-50 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+            لأن العناية الحقيقية<br className="hidden sm:block" />
+            <span className="text-sage-300 block mt-2 sm:mt-1">تبدأ بالاستماع</span>
           </h2>
-          <p className="mt-6 max-w-md text-sm leading-8 text-ivory-100/60">
-            في Androderma، نؤمن أن كل بشرة لها قصتها الخاصة. لذلك نمنحك مساحة هادئة لفهم احتياجاتك، ونعمل معك على تجربة عناية تناسبك في كافة فروعنا.
+          <p className="mt-6 max-w-md text-sm leading-relaxed text-ivory-100/70">
+            في عيادات Androderma، نؤمن أن كل بشرة لها قصتها الخاصة. لذلك نمنحك مساحة هادئة لفهم احتياجاتك، ونعمل معك على تجربة عناية تناسبك في كافة فروعنا.
           </p>
           <div className="mt-9 grid max-w-md grid-cols-2 gap-5 border-t border-ivory-50/15 pt-6">
             <div>
               <span className="mb-2 block text-sage-300">
                 <Sparkles className="h-5 w-5" />
               </span>
-              <h3 className="text-sm font-bold">اهتمام بالتفاصيل</h3>
-              <p className="mt-1 text-xs leading-5 text-ivory-100/50">كل خطوة محسوبة لراحتك.</p>
+              <h3 className="text-sm font-bold leading-relaxed">اهتمام بالتفاصيل</h3>
+              <p className="mt-1 text-xs leading-relaxed text-ivory-100/60">كل خطوة محسوبة لراحتك.</p>
             </div>
             <div>
               <span className="mb-2 block text-sage-300">
                 <CalendarDays className="h-5 w-5" />
               </span>
-              <h3 className="text-sm font-bold">تواصل أسهل</h3>
-              <p className="mt-1 text-xs leading-5 text-ivory-100/50">نحن هنا للإجابة عن أسئلتك.</p>
+              <h3 className="text-sm font-bold leading-relaxed">تواصل أسهل</h3>
+              <p className="mt-1 text-xs leading-relaxed text-ivory-100/60">نحن هنا للإجابة عن أسئلتك.</p>
             </div>
           </div>
         </Reveal>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Gallery() {
   const [selected, setSelected] = useState<string | null>(null);
   return (
-    <section id="gallery" className="bg-ivory-100 py-24 sm:py-32">
+    <motion.section
+      id="gallery"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="bg-ivory-100 py-24 sm:py-32"
+    >
       <div className="container-px">
         <Reveal>
-          <div className="mb-10 flex items-end justify-between">
+          <div className="mb-12 flex items-end justify-between">
             <div>
               <span className="eyebrow">A GLIMPSE INSIDE</span>
-              <h2 className="mt-3 text-3xl font-bold sm:text-5xl">
-                من داخل <span className="text-sage-600">Androderma</span>
+              <h2 className="mt-4 text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+                من داخل <span className="text-sage-600">عيادات Androderma</span>
               </h2>
             </div>
-            <span className="hidden text-xs text-charcoal-800/45 sm:block">اضغط على الصورة للتكبير</span>
+            <span className="hidden text-xs text-charcoal-800/50 sm:block">اضغط على الصورة للتكبير</span>
           </div>
         </Reveal>
         <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[220px] sm:grid-cols-4 sm:gap-5">
@@ -330,7 +368,7 @@ function Gallery() {
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
               <ImageIcon className="mb-4 h-5 w-5 text-sage-200" />
               <span className="eyebrow text-sage-200">OUR SPACE</span>
-              <p className="mt-3 text-lg font-semibold leading-8 text-ivory-50">
+              <p className="mt-3 text-lg font-semibold leading-relaxed text-ivory-50">
                 مساحة صُممت لتشعر فيها بالراحة والثقة.
               </p>
               <a
@@ -371,21 +409,28 @@ function Gallery() {
           </motion.div>
         )}
       </AnimatePresence>
-    </section>
+    </motion.section>
   );
 }
 
 function Reviews() {
   return (
-    <section id="reviews" className="bg-ivory-50 py-24 sm:py-32">
+    <motion.section
+      id="reviews"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="bg-ivory-50 py-24 sm:py-32"
+    >
       <div className="container-px">
         <Reveal>
-          <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">GOOGLE REVIEWS</span>
-              <h2 className="mt-3 max-w-lg text-3xl font-bold leading-tight sm:text-5xl">
-                تجارب حقيقية،<br />
-                <span className="text-sage-600">بكلمات أصحابها</span>
+              <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+                تجارب حقيقية،<br className="hidden sm:block" />
+                <span className="text-sage-600 block mt-2 sm:mt-1">بكلمات أصحابها</span>
               </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -403,22 +448,22 @@ function Reviews() {
                 </div>
               </div>
               <div className="h-10 w-px bg-ivory-300" />
-              <span className="max-w-[100px] text-xs leading-5 text-charcoal-800/55">54 تقييمًا على Google</span>
+              <span className="max-w-[100px] text-xs leading-relaxed text-charcoal-800/60">54 تقييمًا على Google</span>
             </div>
           </div>
         </Reveal>
-        <Stagger className="grid gap-5 md:grid-cols-2" stagger={0.12}>
+        <Stagger className="grid gap-6 md:grid-cols-2" stagger={0.12}>
           {reviews.map((review) => (
             <motion.blockquote
               key={review.id}
               variants={staggerItem}
-              className="relative rounded-2xl border border-ivory-300 bg-ivory-100 p-7 sm:p-9"
+              className="relative rounded-2xl border border-ivory-300 bg-ivory-100 p-7 shadow-soft sm:p-9 hover:shadow-md transition-shadow duration-300"
             >
               <Quote className="mb-5 h-7 w-7 text-sage-400" />
-              <p className="text-base font-medium leading-8 text-charcoal-800 sm:text-lg">{review.text}</p>
+              <p className="text-base font-medium leading-relaxed text-charcoal-800 sm:text-lg">{review.text}</p>
               <footer className="mt-7 flex items-center justify-between border-t border-ivory-300 pt-5">
-                <span className="text-xs text-charcoal-800/45">{review.author ?? 'مراجع Google'}</span>
-                <span className="flex items-center gap-1 text-[10px] text-charcoal-800/45">
+                <span className="text-xs text-charcoal-800/50">{review.author ?? 'مراجع Google'}</span>
+                <span className="flex items-center gap-1 text-[10px] text-charcoal-800/50">
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[9px] font-bold text-blue-500">
                     G
                   </span>{' '}
@@ -428,36 +473,33 @@ function Reviews() {
             </motion.blockquote>
           ))}
         </Stagger>
-        <div className="mt-8 text-center">
-          <a
-            href="https://www.google.com/maps/search/?api=1&query=Androderma+Laser+Clinic+Nasr+City"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secondary"
-          >
-            عرض جميع التقييمات <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function FAQ() {
   const [open, setOpen] = useState(0);
   return (
-    <section id="faq" className="bg-ivory-100 py-24 sm:py-32">
+    <motion.section
+      id="faq"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="bg-ivory-100 py-24 sm:py-32"
+    >
       <div className="container-px grid gap-12 lg:grid-cols-[0.75fr_1fr] lg:gap-24">
         <Reveal>
           <span className="eyebrow">NEED TO KNOW</span>
-          <h2 className="mt-3 max-w-sm text-3xl font-bold leading-tight sm:text-5xl">
-            أسئلة قد<br />
-            <span className="text-sage-600">تخطر ببالك</span>
+          <h2 className="mt-4 max-w-sm text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+            أسئلة قد<br className="hidden sm:block" />
+            <span className="text-sage-600 block mt-2 sm:mt-1">تخطر ببالك</span>
           </h2>
-          <p className="mt-6 max-w-xs text-sm leading-7 text-charcoal-800/60">
+          <p className="mt-6 max-w-xs text-sm leading-relaxed text-charcoal-800/70">
             لم تجد إجابتك؟ تواصل معنا مباشرة وسيسعد فريقنا بمساعدتك في أي من فروعنا.
           </p>
-          <a href={waLink} target="_blank" rel="noreferrer" className="btn-ghost mt-5 -mr-5 text-sage-700">
+          <a href={waLink} target="_blank" rel="noreferrer" className="btn-ghost mt-6 -mr-5 text-sage-700">
             اسألنا على واتساب <ArrowLeft className="h-4 w-4" />
           </a>
         </Reveal>
@@ -469,7 +511,7 @@ function FAQ() {
                   onClick={() => setOpen(open === i ? -1 : i)}
                   className="flex w-full items-center justify-between gap-4 py-5 text-right"
                 >
-                  <span className="text-sm font-semibold text-charcoal-900">{faq.q}</span>
+                  <span className="text-sm font-semibold text-charcoal-900 leading-relaxed">{faq.q}</span>
                   <span
                     className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
                       open === i ? 'bg-charcoal-900 text-ivory-50' : 'bg-ivory-200 text-charcoal-800'
@@ -486,7 +528,7 @@ function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-5 pl-12 text-sm leading-7 text-charcoal-800/60">{faq.a}</p>
+                      <p className="pb-5 pl-12 text-sm leading-relaxed text-charcoal-800/70">{faq.a}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -495,7 +537,7 @@ function FAQ() {
           ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -504,14 +546,21 @@ function Location({ onBook }: { onBook: () => void }) {
   const currentBranch = branches.find((b) => b.id === activeBranchId) || branches[0];
 
   return (
-    <section id="contact" className="bg-sage-100 py-24 sm:py-32">
+    <motion.section
+      id="contact"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="bg-sage-100 py-24 sm:py-32"
+    >
       <div className="container-px">
-        <div className="mb-10 text-center sm:text-right">
+        <div className="mb-12 text-center sm:text-right">
           <span className="eyebrow text-sage-700">OUR BRANCHES</span>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-charcoal-950 sm:text-5xl">
+          <h2 className="mt-3 text-3xl font-bold leading-[1.65] text-charcoal-950 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
             فروعنا <span className="text-sage-600">في خدمتك</span>
           </h2>
-          <p className="mt-3 text-sm text-charcoal-800/70">
+          <p className="mt-3 text-sm leading-relaxed text-charcoal-800/75 max-w-2xl">
             اختر الفرع الأقرب إليك لعرض العنوان المباشر، أرقام التواصل، وخريطة الوصول التفاعلية
           </p>
         </div>
@@ -524,10 +573,10 @@ function Location({ onBook }: { onBook: () => void }) {
               <button
                 key={b.id}
                 onClick={() => setActiveBranchId(b.id)}
-                className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-all sm:text-sm ${
+                className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-all duration-300 sm:text-sm ${
                   isActive
-                    ? 'bg-charcoal-900 text-ivory-50 shadow-md'
-                    : 'text-charcoal-800 hover:bg-ivory-200/80'
+                    ? 'bg-charcoal-900 text-ivory-50 shadow-md scale-[1.02]'
+                    : 'text-charcoal-800 hover:bg-ivory-200/90 hover:-translate-y-0.5'
                 }`}
               >
                 <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-sage-300' : 'text-sage-600'}`} />
@@ -538,7 +587,7 @@ function Location({ onBook }: { onBook: () => void }) {
         </div>
 
         {/* Main Branch Details & Interactive Map Card */}
-        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 text-ivory-50 shadow-lift lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 text-ivory-50 shadow-lift transition-all duration-300 hover:shadow-2xl lg:grid-cols-[1.05fr_0.95fr]">
           <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-12 lg:p-14">
             <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-sage-400/20" />
 
@@ -550,7 +599,7 @@ function Location({ onBook }: { onBook: () => void }) {
                 </span>
               </div>
 
-              <h3 className="mt-3 text-2xl font-bold leading-snug sm:text-4xl text-ivory-50">
+              <h3 className="mt-4 text-2xl font-bold leading-relaxed sm:text-3xl lg:text-4xl text-ivory-50">
                 {currentBranch.nameAr}
               </h3>
 
@@ -559,10 +608,10 @@ function Location({ onBook }: { onBook: () => void }) {
                 <div className="flex items-start gap-3.5">
                   <MapPin className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/40">
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
                       العنوان
                     </span>
-                    <p className="leading-7 text-ivory-100/90 font-medium">
+                    <p className="leading-relaxed text-ivory-100/90 font-medium">
                       {currentBranch.addressAr}
                     </p>
                   </div>
@@ -572,10 +621,10 @@ function Location({ onBook }: { onBook: () => void }) {
                 <div className="flex items-start gap-3.5">
                   <Phone className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/40">
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
                       أرقام الهاتف المباشرة (اضغط للاتصال)
                     </span>
-                    <div className="flex flex-wrap gap-2.5 pt-0.5">
+                    <div className="flex flex-wrap gap-2.5 pt-1">
                       {currentBranch.phones.map((p) => (
                         <a
                           key={p.number}
@@ -595,7 +644,7 @@ function Location({ onBook }: { onBook: () => void }) {
                 <div className="flex items-start gap-3.5">
                   <Mail className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/40">
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
                       البريد الإلكتروني
                     </span>
                     <a
@@ -611,7 +660,7 @@ function Location({ onBook }: { onBook: () => void }) {
                 <div className="flex items-center gap-3.5">
                   <Clock3 className="h-4 w-4 shrink-0 text-sage-300" />
                   <div>
-                    <span className="mb-0.5 block text-[10px] uppercase tracking-wider text-ivory-100/40">
+                    <span className="mb-0.5 block text-[10px] uppercase tracking-wider text-ivory-100/50">
                       مواعيد العمل
                     </span>
                     <p className="text-ivory-100/85">{clinic.closingNote}</p>
@@ -654,94 +703,7 @@ function Location({ onBook }: { onBook: () => void }) {
           </div>
         </div>
       </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="bg-ivory-50 pb-24 pt-16 sm:pb-10">
-      <div className="container-px">
-        <div className="flex flex-col justify-between gap-10 border-b border-ivory-300 pb-10 sm:flex-row">
-          <div>
-            <div className="flex items-center gap-3">
-              <LogoMark size="md" />
-              <div>
-                <span className="block font-display text-lg font-bold leading-none text-charcoal-950">
-                  Androderma
-                </span>
-                <span className="text-[10px] font-medium tracking-[0.2em] text-sage-600 uppercase">
-                  Laser Clinic
-                </span>
-              </div>
-            </div>
-            <p className="mt-4 max-w-[260px] text-xs leading-6 text-charcoal-800/65">
-              {clinic.taglineAr} — متواجدون في 4 فروع (مدينة نصر، التجمع الخامس، المعادي، نيو جيزة).
-            </p>
-            <div className="mt-4 flex flex-col gap-1.5 text-xs text-charcoal-800/70">
-              <a
-                href={`mailto:${clinic.email}`}
-                className="inline-flex items-center gap-2 text-sage-700 hover:text-charcoal-950 font-medium"
-              >
-                <Mail className="h-3.5 w-3.5" />
-                Email: {clinic.email}
-              </a>
-              <a
-                href={`tel:${clinic.phone}`}
-                className="inline-flex items-center gap-2 text-sage-700 hover:text-charcoal-950 font-medium"
-              >
-                <Phone className="h-3.5 w-3.5" />
-                <span dir="ltr">{clinic.phoneDisplay}</span>
-              </a>
-            </div>
-            <div className="mt-5 flex items-center gap-2">
-              <a
-                href="https://www.instagram.com/androdermaclinic/?hl=ar"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="grid h-9 w-9 place-items-center rounded-full border border-ivory-300 text-charcoal-800/70 transition-all hover:border-charcoal-900/30 hover:bg-ivory-200 hover:text-charcoal-950"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a
-                href="https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="grid h-9 w-9 place-items-center rounded-full border border-ivory-300 text-charcoal-800/70 transition-all hover:border-charcoal-900/30 hover:bg-ivory-200 hover:text-charcoal-950"
-              >
-                <Facebook className="h-4 w-4" />
-              </a>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-xs text-charcoal-800/60 sm:grid-cols-3">
-            <a href="#services" className="hover:text-charcoal-950">
-              خدماتنا
-            </a>
-            <a href="#about" className="hover:text-charcoal-950">
-              عن العيادة
-            </a>
-            <a href="#gallery" className="hover:text-charcoal-950">
-              المعرض
-            </a>
-            <a href="#reviews" className="hover:text-charcoal-950">
-              التقييمات
-            </a>
-            <a href="#faq" className="hover:text-charcoal-950">
-              الأسئلة الشائعة
-            </a>
-            <a href="#contact" className="hover:text-charcoal-950">
-              فروعنا وتواصل معنا
-            </a>
-          </div>
-        </div>
-        <div className="flex flex-col justify-between gap-4 pt-6 text-[11px] text-charcoal-800/45 sm:flex-row">
-          <span>© {new Date().getFullYear()} Androderma Laser Clinic — جميع الحقوق محفوظة</span>
-          <span>العناية التي تبدأ من الفهم والتطور الطبي</span>
-        </div>
-      </div>
-    </footer>
+    </motion.section>
   );
 }
 
@@ -768,6 +730,7 @@ function App() {
   const [bookingOpen, setBookingOpen] = useState(false);
   return (
     <div className="overflow-hidden">
+      <SplashScreen />
       <Header />
       <main>
         <Hero onBook={() => setBookingOpen(true)} />
@@ -779,12 +742,12 @@ function App() {
         <FAQ />
         <Location onBook={() => setBookingOpen(true)} />
       </main>
-      <Footer />
+      <LuxuryFooter />
       <a
         href={waLink}
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-6 left-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full bg-sage-600 text-ivory-50 shadow-lift transition hover:scale-105 hover:bg-sage-700 sm:flex"
+        className="fixed bottom-6 left-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full bg-sage-600 text-ivory-50 shadow-lift transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-sage-700 sm:flex"
         aria-label="تواصل عبر واتساب"
       >
         <MessageCircle className="h-5 w-5" />

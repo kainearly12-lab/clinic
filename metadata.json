@@ -1,6 +1,6 @@
 {
   "name": "Androderma Laser Clinic",
-  "description": "Androderma Laser Clinic website for dermatology and laser treatments in Nasr City, Cairo.",
+  "description": "Androderma Dermatology & Laser Clinics multi-branch medical center across Nasr City, 5th Settlement, Maadi, and New Giza.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
