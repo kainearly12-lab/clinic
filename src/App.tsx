@@ -689,6 +689,9 @@ function Location({ onBook }: { onBook: () => void }) {
               key={currentBranch.id}
               title={`موقع ${currentBranch.nameAr} على الخريطة`}
               src={currentBranch.mapSrc || branches[0].mapSrc}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
               className="w-full h-full rounded-2xl border-0 bg-gray-100 min-h-[350px] lg:min-h-full"
               allowFullScreen
               loading="lazy"

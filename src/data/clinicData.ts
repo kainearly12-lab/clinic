@@ -61,7 +61,7 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021247', display: '01154021247' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=12%20Abu%20Dawoud%20Al%20Zaheri%20Nasr%20City%20Cairo%20Androderma&t=&z=16&ie=UTF8&iwloc=&output=embed',
+    mapSrc: 'https://maps.google.com/maps?q=12+Abu+Dawud+Al-Zahiri,+Nasr+City,+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
     mapsUrl: 'https://maps.app.goo.gl/4RqWp38sa7P9zvji9',
   },
   {
@@ -73,7 +73,7 @@ export const branches: Branch[] = [
       { number: '01223371075', display: '01223371075' },
       { number: '01015563395', display: '01015563395' },
     ],
-    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3454.112233445!2d31.4350000!3d30.0250000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDAxJzMwLjAiTiAzMcKwMjYnMDYuMCJF!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapSrc: 'https://maps.google.com/maps?q=Cairo+Medical+Center,+North+Teseen+Street,+New+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
     mapsUrl: 'https://maps.app.goo.gl/DM2QmQAMwy429dZe8',
   },
   {
@@ -84,7 +84,7 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021249', display: '01154021249' },
     ],
-    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.987654321!2d31.2750000!3d29.9750000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjk1OCczMC4wIk4gMzHCsDE2JzMwLjAiRQ!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapSrc: 'https://maps.google.com/maps?q=1/5+Al-Laselky+Street,+Maadi,+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
     mapsUrl: 'https://maps.app.goo.gl/f3yjW8tvFMUeRh9t8',
   },
   {
@@ -95,7 +95,7 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021248', display: '01154021248' },
     ],
-    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.123456789!2d31.0200000!3d30.0100000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDAwJzM2LjAiTiAzMcKwMDEnMTIgMCJF!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapSrc: 'https://maps.google.com/maps?q=Medi+Town,+Building+B1,+New+Giza&t=&z=15&ie=UTF8&iwloc=&output=embed',
     mapsUrl: 'https://maps.app.goo.gl/uT6ZiT5K7LcZjKBo8',
   },
 ];
