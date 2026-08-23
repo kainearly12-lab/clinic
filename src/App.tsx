@@ -16,6 +16,8 @@ import {
   Star,
   X,
   Building2,
+  Navigation,
+  CheckCircle2,
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LuxuryFooter } from '@/components/LuxuryFooter';
@@ -683,27 +685,71 @@ function Location({ onBook }: { onBook: () => void }) {
             </div>
           </div>
 
-          {/* Interactive Google Map with Dynamic Iframe */}
-          <div className="relative min-h-[380px] bg-charcoal-950/60 p-3 sm:p-5 lg:min-h-full">
-            <iframe
-              key={currentBranch.id}
-              title={`موقع ${currentBranch.nameAr} على الخريطة`}
-              src={currentBranch.mapSrc || branches[0].mapSrc}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              className="w-full h-full rounded-2xl border-0 bg-gray-100 min-h-[350px] lg:min-h-full"
-              allowFullScreen
-              loading="lazy"
-            />
-            <a
-              href={currentBranch.mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="absolute bottom-6 left-6 flex items-center gap-2 rounded-full bg-ivory-50/95 dark:bg-gray-900/95 dark:text-white px-4 py-2.5 text-xs font-bold text-charcoal-950 shadow-lift transition hover:bg-white dark:hover:bg-gray-800 active:scale-95 border border-white/20 dark:border-gray-700"
-            >
-              فتح الموقع على الخريطة <ExternalLink className="h-3.5 w-3.5 text-sage-700 dark:text-sage-400" />
-            </a>
+          {/* Luxury High-End Interactive Location & Directions Card */}
+          <div className="relative flex flex-col justify-between overflow-hidden border-t border-ivory-50/10 bg-gradient-to-br from-charcoal-950 via-[#13161c] to-charcoal-900 p-7 sm:p-10 lg:border-r lg:border-t-0">
+            {/* Background Aesthetic Grid Pattern */}
+            <div className="pointer-events-none absolute inset-0 opacity-10 [background-image:radial-gradient(#5d7a6b_1px,transparent_1px)] [background-size:16px_16px]" />
+            <div className="pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-sage-500/10 blur-2xl" />
+
+            <div className="relative z-10">
+              {/* Header badge */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sage-300">
+                  <Navigation className="h-4 w-4 animate-pulse text-sage-400" />
+                  <span className="text-xs font-bold tracking-wider">الموقع الدقيق على الخريطة</span>
+                </div>
+                <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="h-3 w-3" /> موقع موثّق ومعتمد
+                </span>
+              </div>
+
+              {/* Central Map Illustration Card */}
+              <div className="mt-6 rounded-2xl border border-ivory-50/10 bg-charcoal-850/90 p-6 backdrop-blur-sm shadow-inner">
+                <div className="flex items-center gap-4">
+                  <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sage-600/20 border border-sage-400/30 text-sage-300 shadow-md">
+                    <MapPin className="h-7 w-7 text-sage-300" />
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sage-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-sage-500"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-ivory-50">{currentBranch.nameAr}</h4>
+                    <p className="text-xs text-ivory-100/70 mt-0.5 line-clamp-2 leading-relaxed">
+                      {currentBranch.addressAr}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-4 text-xs">
+                  <div className="rounded-xl bg-charcoal-900/80 p-3 border border-ivory-50/5">
+                    <span className="block text-[10px] text-ivory-100/50 mb-0.5">سهولة الوصول</span>
+                    <span className="font-semibold text-ivory-100">موقع حيوي ومواقف متوفرة</span>
+                  </div>
+                  <div className="rounded-xl bg-charcoal-900/80 p-3 border border-ivory-50/5">
+                    <span className="block text-[10px] text-ivory-100/50 mb-0.5">التوجيه المباشر</span>
+                    <span className="font-semibold text-ivory-100">GPS دقيق خطوة بخطوة</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button for Google Maps */}
+            <div className="relative z-10 mt-8 space-y-3">
+              <a
+                href={currentBranch.mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-sage-600 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-500 hover:shadow-sage-600/30 hover:scale-[1.02] active:scale-95"
+              >
+                <MapPin className="h-4 w-4 text-sage-100 transition-transform group-hover:scale-110" />
+                <span>افتح على خرائط جوجل (Google Maps)</span>
+                <ExternalLink className="h-4 w-4 text-sage-200 transition-transform group-hover:translate-x-[-3px]" />
+              </a>
+              <p className="text-center text-[11px] text-ivory-100/50">
+                سيتم فتح اللوكيشن الرسمي المباشر للفرع في تطبيق خرائط Google لتوجيهك بدقة.
+              </p>
+            </div>
           </div>
         </div>
       </div>

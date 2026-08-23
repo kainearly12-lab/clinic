@@ -61,7 +61,7 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021247', display: '01154021247' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=12+Abu+Dawud+Al-Zahiri,+Nasr+City,+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    mapSrc: '',
     mapsUrl: 'https://maps.app.goo.gl/4RqWp38sa7P9zvji9',
   },
   {
@@ -73,8 +73,8 @@ export const branches: Branch[] = [
       { number: '01223371075', display: '01223371075' },
       { number: '01015563395', display: '01015563395' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=Cairo+Medical+Center,+North+Teseen+Street,+New+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.app.goo.gl/DM2QmQAMwy429dZe8',
+    mapSrc: '',
+    mapsUrl: 'https://maps.app.goo.gl/d9wMmUhogETcJzMW6',
   },
   {
     id: 'maadi',
@@ -84,8 +84,8 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021249', display: '01154021249' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=1/5+Al-Laselky+Street,+Maadi,+Cairo&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.app.goo.gl/f3yjW8tvFMUeRh9t8',
+    mapSrc: '',
+    mapsUrl: 'https://maps.app.goo.gl/x7igMWPDExcBsBuV8',
   },
   {
     id: 'new-giza',
@@ -95,8 +95,8 @@ export const branches: Branch[] = [
     phones: [
       { number: '01154021248', display: '01154021248' },
     ],
-    mapSrc: 'https://maps.google.com/maps?q=Medi+Town,+Building+B1,+New+Giza&t=&z=15&ie=UTF8&iwloc=&output=embed',
-    mapsUrl: 'https://maps.app.goo.gl/uT6ZiT5K7LcZjKBo8',
+    mapSrc: '',
+    mapsUrl: 'https://maps.app.goo.gl/yxDEgB8H1sSGom1c9',
   },
 ];
 
