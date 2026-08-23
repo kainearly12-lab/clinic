@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
+import { LogoMark } from './LogoMark';
 import { MobileMenu } from './MobileMenu';
 import { BookingModal } from './BookingModal';
 
@@ -53,14 +54,8 @@ export function Header() {
               isCompact ? 'h-14' : 'h-20'
             }`}
           >
-            <a href="#home" className="group flex items-center gap-2.5" aria-label={clinic.name}>
-              <span
-                className={`grid place-items-center rounded-xl bg-charcoal-900 font-display font-bold text-ivory-50 transition-all duration-300 ${
-                  isCompact ? 'h-8 w-8 text-base' : 'h-10 w-10 text-lg'
-                }`}
-              >
-                A
-              </span>
+            <a href="#home" className="group flex items-center gap-3" aria-label={clinic.name}>
+              <LogoMark size={isCompact ? 'sm' : 'md'} />
               <span className="flex flex-col leading-tight">
                 <span
                   className={`font-display font-bold tracking-tight transition-all duration-300 ${
@@ -86,7 +81,7 @@ export function Header() {
                   href={link.href}
                   className={`relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                     active === link.id
-                      ? 'text-charcoal-950'
+                      ? 'text-charcoal-950 font-semibold'
                       : 'text-charcoal-800/70 hover:text-charcoal-950'
                   }`}
                 >
@@ -94,7 +89,7 @@ export function Header() {
                   {active === link.id && (
                     <motion.span
                       layoutId="nav-active"
-                      className="absolute inset-x-3 -bottom-px h-px bg-sage-500"
+                      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-sage-500"
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     />
                   )}

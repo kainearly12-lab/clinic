@@ -1,0 +1,6 @@
+{
+  "name": "Androderma Laser Clinic",
+  "description": "Androderma Laser Clinic website for dermatology and laser treatments in Nasr City, Cairo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

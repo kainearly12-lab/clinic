@@ -1,7 +1,18 @@
+export interface Branch {
+  id: string;
+  nameAr: string;
+  cityAr: string;
+  addressAr: string;
+  phones: { number: string; display: string }[];
+  mapSrc: string;
+  mapsUrl: string;
+}
+
 export interface Clinic {
   name: string;
   nameAr: string;
   taglineAr: string;
+  email: string;
   phone: string;
   phoneDisplay: string;
   whatsapp: string;
@@ -41,15 +52,64 @@ export interface NavLink {
   href: string;
 }
 
+export const branches: Branch[] = [
+  {
+    id: 'nasr-city',
+    nameAr: 'فرع مدينة نصر',
+    cityAr: 'مدينة نصر',
+    addressAr: '12 شارع أبو داوود الظاهري متفرع من شارع مكرم عبيد أمام البنك العربي الإفريقي الدولي الدور الأول',
+    phones: [
+      { number: '01154021247', display: '01154021247' },
+    ],
+    mapSrc: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.649174092497!2d31.3392476!3d30.0469317!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583e6f9829dc77%3A0xc3f2b6040de2397!2sAndroderma%20Laser%20Clinic!5e0!3m2!1sen!2seg!4v1710000000000!5m2!1sen!2seg',
+    mapsUrl: 'https://maps.google.com/?q=12+Abu+Dawoud+Al+Zaheri+Nasr+City+Cairo',
+  },
+  {
+    id: 'fifth-settlement',
+    nameAr: 'فرع التجمع الخامس',
+    cityAr: 'التجمع الخامس',
+    addressAr: 'مجمع كايرو ميديكال (CMC) شارع التسعين الشمالي خلف المستشفى الجوي وبجوار محطة موبيل الدور الرابع عيادة 441',
+    phones: [
+      { number: '01223371075', display: '01223371075' },
+      { number: '01015563395', display: '01015563395' },
+    ],
+    mapSrc: 'https://maps.google.com/maps?q=%D9%85%D8%AC%D9%85%D8%B9%20%D9%83%D8%A7%D9%8A%D8%B1%D9%88%20%D9%85%D9%8A%D8%AF%D9%8A%D9%83%D8%A7%D9%84%20CMC%20%D8%A7%D9%84%D8%AA%D8%B3%D8%B9%D9%8A%D9%86%20%D8%A7%D9%84%D8%B4%D9%85%D8%A7%D9%84%D9%8A%20%D8%A7%D9%84%D8%AA%D8%AC%D9%85%D8%B9%20%D8%A7%D9%84%D8%AE%D8%A7%D9%85%D8%B3&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    mapsUrl: 'https://maps.google.com/?q=Cairo+Medical+Center+CMC+North+90th+New+Cairo',
+  },
+  {
+    id: 'maadi',
+    nameAr: 'فرع المعادي',
+    cityAr: 'المعادي',
+    addressAr: '1/5 شارع اللاسلكي عمارة جوهرة الشمس الدور الأول',
+    phones: [
+      { number: '01154021249', display: '01154021249' },
+    ],
+    mapSrc: 'https://maps.google.com/maps?q=1%2F5+%D8%B4%D8%A7%D8%B1%D8%B9+%D8%A7%D9%84%D9%84%D8%A7%D8%B3%D9%84%D9%83%D9%8A+%D8%A7%D9%84%D9%85%D8%B9%D8%A7%D8%AF%D9%8A+%D8%B9%D9%85%D8%A7%D8%B1%D8%A9+%D8%AC%D9%88%D9%87%D8%B1%D8%A9+%D8%A7%D9%84%D8%B4%D9%85%D8%B3&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    mapsUrl: 'https://maps.google.com/?q=1%2F5+El+Laselky+St+Maadi+Cairo',
+  },
+  {
+    id: 'new-giza',
+    nameAr: 'فرع نيو جيزة',
+    cityAr: 'نيو جيزة',
+    addressAr: 'ميدي تاون - مبنى B1 عيادة 305 - الدور الثالث',
+    phones: [
+      { number: '01154021248', display: '01154021248' },
+    ],
+    mapSrc: 'https://maps.google.com/maps?q=Midi+Town+New+Giza+Egypt&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    mapsUrl: 'https://maps.google.com/?q=Midi+Town+Building+B1+New+Giza',
+  },
+];
+
 export const clinic: Clinic = {
   name: 'Androderma Laser Clinic',
   nameAr: 'أندرودرما ليزر كلينك',
-  taglineAr: 'العناية بالبشرة والجلدية والليزر',
+  taglineAr: 'عناية متقدمة بالجلدية والليزر وتجميل البشرة',
+  email: 'info@andro-derma.com',
   phone: '01154021247',
   phoneDisplay: '01154021247',
   whatsapp: '201154021247',
   whatsappMessage: 'مرحبًا، أريد الاستفسار عن حجز موعد في عيادة Androderma.',
-  addressAr: 'أبو داوود الظاهري، المنطقة السادسة، مدينة نصر، القاهرة',
+  addressAr: '12 شارع أبو داوود الظاهري متفرع من شارع مكرم عبيد، مدينة نصر، القاهرة',
   plusCode: '3962+GG',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=3962%2BGG+Nasr+City+Cairo',
   rating: 3.9,

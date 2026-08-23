@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronLeft, Clock3, Sparkles } from 'lucide-react';
-import { services } from '@/data/clinicData';
+import { branches, services } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
 
 interface BookingModalProps {
@@ -13,6 +13,7 @@ const timeOptions = ['10:00 ص', '12:00 م', '2:00 م', '4:00 م', '6:00 م', '8
 export function BookingModal({ open, onClose }: BookingModalProps) {
   const [submitted, setSubmitted] = useState(false);
   const [service, setService] = useState('');
+  const [branch, setBranch] = useState(branches[0]?.id || '');
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +36,7 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
             تم استلام طلبك بنجاح
           </h2>
           <p className="mx-auto mb-8 max-w-xs text-sm leading-7 text-charcoal-800/65">
-            سيتواصل معك فريق العيادة لتأكيد الموعد في أقرب وقت.
+            سيتواصل معك فريق العيادة لتأكيد الموعد بالفرع المختار في أقرب وقت.
           </p>
           <button onClick={handleClose} className="btn-primary w-full">
             العودة للموقع
@@ -49,10 +50,26 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
               احجز استشارتك
             </h2>
             <p className="mt-2 text-sm leading-6 text-charcoal-800/60">
-              اترك بياناتك وسيتواصل معك فريقنا لتأكيد الوقت المناسب.
+              اترك بياناتك وسيتواصل معك فريقنا لتأكيد الوقت والفرع الأنسب لك.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="branch" className="field-label">اختر الفرع</label>
+              <select
+                id="branch"
+                required
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                className="field-input font-medium"
+              >
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.nameAr} ({b.cityAr})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label htmlFor="name" className="field-label">الاسم</label>
               <input id="name" required className="field-input" placeholder="اكتب اسمك بالكامل" />
@@ -83,7 +100,7 @@ export function BookingModal({ open, onClose }: BookingModalProps) {
             </div>
             <div>
               <label htmlFor="notes" className="field-label">ملاحظات <span className="font-normal text-charcoal-800/40">(اختياري)</span></label>
-              <textarea id="notes" rows={3} className="field-input resize-none" placeholder="هل لديك أي ملاحظات؟" />
+              <textarea id="notes" rows={3} className="field-input resize-none" placeholder="هل لديك أي ملاحظات أو استفسار؟" />
             </div>
             <button type="submit" className="btn-primary mt-2 w-full py-3.5">
               إرسال طلب الحجز <ChevronLeft className="h-4 w-4" />
@@ -105,4 +122,5 @@ export function BookingButton({ onClick, children = 'احجز موعدك' }: { o
 export function BookingIcon() {
   return <Sparkles className="h-4 w-4" />;
 }
+
 
