@@ -41,7 +41,7 @@ export function Header() {
       >
         <div className="mx-auto max-w-7xl w-full pointer-events-auto">
           {/* Main Ultra-Transparent Glassmorphic Container matching Center K */}
-          <div className="relative overflow-hidden backdrop-blur-xl bg-white/60 dark:bg-gray-900/60 border border-white/40 dark:border-gray-800/40 shadow-xl rounded-2xl sm:rounded-full transition-all duration-300">
+          <div className="relative overflow-hidden backdrop-blur-xl bg-white/70 dark:bg-[#12141a]/75 border border-white/40 dark:border-white/10 shadow-xl rounded-2xl sm:rounded-full transition-all duration-300">
             
             <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
               {/* Brand Logo & Name */}

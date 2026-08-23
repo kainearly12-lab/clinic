@@ -105,7 +105,7 @@ export function LuxuryFooter() {
               {branches.map((b) => (
                 <div
                   key={b.id}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-sage-500/40 hover:bg-white/[0.06] transition-all duration-300"
+                  className="p-3 rounded-xl bg-white/[0.03] border border-white/10 dark:border-emerald-500/20 hover:border-sage-500/40 dark:hover:border-emerald-500/50 dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] hover:bg-white/[0.06] transition-all duration-300"
                 >
                   <div className="flex items-center justify-between font-bold text-white mb-1">
                     <span className="flex items-center gap-1.5 text-sage-300">

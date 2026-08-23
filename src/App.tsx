@@ -22,6 +22,7 @@ import {
 import { Header } from '@/components/Header';
 import { LuxuryFooter } from '@/components/LuxuryFooter';
 import { SplashScreen } from '@/components/SplashScreen';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 import { BookingButton, BookingModal } from '@/components/BookingModal';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
 import { branches, clinic, faqs, galleryItems, reviews, services } from '@/data/clinicData';
@@ -161,7 +162,7 @@ function Hero({ onBook }: { onBook: () => void }) {
           <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="glass-dark absolute -right-3 bottom-8 max-w-[190px] rounded-2xl border border-ivory-50/20 px-4 py-3 text-ivory-50 shadow-lift sm:-right-8"
+            className="glass-dark absolute -right-3 bottom-8 max-w-[190px] rounded-2xl border border-ivory-50/20 dark:border-emerald-500/30 px-4 py-3 text-ivory-50 shadow-lift dark:shadow-[0_0_25px_rgba(16,185,129,0.18)] sm:-right-8"
           >
             <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-sage-300/20">
               <Sparkles className="h-3.5 w-3.5 text-sage-200" />
@@ -171,7 +172,7 @@ function Hero({ onBook }: { onBook: () => void }) {
               <span className="text-sage-200 font-semibold">بمعايير طبية عالمية</span>
             </p>
           </motion.div>
-          <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 dark:border-gray-700/60 bg-ivory-50 dark:bg-[#181b22] px-4 py-3 shadow-soft sm:block">
+          <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 dark:border-gray-700/60 dark:hover:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.08)] dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.18)] bg-ivory-50 dark:bg-[#181b22] px-4 py-3 shadow-soft sm:block transition-all duration-300">
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold text-charcoal-900 dark:text-white">4</span>
               <div>
@@ -221,7 +222,7 @@ function Services({ onBook }: { onBook: () => void }) {
               key={service.id}
               variants={staggerItem}
               whileHover={{ y: -7 }}
-              className={`group relative overflow-hidden rounded-2xl bg-charcoal-900 border border-transparent dark:border-gray-800/60 shadow-md ${
+              className={`group relative overflow-hidden rounded-2xl bg-charcoal-900 border border-transparent dark:border-gray-800/60 shadow-md transition-all duration-500 dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.22)] dark:hover:border-emerald-500/50 ${
                 i === 1 ? 'lg:translate-y-8' : ''
               }`}
             >
@@ -275,7 +276,7 @@ function About() {
                 className="h-full w-full object-cover opacity-80"
               />
             </div>
-            <div className="absolute -bottom-6 -left-5 hidden w-44 rounded-2xl border border-ivory-50/15 bg-charcoal-800 p-4 sm:block">
+            <div className="absolute -bottom-6 -left-5 hidden w-44 rounded-2xl border border-ivory-50/15 dark:border-emerald-500/30 bg-charcoal-800 p-4 sm:block dark:shadow-[0_0_25px_rgba(16,185,129,0.18)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.28)] dark:hover:border-emerald-500/50 transition-all duration-300">
               <span className="eyebrow text-sage-300">THE EXPERIENCE</span>
               <p className="mt-2 text-sm leading-relaxed text-ivory-100/80">احترافية تبدأ من أول لحظة.</p>
             </div>
@@ -292,14 +293,14 @@ function About() {
             في عيادات Androderma، نؤمن أن كل بشرة لها قصتها الخاصة. لذلك نمنحك مساحة هادئة لفهم احتياجاتك، ونعمل معك على تجربة عناية تناسبك في كافة فروعنا.
           </p>
           <div className="mt-9 grid max-w-md grid-cols-2 gap-5 border-t border-ivory-50/15 pt-6">
-            <div>
+            <div className="rounded-xl p-3.5 dark:bg-charcoal-800/50 dark:border dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all duration-300">
               <span className="mb-2 block text-sage-300">
                 <Sparkles className="h-5 w-5" />
               </span>
               <h3 className="text-sm font-bold leading-relaxed">اهتمام بالتفاصيل</h3>
               <p className="mt-1 text-xs leading-relaxed text-ivory-100/60">كل خطوة محسوبة لراحتك.</p>
             </div>
-            <div>
+            <div className="rounded-xl p-3.5 dark:bg-charcoal-800/50 dark:border dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all duration-300">
               <span className="mb-2 block text-sage-300">
                 <CalendarDays className="h-5 w-5" />
               </span>
@@ -342,7 +343,7 @@ function Gallery() {
               key={item.id}
               onClick={() => setSelected(item.src)}
               whileHover={{ scale: 0.985 }}
-              className={`group relative overflow-hidden rounded-2xl text-right border border-transparent dark:border-gray-800/50 ${
+              className={`group relative overflow-hidden rounded-2xl text-right border border-transparent dark:border-gray-800/50 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.05)] dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all duration-300 ${
                 item.span === 'tall' ? 'row-span-2' : item.span === 'wide' ? 'col-span-2' : ''
               }`}
             >
@@ -358,7 +359,7 @@ function Gallery() {
               </span>
             </motion.button>
           ))}
-          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-transparent dark:border-gray-800/50">
+          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-transparent dark:border-gray-800/50 dark:hover:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.08)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.22)] transition-all duration-300">
             <img
               src="https://images.pexels.com/photos/6899554/pexels-photo-6899554.jpeg?auto=compress&cs=tinysrgb&w=1200"
               alt="مساحة العيادة الداخلية"
@@ -458,7 +459,7 @@ function Reviews() {
             <motion.blockquote
               key={review.id}
               variants={staggerItem}
-              className="relative rounded-2xl border border-ivory-300 dark:border-gray-800 bg-ivory-100 dark:bg-[#181b22] p-7 shadow-soft sm:p-9 hover:shadow-md transition-all duration-300"
+              className="relative rounded-2xl border border-ivory-300 dark:border-gray-800 bg-ivory-100 dark:bg-[#181b22] p-7 shadow-soft sm:p-9 hover:shadow-md dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_28px_rgba(16,185,129,0.2)] dark:hover:border-emerald-500/40 transition-all duration-300"
             >
               <Quote className="mb-5 h-7 w-7 text-sage-400" />
               <p className="text-base font-medium leading-relaxed text-charcoal-800 dark:text-gray-200 sm:text-lg">{review.text}</p>
@@ -569,7 +570,7 @@ function Location({ onBook }: { onBook: () => void }) {
         </div>
 
         {/* Branch Selector Tabs */}
-        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-charcoal-900/10 dark:border-gray-800 bg-ivory-50/80 dark:bg-[#181b22]/90 p-2 shadow-soft sm:gap-3">
+        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-charcoal-900/10 dark:border-gray-800 bg-ivory-50/80 dark:bg-[#181b22]/90 p-2 shadow-soft dark:shadow-[0_0_25px_rgba(16,185,129,0.06)] sm:gap-3">
           {branches.map((b) => {
             const isActive = b.id === currentBranch.id;
             return (
@@ -578,7 +579,7 @@ function Location({ onBook }: { onBook: () => void }) {
                 onClick={() => setActiveBranchId(b.id)}
                 className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-all duration-300 sm:text-sm ${
                   isActive
-                    ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white shadow-md scale-[1.02]'
+                    ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white shadow-md dark:shadow-[0_0_20px_rgba(16,185,129,0.35)] scale-[1.02]'
                     : 'text-charcoal-800 dark:text-gray-300 hover:bg-ivory-200/90 dark:hover:bg-gray-800 hover:-translate-y-0.5'
                 }`}
               >
@@ -590,9 +591,9 @@ function Location({ onBook }: { onBook: () => void }) {
         </div>
 
         {/* Main Branch Details & Interactive Map Card */}
-        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 dark:bg-[#161920] text-ivory-50 border border-transparent dark:border-gray-800 shadow-lift transition-all duration-300 hover:shadow-2xl lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 dark:bg-[#161920] text-ivory-50 border border-charcoal-800/80 dark:border-gray-800/80 shadow-lift transition-all duration-500 hover:shadow-2xl hover:border-sage-500/30 dark:border-emerald-500/25 dark:shadow-[0_0_35px_rgba(16,185,129,0.12)] dark:hover:shadow-[0_0_45px_rgba(16,185,129,0.25)] dark:hover:border-emerald-500/50 lg:grid-cols-[1.05fr_0.95fr] group/card">
           <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-12 lg:p-14">
-            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-sage-400/20" />
+            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-sage-400/20 transition-all duration-700 group-hover/card:scale-110 group-hover/card:border-sage-400/35" />
 
             <div>
               <div className="flex items-center gap-2">
@@ -633,7 +634,7 @@ function Location({ onBook }: { onBook: () => void }) {
                           key={p.number}
                           href={`tel:${p.number}`}
                           dir="ltr"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-sage-400/30 bg-charcoal-800/80 px-3 py-1.5 font-semibold text-ivory-100 transition hover:border-sage-300 hover:bg-sage-600 hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-sage-400/30 dark:border-emerald-500/30 bg-charcoal-800/80 dark:bg-charcoal-800/90 px-3 py-1.5 font-semibold text-ivory-100 transition hover:border-sage-300 dark:hover:border-emerald-400 hover:bg-sage-600 dark:hover:bg-sage-600 hover:text-white dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
                         >
                           <Phone className="h-3 w-3 text-sage-300" />
                           <span>{p.display}</span>
@@ -704,7 +705,7 @@ function Location({ onBook }: { onBook: () => void }) {
               </div>
 
               {/* Central Map Illustration Card */}
-              <div className="mt-6 rounded-2xl border border-ivory-50/10 bg-charcoal-850/90 p-6 backdrop-blur-sm shadow-inner">
+              <div className="mt-6 rounded-2xl border border-ivory-50/10 dark:border-emerald-500/25 bg-charcoal-850/90 dark:bg-[#14171e]/90 p-6 backdrop-blur-sm shadow-inner dark:shadow-[0_0_25px_rgba(16,185,129,0.12)] dark:hover:border-emerald-500/40 transition-all duration-300">
                 <div className="flex items-center gap-4">
                   <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sage-600/20 border border-sage-400/30 text-sage-300 shadow-md">
                     <MapPin className="h-7 w-7 text-sage-300" />
@@ -722,11 +723,11 @@ function Location({ onBook }: { onBook: () => void }) {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-4 text-xs">
-                  <div className="rounded-xl bg-charcoal-900/80 p-3 border border-ivory-50/5">
+                  <div className="rounded-xl bg-charcoal-900/80 dark:bg-[#161920] p-3 border border-ivory-50/5 dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300">
                     <span className="block text-[10px] text-ivory-100/50 mb-0.5">سهولة الوصول</span>
                     <span className="font-semibold text-ivory-100">موقع حيوي ومواقف متوفرة</span>
                   </div>
-                  <div className="rounded-xl bg-charcoal-900/80 p-3 border border-ivory-50/5">
+                  <div className="rounded-xl bg-charcoal-900/80 dark:bg-[#161920] p-3 border border-ivory-50/5 dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300">
                     <span className="block text-[10px] text-ivory-100/50 mb-0.5">التوجيه المباشر</span>
                     <span className="font-semibold text-ivory-100">GPS دقيق خطوة بخطوة</span>
                   </div>
@@ -759,7 +760,7 @@ function Location({ onBook }: { onBook: () => void }) {
 
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   return (
-    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-ivory-300/80 dark:border-gray-800 p-2 shadow-lift sm:hidden">
+    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-ivory-300/80 dark:border-emerald-500/30 p-2 shadow-lift dark:shadow-[0_0_25px_rgba(16,185,129,0.15)] sm:hidden">
       <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold">
         <CalendarDays className="h-3.5 w-3.5" /> احجز موعدك
       </button>
@@ -793,11 +794,12 @@ function App() {
         <Location onBook={() => setBookingOpen(true)} />
       </main>
       <LuxuryFooter />
+      <ScrollToTopButton />
       <a
         href={waLink}
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-6 left-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full bg-sage-600 text-ivory-50 shadow-lift transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-sage-700 sm:flex"
+        className="fixed bottom-20 left-4 sm:bottom-6 sm:left-6 z-40 flex h-12 w-12 items-center justify-center rounded-2xl sm:rounded-full bg-sage-600 text-ivory-50 shadow-lift transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-sage-500 active:scale-95 border border-white/20 dark:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.25)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.4)]"
         aria-label="تواصل عبر واتساب"
       >
         <MessageCircle className="h-5 w-5" />
