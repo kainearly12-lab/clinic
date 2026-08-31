@@ -658,9 +658,10 @@ export const FaceMeshCanvas: React.FC<FaceMeshCanvasProps> = ({
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       const zoomFactor = e.deltaY > 0 ? 1.08 : 0.92;
       const currentLen = targetCamPosRef.current.length();
-      const newLen = THREE.MathUtils.clamp(currentLen * zoomFactor, 2.2, 5.2);
+      const newLen = THREE.MathUtils.clamp(currentLen * zoomFactor, 2.8, 6.0);
       targetCamPosRef.current.setLength(newLen);
     };
 
@@ -670,6 +671,8 @@ export const FaceMeshCanvas: React.FC<FaceMeshCanvasProps> = ({
     canvas.addEventListener('touchstart', onPointerDown, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
     window.addEventListener('touchend', onPointerUp);
+
+    container.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('wheel', onWheel, { passive: false });
 
     // 9. RESIZE OBSERVER
@@ -794,6 +797,7 @@ export const FaceMeshCanvas: React.FC<FaceMeshCanvasProps> = ({
       window.removeEventListener('touchmove', onPointerMove);
       window.removeEventListener('touchend', onPointerUp);
 
+      container.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('wheel', onWheel);
 
       headGeo.dispose();
@@ -814,12 +818,16 @@ export const FaceMeshCanvas: React.FC<FaceMeshCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[550px] flex items-center justify-center select-none overflow-hidden rounded-3xl bg-slate-900/40 border border-white/10 shadow-inner"
+      data-lenis-prevent
+      onWheel={(e) => {
+        e.stopPropagation();
+      }}
+      className="relative w-full h-[550px] flex items-center justify-center select-none overflow-hidden rounded-3xl bg-slate-900/40 border border-white/10 shadow-inner touch-none pointer-events-auto"
     >
       {/* 3D WebGL Canvas */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing block"
+        className="w-full h-full cursor-grab active:cursor-grabbing block touch-none pointer-events-auto"
       />
 
       {/* Floating 2D HTML Hotspot Labels & Click Targets on top of 3D Model */}

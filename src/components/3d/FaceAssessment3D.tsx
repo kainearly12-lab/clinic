@@ -145,7 +145,11 @@ export function FaceAssessment3D({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-center">
         
         {/* LEFT COLUMN: 3D VIEWPORT CONTAINER (lg:col-span-7) */}
-        <div className="lg:col-span-7 h-[550px] relative rounded-3xl overflow-hidden border border-white/10 bg-slate-900/40 shadow-2xl flex flex-col justify-between">
+        <div
+          data-lenis-prevent
+          onWheel={(e) => e.stopPropagation()}
+          className="lg:col-span-7 h-[550px] relative rounded-3xl overflow-hidden border border-white/10 bg-slate-900/40 shadow-2xl flex flex-col justify-between"
+        >
           
           {/* Futuristic Medical Grid Background */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#00B8A9_1px,transparent_1px)] [background-size:20px_20px] opacity-15" />
