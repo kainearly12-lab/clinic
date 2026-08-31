@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { clinic } from '@/data/clinicData';
+import { CLINIC_LOGO } from '@/data/clinicLogo';
 
 export function SplashScreen() {
   const [visible, setVisible] = useState(() => {
@@ -117,8 +117,8 @@ export function SplashScreen() {
           <div className="absolute inset-0 rounded-full bg-[#00B8A9]/20 blur-2xl animate-pulse" />
           <img
             ref={logoRef}
-            src="https://i.postimg.cc/5N8zRfpb/327194266-596823435614064-703957778024686372-n-removebg-preview.png"
-            alt={clinic.name}
+            src={CLINIC_LOGO}
+            alt="Androderma Logo"
             className="relative w-28 sm:w-36 h-auto object-contain drop-shadow-[0_0_30px_rgba(0,184,169,0.35)]"
             loading="eager"
           />

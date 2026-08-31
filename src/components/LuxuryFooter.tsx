@@ -1,6 +1,6 @@
 import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft } from 'lucide-react';
 import { clinic, branches, navLinks } from '@/data/clinicData';
-import { LogoMark } from './LogoMark';
+import { CLINIC_LOGO } from '@/data/clinicLogo';
 
 export function LuxuryFooter() {
   return (
@@ -17,7 +17,11 @@ export function LuxuryFooter() {
           <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
             <div>
               <div className="flex items-center gap-3.5">
-                <LogoMark size="lg" className="ring-1 ring-white/20" />
+                <img
+                  src={CLINIC_LOGO}
+                  alt="Androderma Logo"
+                  className="h-12 w-auto object-contain drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
+                />
                 <div className="flex flex-col">
                   <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                     عيادات Androderma

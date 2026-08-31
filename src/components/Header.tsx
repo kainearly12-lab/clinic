@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
+import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { MobileMenu } from './MobileMenu';
 import { BookingModal } from './BookingModal';
 import { TopScrollProgressBar } from './TopScrollProgressBar';
@@ -97,9 +98,9 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                 aria-label={clinic.name}
               >
                 <img
-                  src="https://i.postimg.cc/5N8zRfpb/327194266-596823435614064-703957778024686372-n-removebg-preview.png"
-                  alt={clinic.name}
-                  className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.35)]"
+                  src={CLINIC_LOGO}
+                  alt="Androderma Logo"
+                  className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
                   loading="eager"
                 />
                 <div className="flex flex-col">
