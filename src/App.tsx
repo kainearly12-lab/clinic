@@ -28,7 +28,7 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
-import { getSupabaseClient } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabase';
 
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
@@ -117,16 +117,16 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
             {/* Primary Magnetic CTA */}
             <BookingButton
               onClick={onBook}
-              className="py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800"
+              className="py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800 cursor-pointer"
             >
               احجز كشفك الآن
             </BookingButton>
 
-            {/* Secondary Discovery CTA - Navigates to dedicated Skin Diagnostic Quiz Tab */}
+            {/* Secondary Discovery CTA */}
             <button
               type="button"
               onClick={onOpenDiagnostic}
-              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600"
+              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600 cursor-pointer"
             >
               <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
               <span>🧴 فحص البشرة 3D التفاعلي</span>
@@ -168,7 +168,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
         </span>
         <button
           onClick={scrollToServices}
-          className="flex items-center gap-1 text-slate-600 dark:text-gray-300 hover:text-teal-700 transition-colors"
+          className="flex items-center gap-1 text-slate-600 dark:text-gray-300 hover:text-teal-700 transition-colors cursor-pointer"
         >
           <span>اكتشف المزيد</span>
           <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
@@ -181,7 +181,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   return (
     <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-slate-200/90 dark:border-emerald-500/30 p-2 shadow-lift sm:hidden">
-      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold">
+      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold cursor-pointer">
         <CalendarDays className="h-3.5 w-3.5" /> احجز كشفك الآن
       </button>
       <a
@@ -198,29 +198,63 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin'>('home');
+  // Determine initial route based on window pathname and hash
+  const isInitialAdminPath = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/admin') ||
+    window.location.hash === '#admin'
+  );
+
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin'>(
+    isInitialAdminPath ? 'admin' : 'home'
+  );
   const [bookingOpen, setBookingOpen] = useState(false);
   const [initialService, setInitialService] = useState('');
   const [initialBranch, setInitialBranch] = useState('');
 
   // Admin Auth Gate State
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [adminUserEmail, setAdminUserEmail] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('androderma_admin_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return Boolean(parsed?.email);
+        }
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+  const [adminUserEmail, setAdminUserEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('androderma_admin_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed?.email || 'admin@androderma.com';
+        }
+      } catch {
+        return 'admin@androderma.com';
+      }
+    }
+    return 'admin@androderma.com';
+  });
 
   // Initialize Lenis smooth momentum scroll
   useSmoothScroll();
 
-  // Check existing Supabase session on startup
+  // Check Supabase session on startup
   useEffect(() => {
     const checkAuthSession = async () => {
       const supabase = getSupabaseClient();
       if (!supabase) return;
       try {
         const { data } = await supabase.auth.getSession();
-        if (data && data.session && data.session.user) {
+        if (data?.session?.user) {
           setIsAdminAuthenticated(true);
-          setAdminUserEmail(data.session.user.email || '');
+          setAdminUserEmail(data.session.user.email || 'admin@androderma.com');
         }
       } catch (err) {
         console.warn('Error checking existing Supabase session:', err);
@@ -231,28 +265,53 @@ function App() {
 
   // Secure Admin Access Trigger
   const handleTriggerAdminAccess = useCallback(() => {
-    if (isAdminAuthenticated) {
-      setActiveTab('admin');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
+    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+      window.history.pushState(null, '', '/admin');
+    }
+    setActiveTab('admin');
+
+    if (!isAdminAuthenticated) {
       setIsAdminAuthModalOpen(true);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [isAdminAuthenticated]);
 
-  // Listen to hash changes if someone navigates with #diagnostic-quiz or #admin
+  // Synchronize route and handle browser Back / Forward (popstate)
   useEffect(() => {
-    const handleHash = () => {
-      if (window.location.hash === '#diagnostic-quiz') {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+
+      if (path.startsWith('/admin') || hash === '#admin') {
+        setActiveTab('admin');
+        if (!isAdminAuthenticated) {
+          setIsAdminAuthModalOpen(true);
+        }
+      } else if (hash === '#diagnostic-quiz') {
         setActiveTab('diagnostic');
+        setIsAdminAuthModalOpen(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (window.location.hash === '#admin') {
-        handleTriggerAdminAccess();
+      } else {
+        setActiveTab('home');
+        setIsAdminAuthModalOpen(false);
       }
     };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, [handleTriggerAdminAccess]);
+
+    // Trigger on mount if starting at /admin
+    if (isInitialAdminPath) {
+      if (!isAdminAuthenticated) {
+        setIsAdminAuthModalOpen(true);
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [isAdminAuthenticated, isInitialAdminPath]);
 
   // Auth Success Handler from Modal
   const handleAuthSuccess = (email: string) => {
@@ -260,6 +319,9 @@ function App() {
     setAdminUserEmail(email);
     setIsAdminAuthModalOpen(false);
     setActiveTab('admin');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/admin') {
+      window.history.pushState(null, '', '/admin');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -273,17 +335,27 @@ function App() {
         console.warn('Supabase sign out error:', err);
       }
     }
+    try {
+      localStorage.removeItem('androderma_admin_session');
+    } catch {
+      // Ignored
+    }
     setIsAdminAuthenticated(false);
     setActiveTab('home');
-    if (window.location.hash === '#admin') {
-      window.history.replaceState(null, '', window.location.pathname);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => {
     if (tab === 'admin') {
       handleTriggerAdminAccess();
       return;
+    }
+
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      window.history.pushState(null, '', '/');
     }
 
     setActiveTab(tab);
@@ -309,6 +381,7 @@ function App() {
     setBookingOpen(true);
   };
 
+  // Dedicated Route: `/admin` authenticated view
   if (activeTab === 'admin' && isAdminAuthenticated) {
     return (
       <AdminDashboard
@@ -379,8 +452,17 @@ function App() {
       />
       <AdminAuthModal
         isOpen={isAdminAuthModalOpen}
-        onClose={() => setIsAdminAuthModalOpen(false)}
+        onClose={() => {
+          setIsAdminAuthModalOpen(false);
+          if (activeTab === 'admin' && !isAdminAuthenticated) {
+            handleSelectTab('home');
+          }
+        }}
         onSuccess={handleAuthSuccess}
+        onBackToSite={() => {
+          setIsAdminAuthModalOpen(false);
+          handleSelectTab('home');
+        }}
       />
     </div>
   );

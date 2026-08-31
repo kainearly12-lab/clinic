@@ -1,8 +1,7 @@
-import { getSupabaseClient } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabase';
 import { branches as defaultBranches } from '@/data/clinicData';
 import {
   BranchRecord,
-  WeeklyScheduleRecord,
   ScheduleExceptionRecord,
   NormalizedBranch,
   TodayScheduleResult,
@@ -92,22 +91,23 @@ const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأ
 const ENGLISH_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * Normalizes branch data from Supabase or fallback format
+ * Normalizes branch data from Supabase or static dataset
  */
 export function normalizeBranch(raw: BranchRecord | null | undefined): NormalizedBranch | null {
   if (!raw) return null;
+  const fallback = defaultBranches.find((def) => def.id === raw.id || def.nameAr === raw.name_ar || def.nameAr === raw.nameAr);
   const phone =
     raw.phone ||
-    (raw.phones && raw.phones.length > 0 ? raw.phones[0].display || raw.phones[0].number : '') ||
+    fallback?.phones[0]?.number ||
     '01154021247';
 
   return {
     id: raw.id,
-    nameAr: raw.name_ar || raw.nameAr || raw.id,
-    cityAr: raw.city_ar || raw.cityAr || '',
-    addressAr: raw.address_ar || raw.addressAr || '',
+    nameAr: raw.name_ar || raw.nameAr || raw.name || fallback?.nameAr || 'فرع العيادة',
+    cityAr: raw.city_ar || raw.cityAr || fallback?.cityAr || 'القاهرة',
+    addressAr: raw.address_ar || raw.addressAr || raw.address || fallback?.addressAr || '',
     phone,
-    mapsUrl: raw.maps_url || raw.mapsUrl || '',
+    mapsUrl: raw.maps_url || raw.mapsUrl || fallback?.mapsUrl || '',
   };
 }
 
@@ -122,7 +122,7 @@ export function getIsoDateString(date: Date = new Date()): string {
 }
 
 /**
- * Converts a time string (HH:mm:ss or HH:mm) into minutes from midnight for easy comparison
+ * Converts a time string (HH:mm:ss or HH:mm) into minutes from midnight
  */
 function parseTimeToMinutes(timeStr: string | null | undefined): number | null {
   if (!timeStr) return null;
@@ -199,7 +199,7 @@ export function calculateOpenStatus(
 }
 
 /**
- * 1. Query branches and weekly_schedule tables joined by day_of_week
+ * 1. Query branches and weekly_schedule tables from live Supabase
  */
 export async function fetchWeeklyScheduleWithBranches(): Promise<{
   data: WeeklyScheduleItem[];
@@ -208,14 +208,12 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
   error: Error | null;
 }> {
   const client = getSupabaseClient();
+  const fallbackBranches = defaultBranches.map((b) => normalizeBranch(b)!);
 
   if (!client) {
-    // Return structured fallback
-    const normalizedDefaultBranches = defaultBranches.map((b) => normalizeBranch(b)!);
     const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
       const branch =
-        normalizedDefaultBranches.find((b) => b.id === item.branchId) ||
-        normalizedDefaultBranches[0];
+        fallbackBranches.find((b) => b.id === item.branchId) || fallbackBranches[0];
       return {
         dayIndex: item.dayIndex,
         dayNameAr: item.dayNameAr,
@@ -231,38 +229,42 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
 
     return {
       data: scheduleItems,
-      branches: normalizedDefaultBranches,
+      branches: fallbackBranches,
       source: 'fallback',
       error: null,
     };
   }
 
   try {
-    // Query branches first or join directly
     const [branchesRes, scheduleRes] = await Promise.all([
       client.from('branches').select('*').eq('is_active', true),
-      client
-        .from('weekly_schedule')
-        .select('*, branch:branches(*)')
-        .order('day_of_week', { ascending: true }),
+      client.from('weekly_schedule').select('*').order('day_of_week', { ascending: true }),
     ]);
 
-    if (branchesRes.error && scheduleRes.error) {
-      throw new Error(scheduleRes.error?.message || branchesRes.error?.message);
-    }
+    const rawBranches: BranchRecord[] =
+      branchesRes.data && branchesRes.data.length > 0
+        ? branchesRes.data.map((b) => {
+            const fb = defaultBranches.find((def) => def.nameAr === b.name || def.id === b.id);
+            return {
+              id: b.id,
+              nameAr: b.name || fb?.nameAr || 'فرع العيادة',
+              cityAr: fb?.cityAr || 'القاهرة',
+              addressAr: b.address || fb?.addressAr || '',
+              phone: b.contact_number || fb?.phones[0]?.number || '01154021247',
+              mapsUrl: b.google_maps_url || fb?.mapsUrl || '',
+            };
+          })
+        : fallbackBranches;
 
-    const rawBranches: BranchRecord[] = branchesRes.data || (defaultBranches as unknown as BranchRecord[]);
     const normalizedBranches = rawBranches.map((b) => normalizeBranch(b)!);
-
-    const rawSchedules: WeeklyScheduleRecord[] = scheduleRes.data || [];
+    const rawSchedules = scheduleRes.data || [];
 
     if (rawSchedules.length === 0) {
-      // If table is empty, use fallback rotation with Supabase branches
       const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
         const branch =
           normalizedBranches.find((b) => b.id === item.branchId) ||
           normalizedBranches[0] ||
-          normalizeBranch(defaultBranches[0])!;
+          fallbackBranches[0];
         return {
           dayIndex: item.dayIndex,
           dayNameAr: item.dayNameAr,
@@ -286,23 +288,24 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
 
     const scheduleItems: WeeklyScheduleItem[] = rawSchedules.map((row) => {
       const dayIdx = Number(row.day_of_week);
-      const joinedBranch = row.branch || row.branches;
       const branch =
-        normalizeBranch(joinedBranch) ||
         normalizedBranches.find((b) => b.id === row.branch_id) ||
         normalizedBranches[0] ||
-        normalizeBranch(defaultBranches[0])!;
+        fallbackBranches[0];
+
+      const start = row.start_time ? row.start_time.slice(0, 5) : '13:00';
+      const end = row.end_time ? row.end_time.slice(0, 5) : '21:00';
 
       return {
         dayIndex: dayIdx,
-        dayNameAr: row.day_name_ar || ARABIC_DAYS[dayIdx] || 'اليوم',
-        dayNameEn: row.day_name_en || ENGLISH_DAYS[dayIdx] || 'Today',
+        dayNameAr: ARABIC_DAYS[dayIdx] || 'اليوم',
+        dayNameEn: ENGLISH_DAYS[dayIdx] || 'Today',
         branch,
-        hoursAr: row.hours_ar || `${row.open_time} - ${row.close_time}`,
-        openTime: row.open_time ? row.open_time.slice(0, 5) : '13:00',
-        closeTime: row.close_time ? row.close_time.slice(0, 5) : '21:00',
-        isSpecialDay: Boolean(row.is_special),
-        isClosed: Boolean(row.is_closed),
+        hoursAr: `${start} — ${end}`,
+        openTime: start,
+        closeTime: end,
+        isSpecialDay: dayIdx === 5,
+        isClosed: row.is_working_day === false,
       };
     });
 
@@ -314,8 +317,6 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
     };
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
-    // Graceful fallback
-    const fallbackBranches = defaultBranches.map((b) => normalizeBranch(b)!);
     const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
       const branch =
         fallbackBranches.find((b) => b.id === item.branchId) || fallbackBranches[0];
@@ -342,7 +343,7 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
 }
 
 /**
- * 2. Query the schedule_exceptions table for today's date to check if there is an active holiday or a branch swap.
+ * 2. Query schedule_exceptions table for a given date
  */
 export async function fetchScheduleExceptionForDate(
   dateString?: string
@@ -360,25 +361,33 @@ export async function fetchScheduleExceptionForDate(
   try {
     const { data, error } = await client
       .from('schedule_exceptions')
-      .select('*, replacement_branch:branches!replacement_branch_id(*), original_branch:branches!branch_id(*)')
+      .select('*')
       .eq('exception_date', targetDate)
       .maybeSingle();
 
     if (error) {
-      // If the foreign key alias fails, retry simple query
-      const retry = await client
-        .from('schedule_exceptions')
-        .select('*')
-        .eq('exception_date', targetDate)
-        .maybeSingle();
-
-      if (retry.error) {
-        return { data: null, error: new Error(retry.error.message) };
-      }
-      return { data: retry.data as ScheduleExceptionRecord, error: null };
+      return { data: null, error: new Error(error.message) };
     }
 
-    return { data: data as ScheduleExceptionRecord, error: null };
+    if (!data) {
+      return { data: null, error: null };
+    }
+
+    return {
+      data: {
+        id: data.id,
+        exception_date: data.exception_date,
+        exception_type: data.is_holiday ? 'holiday' : 'branch_swap',
+        branch_id: data.replacement_branch_id || null,
+        replacement_branch_id: data.replacement_branch_id || null,
+        override_branch_id: data.replacement_branch_id || null,
+        is_holiday: Boolean(data.is_holiday),
+        is_closed: Boolean(data.is_holiday),
+        title_ar: data.reason || (data.is_holiday ? 'عطلة رسمية' : 'تبديل فرع'),
+        reason_ar: data.reason || null,
+      },
+      error: null,
+    };
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
     return { data: null, error };
@@ -386,9 +395,7 @@ export async function fetchScheduleExceptionForDate(
 }
 
 /**
- * 3. Primary Data Fetcher & Aggregator:
- * Returns a clean JSON object containing the current active branch, today's working hours,
- * and whether the clinic is currently open or on an exception status for the homepage banner.
+ * 3. Primary Dynamic Schedule Calculator
  */
 export async function getTodayDynamicSchedule(
   options: {
@@ -402,7 +409,6 @@ export async function getTodayDynamicSchedule(
   const dayNameAr = ARABIC_DAYS[dayOfWeek] || 'اليوم';
   const dayNameEn = ENGLISH_DAYS[dayOfWeek] || 'Today';
 
-  // 1 & 2: Fetch weekly schedule + branches and today's exception in parallel
   const [weeklyRes, exceptionRes] = await Promise.all([
     fetchWeeklyScheduleWithBranches(),
     fetchScheduleExceptionForDate(dateStr),
@@ -420,7 +426,7 @@ export async function getTodayDynamicSchedule(
   let formattedHoursAr = regularTodayItem?.hoursAr || '1:00 ظهراً — 9:00 مساءً';
   let openTime = regularTodayItem?.openTime || '13:00';
   let closeTime = regularTodayItem?.closeTime || '21:00';
-  let isSpecialHours = Boolean(regularTodayItem?.isSpecialDay);
+  const isSpecialHours = Boolean(regularTodayItem?.isSpecialDay);
   let isClosed = Boolean(regularTodayItem?.isClosed);
 
   const exception = exceptionRes.data;
@@ -440,7 +446,7 @@ export async function getTodayDynamicSchedule(
     isClosed: Boolean(exception?.is_closed),
   };
 
-  // Evaluate Exception Override (Holiday, Branch Swap, Custom Hours)
+  // Evaluate Exception Override (Holiday vs Branch Swap vs Branch Specific)
   if (exception) {
     const isHolidayFlag =
       exception.exception_type === 'holiday' ||
@@ -460,8 +466,7 @@ export async function getTodayDynamicSchedule(
       isBranchSwap = true;
       if (swapBranchId) {
         const replacement =
-          allBranches.find((b) => b.id === swapBranchId) ||
-          normalizeBranch(exception.replacement_branch || exception.override_branch);
+          allBranches.find((b) => b.id === swapBranchId || b.nameAr.includes(swapBranchId));
 
         if (replacement) {
           activeBranch = replacement;
@@ -469,20 +474,11 @@ export async function getTodayDynamicSchedule(
           exceptionDetails.replacementBranchNameAr = replacement.nameAr;
         }
       }
-      if (exception.hours_ar) formattedHoursAr = exception.hours_ar;
-      if (exception.open_time) openTime = exception.open_time.slice(0, 5);
-      if (exception.close_time) closeTime = exception.close_time.slice(0, 5);
       bannerBadgeText = `الفرع النشط اليوم: ${activeBranch ? activeBranch.nameAr : 'عيادات أندروديرما'}`;
-    } else if (exception.exception_type === 'custom_hours') {
-      isSpecialHours = true;
-      if (exception.hours_ar) formattedHoursAr = exception.hours_ar;
-      if (exception.open_time) openTime = exception.open_time.slice(0, 5);
-      if (exception.close_time) closeTime = exception.close_time.slice(0, 5);
-      bannerBadgeText = `مواعيد استثنائية اليوم: ${formattedHoursAr}`;
     }
   }
 
-  // Calculate Real-time Open/Closed Status
+  // Real-time Open/Closed Status
   const statusCalc = calculateOpenStatus(openTime, closeTime, isClosed, date);
 
   if (!bannerBadgeText) {

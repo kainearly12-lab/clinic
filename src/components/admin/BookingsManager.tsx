@@ -4,11 +4,7 @@ import {
   Plus,
   Trash2,
   Edit2,
-  CheckCircle2,
-  XCircle,
-  Clock,
   DollarSign,
-  MessageSquare,
   Filter,
   Calendar as CalendarIcon,
   MapPin,
@@ -16,9 +12,13 @@ import {
   X,
   CreditCard,
   FileDown,
+  Stethoscope,
+  Megaphone,
+  MessageCircle,
+  Tag,
 } from 'lucide-react';
 import gsap from 'gsap';
-import { AppointmentRecord, AppointmentStatus, PaymentStatus } from '@/types/admin';
+import { AppointmentRecord, AppointmentStatus, PaymentStatus, VisitType } from '@/types/admin';
 import {
   fetchAppointments,
   createAppointment,
@@ -29,6 +29,9 @@ import {
 } from '@/services/appointmentService';
 import { exportAppointmentsPdfReport } from '@/services/pdfReportService';
 import { branches as defaultBranches } from '@/data/clinicData';
+import { QuickMedicalNotesModal } from '@/components/admin/QuickMedicalNotesModal';
+import { WhatsAppTemplateModal } from '@/components/admin/WhatsAppTemplateModal';
+import { EmergencyBroadcastModal } from '@/components/admin/EmergencyBroadcastModal';
 
 interface BookingsManagerProps {
   onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
@@ -42,6 +45,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all'); // all, today, upcoming, past
+  const [selectedVisitTypeFilter, setSelectedVisitTypeFilter] = useState<string>('all');
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -53,11 +57,17 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     payment_status: PaymentStatus;
   } | null>(null);
 
+  // New Medical Notes, WhatsApp and Broadcast Modal States
+  const [quickNotesAppointment, setQuickNotesAppointment] = useState<AppointmentRecord | null>(null);
+  const [whatsAppModalAppointment, setWhatsAppModalAppointment] = useState<AppointmentRecord | null>(null);
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
+
   // Form State for Add / Edit
   const [formState, setFormState] = useState({
     patient_name: '',
     patient_phone: '',
     service_name: '',
+    visit_type: 'كشف جديد' as VisitType,
     branch_id: 'nasr-city',
     appointment_date: new Date().toISOString().split('T')[0],
     appointment_time: '05:00 مساءً',
@@ -65,6 +75,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     payment_status: 'paid' as PaymentStatus,
     amount: 1200,
     notes: '',
+    medical_notes: '',
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +120,8 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
         apt.patient_name.toLowerCase().includes(q) ||
         apt.patient_phone.includes(q) ||
         apt.service_name.toLowerCase().includes(q) ||
+        (apt.visit_type && apt.visit_type.toLowerCase().includes(q)) ||
+        (apt.medical_notes && apt.medical_notes.toLowerCase().includes(q)) ||
         (apt.branch_name_ar && apt.branch_name_ar.toLowerCase().includes(q));
 
       // Branch filter
@@ -118,7 +131,12 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       const matchStatus = selectedStatusFilter === 'all' || apt.status === selectedStatusFilter;
 
       // Payment filter
-      const matchPayment = selectedPaymentFilter === 'all' || apt.payment_status === selectedPaymentFilter;
+      const matchPayment =
+        selectedPaymentFilter === 'all' || apt.payment_status === selectedPaymentFilter;
+
+      // Visit Type filter
+      const matchVisitType =
+        selectedVisitTypeFilter === 'all' || (apt.visit_type || 'كشف جديد') === selectedVisitTypeFilter;
 
       // Date filter
       let matchDate = true;
@@ -130,7 +148,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
         matchDate = apt.appointment_date < todayStr;
       }
 
-      return matchSearch && matchBranch && matchStatus && matchPayment && matchDate;
+      return matchSearch && matchBranch && matchStatus && matchPayment && matchVisitType && matchDate;
     });
   }, [
     appointments,
@@ -138,32 +156,49 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     selectedBranchFilter,
     selectedStatusFilter,
     selectedPaymentFilter,
+    selectedVisitTypeFilter,
     selectedDateFilter,
   ]);
 
-  // Summary Metrics
+  // Financial Metrics Calculation
   const metrics = useMemo(() => {
-    const total = appointments.length;
-    const paid = appointments.filter((a) => a.payment_status === 'paid');
-    const unpaid = appointments.filter((a) => a.payment_status === 'unpaid');
-    const totalRev = paid.reduce((s, a) => s + (Number(a.amount) || 0), 0);
-    const pendingRev = unpaid.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+    const totalRev = appointments
+      .filter((a) => a.payment_status === 'paid')
+      .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
 
-    return { total, paidCount: paid.length, unpaidCount: unpaid.length, totalRev, pendingRev };
+    const pendingRev = appointments
+      .filter((a) => a.payment_status === 'unpaid')
+      .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+
+    const totalCount = appointments.length;
+    const paidCount = appointments.filter((a) => a.payment_status === 'paid').length;
+    const unpaidCount = appointments.filter((a) => a.payment_status === 'unpaid').length;
+    const confirmedCount = appointments.filter((a) => a.status === 'confirmed').length;
+
+    return { totalRev, pendingRev, totalCount, paidCount, unpaidCount, confirmedCount };
   }, [appointments]);
 
-  // Handle Form Submit (Add or Edit)
+  // Handle Save (Create / Update)
   const handleSaveAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formState.patient_name.trim() || !formState.patient_phone.trim()) {
-      onNotify('error', 'يرجى إدخال اسم المريض ورقم الهاتف');
-      return;
-    }
-
     try {
       if (editingAppointment) {
         // Update
-        const res = await updateAppointment(editingAppointment.id, formState);
+        const res = await updateAppointment(editingAppointment.id, {
+          patient_name: formState.patient_name,
+          patient_phone: formState.patient_phone,
+          service_name: formState.service_name,
+          visit_type: formState.visit_type,
+          branch_id: formState.branch_id,
+          appointment_date: formState.appointment_date,
+          appointment_time: formState.appointment_time,
+          status: formState.status,
+          payment_status: formState.payment_status,
+          amount: Number(formState.amount),
+          notes: formState.notes,
+          medical_notes: formState.medical_notes,
+        });
+
         if (res.success) {
           onNotify('success', `تم تحديث حجز ${formState.patient_name} بنجاح`);
           setEditingAppointment(null);
@@ -172,10 +207,24 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
           onNotify('error', res.error || 'فشل تحديث الحجز');
         }
       } else {
-        // Create
-        const res = await createAppointment(formState);
+        // Create New
+        const res = await createAppointment({
+          patient_name: formState.patient_name,
+          patient_phone: formState.patient_phone,
+          service_name: formState.service_name,
+          visit_type: formState.visit_type,
+          branch_id: formState.branch_id,
+          appointment_date: formState.appointment_date,
+          appointment_time: formState.appointment_time,
+          status: formState.status,
+          payment_status: formState.payment_status,
+          amount: Number(formState.amount),
+          notes: formState.notes,
+          medical_notes: formState.medical_notes,
+        });
+
         if (res.success) {
-          onNotify('success', `تم تسجيل حجز جديد للمريض ${formState.patient_name}`);
+          onNotify('success', `تم تسجيل حجز جديد للمريض ${formState.patient_name} بنجاح`);
           setIsAddModalOpen(false);
           await loadData();
         } else {
@@ -194,6 +243,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       patient_name: apt.patient_name,
       patient_phone: apt.patient_phone,
       service_name: apt.service_name,
+      visit_type: (apt.visit_type as VisitType) || 'كشف جديد',
       branch_id: apt.branch_id,
       appointment_date: apt.appointment_date,
       appointment_time: apt.appointment_time,
@@ -201,6 +251,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       payment_status: apt.payment_status,
       amount: apt.amount || 0,
       notes: apt.notes || '',
+      medical_notes: apt.medical_notes || '',
     });
   };
 
@@ -265,15 +316,6 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     }
   };
 
-  // Open Direct WhatsApp with Patient
-  const handleWhatsAppDirect = (apt: AppointmentRecord) => {
-    const phone = apt.patient_phone.replace(/\D/g, '');
-    const cleanPhone = phone.startsWith('0') ? `20${phone.substring(1)}` : phone.startsWith('20') ? phone : `20${phone}`;
-    const text = `مرحباً أستاذ/ة ${apt.patient_name}، نتواصل معك من عيادات Androderma لتأكيد موعدك المحجوز لخدمة (${apt.service_name}) في ${apt.branch_name_ar || 'الفرع'} بتاريخ ${apt.appointment_date} الساعة ${apt.appointment_time}. هل ترغب في تثبيت الموعد؟`;
-    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   // Export Branch-based PDF Report
   const handleExportPdf = () => {
     try {
@@ -299,62 +341,88 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     }
   };
 
+  // Helper for Status Label
+  const getStatusLabel = (status: AppointmentStatus) => {
+    switch (status) {
+      case 'confirmed':
+        return 'مؤكد (Confirmed)';
+      case 'pending':
+        return 'قيد الانتظار (Pending)';
+      case 'cancelled':
+        return 'ملغي (Cancelled)';
+      case 'completed':
+        return 'مكتمل (Completed)';
+      default:
+        return status;
+    }
+  };
+
+  // Helper for Status Badge
   const getStatusBadge = (status: AppointmentStatus) => {
     switch (status) {
       case 'confirmed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="h-3.5 w-3.5" /> مؤكد
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-400 border border-emerald-500/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            مؤكد
           </span>
         );
       case 'pending':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-400 border border-amber-500/30">
-            <Clock className="h-3.5 w-3.5" /> قيد الانتظار
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-400 border border-amber-500/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            قيد الانتظار
           </span>
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold text-red-400 border border-red-500/30">
-            <XCircle className="h-3.5 w-3.5" /> ملغي
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-400 border border-red-500/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+            ملغي
           </span>
         );
       case 'completed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold text-blue-400 border border-blue-500/30">
-            <CheckCircle2 className="h-3.5 w-3.5" /> مكتمل
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-2.5 py-0.5 text-xs font-bold text-blue-400 border border-blue-500/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+            مكتمل
           </span>
         );
+      default:
+        return null;
     }
   };
 
-  const getStatusLabel = (status: AppointmentStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return 'مؤكد';
-      case 'pending':
-        return 'قيد الانتظار';
-      case 'cancelled':
-        return 'ملغي';
-      case 'completed':
-        return 'مكتمل';
-    }
+  // Helper for Visit Type Badge
+  const getVisitTypeBadge = (vType?: string) => {
+    const t = vType || 'كشف جديد';
+    let color = 'bg-teal-500/15 text-teal-300 border-teal-500/30';
+    if (t.includes('استشارة') || t.includes('متابعة')) color = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+    if (t.includes('ليزر')) color = 'bg-purple-500/15 text-purple-300 border-purple-500/30';
+    if (t.includes('تجميل')) color = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+    if (t.includes('طارئ')) color = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+
+    return (
+      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold border ${color}`}>
+        {t}
+      </span>
+    );
   };
 
   return (
-    <div ref={containerRef} className="space-y-6">
-      {/* Top Quick Metrics Bar */}
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+    <div ref={containerRef} className="space-y-6" dir="rtl">
+      {/* Top Metrics Bar */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="animate-item relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-xl shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">إجمالي الحجوزات المسجلة</span>
+            <span className="text-xs font-semibold text-slate-400">إجمالي الحجوزات</span>
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-teal-500/15 text-[#00B8A9] border border-teal-500/30">
               <CalendarIcon className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white">{metrics.total}</span>
-            <span className="text-xs text-slate-400">حجز مريض</span>
+            <span className="text-2xl font-black text-white">{metrics.totalCount}</span>
+            <span className="text-xs font-semibold text-emerald-400">({metrics.confirmedCount} مؤكد)</span>
           </div>
         </div>
 
@@ -384,20 +452,30 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
           </div>
         </div>
 
-        <div className="animate-item flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-xl shadow-lg">
-          <div className="space-y-1">
-            <p className="text-xs font-bold text-white">إجراءات الحجوزات والتقارير</p>
-            <p className="text-[11px] text-slate-400">إضافة حجوزات فورية وتصدير تقارير PDF مفصلة حسب الفرع</p>
+        <div className="animate-item flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-white/10 bg-slate-900/60 p-3.5 backdrop-blur-xl shadow-lg">
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-white">إجراءات الحجوزات والتواصل</p>
+            <p className="text-[10px] text-slate-400">إشعارات طوارئ جماعية وتقارير PDF</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 w-full justify-end">
+            <button
+              onClick={() => setIsBroadcastModalOpen(true)}
+              title="أداة إرسال إشعارات الطوارئ ورسائل الواتساب الجماعية"
+              className="flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/20 px-3 py-2 text-xs font-black text-teal-300 transition hover:bg-teal-500/30 hover:border-teal-300 shadow-sm"
+            >
+              <Megaphone className="h-3.5 w-3.5 text-[#00B8A9]" />
+              <span>إشعار جماعي / طوارئ</span>
+            </button>
+
             <button
               onClick={handleExportPdf}
               title="تصدير تقرير PDF للفرع المحدد"
-              className="flex items-center gap-1.5 rounded-xl border border-teal-500/30 bg-teal-950/40 px-3.5 py-2.5 text-xs font-bold text-teal-300 transition hover:bg-teal-500/20 hover:border-teal-400"
+              className="flex items-center gap-1 rounded-xl border border-white/15 bg-slate-800/80 px-2.5 py-2 text-xs font-bold text-slate-200 transition hover:bg-slate-700"
             >
-              <FileDown className="h-4 w-4 text-[#00B8A9]" />
-              <span>تصدير تقرير PDF</span>
+              <FileDown className="h-3.5 w-3.5 text-[#00B8A9]" />
+              <span>PDF</span>
             </button>
+
             <button
               onClick={() => {
                 setEditingAppointment(null);
@@ -405,6 +483,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                   patient_name: '',
                   patient_phone: '',
                   service_name: '',
+                  visit_type: 'كشف جديد',
                   branch_id: selectedBranchFilter !== 'all' ? selectedBranchFilter : 'nasr-city',
                   appointment_date: new Date().toISOString().split('T')[0],
                   appointment_time: '05:00 مساءً',
@@ -412,12 +491,13 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                   payment_status: 'paid',
                   amount: 1000,
                   notes: '',
+                  medical_notes: '',
                 });
                 setIsAddModalOpen(true);
               }}
-              className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-3.5 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)]"
+              className="flex items-center gap-1 rounded-xl bg-[#00B8A9] px-3.5 py-2 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)]"
             >
-              <Plus className="h-4 w-4" /> حجز جديد
+              <Plus className="h-3.5 w-3.5" /> حجز جديد
             </button>
           </div>
         </div>
@@ -433,7 +513,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="البحث باسم المريض، رقم الهاتف، أو اسم الخدمة..."
+              placeholder="البحث باسم المريض، رقم الهاتف، التشخيص، أو الخدمة..."
               className="w-full rounded-xl border border-white/10 bg-slate-950/70 py-2.5 pr-10 pl-4 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none"
             />
             {searchQuery && (
@@ -462,6 +542,23 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                     {b.nameAr}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Visit Type Filter */}
+            <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-slate-950/70 px-2.5 py-1.5">
+              <Tag className="h-3.5 w-3.5 text-teal-400" />
+              <select
+                value={selectedVisitTypeFilter}
+                onChange={(e) => setSelectedVisitTypeFilter(e.target.value)}
+                className="bg-transparent text-xs text-slate-200 focus:outline-none"
+              >
+                <option value="all" className="bg-slate-900 text-white">نوع الزيارة (الكل)</option>
+                <option value="كشف جديد" className="bg-slate-900 text-white">كشف جديد</option>
+                <option value="استشارة ومتابعة" className="bg-slate-900 text-white">استشارة ومتابعة</option>
+                <option value="جلسة ليزر" className="bg-slate-900 text-white">جلسة ليزر</option>
+                <option value="إجراء تجميلي" className="bg-slate-900 text-white">إجراء تجميلي</option>
+                <option value="كشف طارئ" className="bg-slate-900 text-white">كشف طارئ</option>
               </select>
             </div>
 
@@ -531,19 +628,20 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
               <tr className="border-b border-white/10 bg-slate-950/60 text-slate-400 font-bold">
                 <th className="py-3.5 px-4">المريض</th>
                 <th className="py-3.5 px-4">الهاتف & واتساب</th>
-                <th className="py-3.5 px-4">الخدمة المطلوبة</th>
+                <th className="py-3.5 px-4">الخدمة ونوع الزيارة</th>
+                <th className="py-3.5 px-4">الملاحظات والتشخيص</th>
                 <th className="py-3.5 px-4">الفرع</th>
                 <th className="py-3.5 px-4">الموعد</th>
                 <th className="py-3.5 px-4">حالة التأكيد</th>
                 <th className="py-3.5 px-4">حالة الدفع</th>
                 <th className="py-3.5 px-4">المبلغ</th>
-                <th className="py-3.5 px-4 text-center">إجراءات</th>
+                <th className="py-3.5 px-4 text-center">إجراءات سريعة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-slate-200">
               {filteredAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     <p className="text-sm font-semibold">لا توجد حجوزات مطابقة لمعايير البحث الحالية</p>
                     <p className="mt-1 text-xs text-slate-500">جرب تعديل الفلاتر أو اضغط على "حجز جديد" لإضافة مريض</p>
                   </td>
@@ -563,7 +661,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                         <div>
                           <span>{apt.patient_name}</span>
                           {apt.notes && (
-                            <p className="text-[10px] font-normal text-slate-400 line-clamp-1 max-w-[150px]">
+                            <p className="text-[10px] font-normal text-slate-400 line-clamp-1 max-w-[130px]">
                               {apt.notes}
                             </p>
                           )}
@@ -571,27 +669,46 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                       </div>
                     </td>
 
-                    {/* Phone & WhatsApp trigger */}
+                    {/* Phone & Interactive WhatsApp trigger */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-slate-300" dir="ltr">
                           {apt.patient_phone}
                         </span>
                         <button
-                          onClick={() => handleWhatsAppDirect(apt)}
-                          title="محادثة واتساب سريعة لتأكيد الموعد"
-                          className="grid h-6 w-6 place-items-center rounded-md bg-emerald-500/20 text-emerald-400 transition hover:bg-emerald-500 hover:text-slate-950"
+                          onClick={() => setWhatsAppModalAppointment(apt)}
+                          title="فتح نافذة إرسال قوالب واتساب الذكية (تأكيد، تذكير، تأخير، متابعة)"
+                          className="grid h-6 w-6 place-items-center rounded-md bg-emerald-500/20 text-emerald-400 transition hover:bg-emerald-500 hover:text-slate-950 shadow-sm"
                         >
-                          <MessageSquare className="h-3.5 w-3.5" />
+                          <MessageCircle className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
 
-                    {/* Service Name */}
-                    <td className="py-3.5 px-4 max-w-[200px]">
-                      <span className="font-medium text-slate-200 line-clamp-1" title={apt.service_name}>
-                        {apt.service_name}
-                      </span>
+                    {/* Service & Visit Type */}
+                    <td className="py-3.5 px-4 max-w-[180px]">
+                      <div className="space-y-1">
+                        <span className="font-medium text-slate-200 block truncate" title={apt.service_name}>
+                          {apt.service_name}
+                        </span>
+                        {getVisitTypeBadge(apt.visit_type)}
+                      </div>
+                    </td>
+
+                    {/* Doctor's Medical Notes / Quick Diagnostic Tag */}
+                    <td className="py-3.5 px-4 max-w-[180px]">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setQuickNotesAppointment(apt)}
+                          title="تسجيل أو تعديل الملاحظات والتشخيص الطبي"
+                          className="flex items-center gap-1 rounded-lg border border-teal-500/30 bg-teal-950/40 px-2 py-1 text-[11px] text-teal-300 hover:bg-teal-500/20 hover:border-teal-400 transition"
+                        >
+                          <Stethoscope className="h-3 w-3 text-[#00B8A9]" />
+                          <span className="line-clamp-1 max-w-[110px] text-right">
+                            {apt.medical_notes ? apt.medical_notes : '+ كتابة تشخيص'}
+                          </span>
+                        </button>
+                      </div>
                     </td>
 
                     {/* Branch */}
@@ -653,6 +770,20 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                     <td className="py-3.5 px-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
+                          onClick={() => setQuickNotesAppointment(apt)}
+                          title="الملاحظات الطبية والتشخيص"
+                          className="grid h-7 w-7 place-items-center rounded-lg bg-slate-800 text-teal-300 transition hover:bg-teal-500 hover:text-slate-950"
+                        >
+                          <Stethoscope className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setWhatsAppModalAppointment(apt)}
+                          title="إرسال واتساب للمريض"
+                          className="grid h-7 w-7 place-items-center rounded-lg bg-slate-800 text-emerald-400 transition hover:bg-emerald-500 hover:text-slate-950"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </button>
+                        <button
                           onClick={() => openEditModal(apt)}
                           title="تعديل الحجز"
                           className="grid h-7 w-7 place-items-center rounded-lg bg-slate-800 text-slate-300 transition hover:bg-[#00B8A9] hover:text-slate-950"
@@ -679,16 +810,16 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       {/* Add / Edit Modal */}
       {(isAddModalOpen || editingAppointment) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+          <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">
-                  {editingAppointment ? 'تعديل بيانات الحجز' : 'إضافة حجز مريض جديد'}
+                  {editingAppointment ? 'تعديل بيانات الحجز والتشخيص' : 'إضافة حجز مريض جديد'}
                 </h3>
                 <p className="text-xs text-slate-400">
                   {editingAppointment
                     ? `تعديل تفاصيل حجز #${editingAppointment.id}`
-                    : 'تسجيل حجز مباشر في جدول العيادة ومزامنة المدفوعات'}
+                    : 'تسجيل حجز مباشر في جدول العيادة ومزامنة المدفوعات والتشخيص الطبي'}
                 </p>
               </div>
               <button
@@ -730,16 +861,33 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block font-semibold text-slate-300">الخدمة المطلوبة *</label>
-                <input
-                  type="text"
-                  required
-                  value={formState.service_name}
-                  onChange={(e) => setFormState({ ...formState, service_name: e.target.value })}
-                  placeholder="مثال: جلسة ليزر كانديلا، هيدرافيشل، بوتوكس..."
-                  className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none"
-                />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block font-semibold text-slate-300">الخدمة المطلوبة *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formState.service_name}
+                    onChange={(e) => setFormState({ ...formState, service_name: e.target.value })}
+                    placeholder="مثال: جلسة ليزر كانديلا، هيدرافيشل..."
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block font-semibold text-slate-300">نوع الزيارة / الكشف *</label>
+                  <select
+                    value={formState.visit_type}
+                    onChange={(e) => setFormState({ ...formState, visit_type: e.target.value as VisitType })}
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none"
+                  >
+                    <option value="كشف جديد">كشف جديد</option>
+                    <option value="استشارة ومتابعة">استشارة ومتابعة</option>
+                    <option value="جلسة ليزر">جلسة ليزر</option>
+                    <option value="إجراء تجميلي">إجراء تجميلي</option>
+                    <option value="كشف طارئ">كشف طارئ</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -824,12 +972,26 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-300">ملاحظات إدارية / طبية</label>
+                <label className="mb-1 block font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Stethoscope className="h-3.5 w-3.5 text-[#00B8A9]" />
+                  <span>الملاحظات الطبية والتشخيص المبدئي (Doctor's Notes)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={formState.medical_notes}
+                  onChange={(e) => setFormState({ ...formState, medical_notes: e.target.value })}
+                  placeholder="التشخيص، نوع الليزر، عدد الجلسات، أو توصيات الطبيب..."
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block font-semibold text-slate-300">ملاحظات إدارية عامة</label>
                 <textarea
                   rows={2}
                   value={formState.notes}
                   onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
-                  placeholder="أي تفاصيل خاصة بالحالة أو طريقة الدفع..."
+                  placeholder="أي تفاصيل خاصة بالاستقبال أو طريقة الدفع..."
                   className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none resize-none"
                 />
               </div>
@@ -849,7 +1011,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
                   type="submit"
                   className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-5 py-2.5 font-bold text-slate-950 transition hover:bg-[#00d6c4] shadow-lg hover:shadow-[0_0_15px_rgba(0,184,169,0.3)]"
                 >
-                  {editingAppointment ? 'حفظ التعديلات' : 'تأكيد وحفظ الحجز'}
+                  {editingAppointment ? 'حفظ التعديلات والتشخيص' : 'تأكيد وحفظ الحجز'}
                 </button>
               </div>
             </form>
@@ -958,6 +1120,33 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
           </div>
         </div>
       )}
+
+      {/* Quick Medical Notes Modal */}
+      <QuickMedicalNotesModal
+        appointment={quickNotesAppointment}
+        onClose={() => setQuickNotesAppointment(null)}
+        onSaved={(updatedApt) => {
+          setAppointments((prev) =>
+            prev.map((a) => (a.id === updatedApt.id ? updatedApt : a))
+          );
+        }}
+        onNotify={onNotify}
+      />
+
+      {/* Single Patient WhatsApp Template Communicator */}
+      <WhatsAppTemplateModal
+        appointment={whatsAppModalAppointment}
+        onClose={() => setWhatsAppModalAppointment(null)}
+        onNotify={onNotify}
+      />
+
+      {/* Bulk Emergency Broadcast / Notification Tool */}
+      <EmergencyBroadcastModal
+        isOpen={isBroadcastModalOpen}
+        onClose={() => setIsBroadcastModalOpen(false)}
+        appointments={appointments}
+        onNotify={onNotify}
+      />
     </div>
   );
 }

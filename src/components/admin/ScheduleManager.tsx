@@ -9,6 +9,7 @@ import {
   Check,
   Building2,
   Clock,
+  Layers,
 } from 'lucide-react';
 import { BranchRecord, ScheduleExceptionRecord } from '@/types/schedule';
 
@@ -39,6 +40,7 @@ export function ScheduleManager({
   const [isHolidayForm, setIsHolidayForm] = useState<boolean>(true);
   const [holidayTitle, setHolidayTitle] = useState<string>('عطلة رسمية — مغلق');
   const [holidayReason, setHolidayReason] = useState<string>('');
+  const [targetHolidayBranch, setTargetHolidayBranch] = useState<string>('all');
   const [selectedOverrideBranch, setSelectedOverrideBranch] = useState<string>(branches[0]?.id || 'nasr-city');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -107,8 +109,9 @@ export function ScheduleManager({
     if (existing) {
       const isHol = existing.is_holiday || existing.exception_type === 'holiday';
       setIsHolidayForm(Boolean(isHol));
-      setHolidayTitle(existing.title_ar || (isHol ? 'عطلة رسمية — مغلق' : 'تبديل فرع'));
-      setHolidayReason(existing.reason_ar || '');
+      setHolidayTitle(existing.title_ar || existing.reason_ar || (isHol ? 'عطلة رسمية — مغلق' : 'تبديل فرع'));
+      setHolidayReason(existing.reason_ar || existing.reason || '');
+      setTargetHolidayBranch(existing.branch_id || existing.replacement_branch_id || 'all');
       setSelectedOverrideBranch(
         existing.override_branch_id || existing.replacement_branch_id || branches[0]?.id || 'nasr-city'
       );
@@ -116,6 +119,7 @@ export function ScheduleManager({
       setIsHolidayForm(true);
       setHolidayTitle('عطلة رسمية — مغلق');
       setHolidayReason('');
+      setTargetHolidayBranch('all');
       setSelectedOverrideBranch(branches[0]?.id || 'nasr-city');
     }
   };
@@ -127,13 +131,20 @@ export function ScheduleManager({
     setIsSaving(true);
     try {
       if (isHolidayForm) {
+        const targetBranchObj = branches.find((b) => b.id === targetHolidayBranch);
+        const branchSpecificTitle = targetHolidayBranch !== 'all' && targetBranchObj
+          ? `${holidayTitle.trim() || 'عطلة'} (${targetBranchObj.name_ar || targetBranchObj.nameAr || targetBranchObj.id})`
+          : holidayTitle.trim() || 'عطلة رسمية — مغلق';
+
         await onSaveException({
           exception_date: selectedDateStr,
           exception_type: 'holiday',
           is_holiday: true,
           is_closed: true,
-          title_ar: holidayTitle.trim() || 'عطلة رسمية — مغلق',
-          reason_ar: holidayReason.trim() || null,
+          branch_id: targetHolidayBranch === 'all' ? null : targetHolidayBranch,
+          replacement_branch_id: targetHolidayBranch === 'all' ? null : targetHolidayBranch,
+          title_ar: branchSpecificTitle,
+          reason_ar: holidayReason.trim() || branchSpecificTitle,
         });
       } else {
         const replacementBranchObj = branches.find((b) => b.id === selectedOverrideBranch);
@@ -142,6 +153,7 @@ export function ScheduleManager({
           exception_type: 'branch_swap',
           is_holiday: false,
           is_closed: false,
+          branch_id: selectedOverrideBranch,
           override_branch_id: selectedOverrideBranch,
           replacement_branch_id: selectedOverrideBranch,
           title_ar: `تبديل للعمل بـ ${replacementBranchObj?.name_ar || replacementBranchObj?.nameAr || 'الفرع البديل'}`,
@@ -163,8 +175,14 @@ export function ScheduleManager({
     }
   };
 
+  const getBranchName = (bId?: string | null) => {
+    if (!bId || bId === 'all') return 'جميع الفروع';
+    const match = branches.find((b) => b.id === bId);
+    return match ? (match.name_ar || match.nameAr || bId) : bId;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* Module Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/40 border border-white/10 backdrop-blur-xl">
         <div className="flex items-center gap-3">
@@ -173,7 +191,9 @@ export function ScheduleManager({
           </div>
           <div>
             <h2 className="text-lg font-black text-white">إدارة المواعيد والعطلات وتبديل الفروع</h2>
-            <p className="text-xs text-slate-400">انقر على أي يوم بالتقويم لتعيين عطلة شاملة أو تحويل العمل لفرع آخر</p>
+            <p className="text-xs text-slate-400">
+              حدد عطلة شاملة لجميع الفروع أو خصص استثناء لفرع محدد مع مزامنة فورية في قاعدة البيانات
+            </p>
           </div>
         </div>
 
@@ -181,7 +201,7 @@ export function ScheduleManager({
         <div className="flex items-center gap-2 bg-slate-950/60 p-1.5 rounded-xl border border-white/5 self-start sm:self-auto">
           <button
             onClick={handlePrevMonth}
-            className="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-all"
+            className="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
             aria-label="الشهر السابق"
           >
             <ChevronRight className="w-4 h-4" />
@@ -191,7 +211,7 @@ export function ScheduleManager({
           </span>
           <button
             onClick={handleNextMonth}
-            className="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-all"
+            className="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
             aria-label="الشهر التالي"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -223,13 +243,14 @@ export function ScheduleManager({
               const isSelected = selectedDateStr === day.dateStr;
               const isHoliday = exc && (exc.is_holiday || exc.exception_type === 'holiday');
               const isSwap = exc && !isHoliday && (exc.override_branch_id || exc.replacement_branch_id);
+              const branchLabel = exc?.branch_id || exc?.replacement_branch_id ? getBranchName(exc.branch_id || exc.replacement_branch_id) : 'كل الفروع';
 
               return (
                 <button
                   key={day.dateStr}
                   onClick={() => handleSelectDate(day.dateStr)}
                   type="button"
-                  className={`min-h-[72px] sm:min-h-[86px] p-2 rounded-xl border text-right transition-all flex flex-col justify-between relative group ${
+                  className={`min-h-[72px] sm:min-h-[86px] p-2 rounded-xl border text-right transition-all flex flex-col justify-between relative group cursor-pointer ${
                     isSelected
                       ? 'border-[#00B8A9] bg-[#00B8A9]/10 shadow-[0_0_15px_rgba(0,184,169,0.3)] ring-1 ring-[#00B8A9]'
                       : isHoliday
@@ -266,16 +287,20 @@ export function ScheduleManager({
 
                   {/* Exception Badge Label in cell */}
                   {exc && (
-                    <div className="mt-1">
+                    <div className="mt-1 space-y-0.5">
                       {isHoliday ? (
                         <div className="text-[10px] font-bold text-red-300 bg-red-900/60 px-1.5 py-0.5 rounded border border-red-500/30 truncate">
-                          ⛔ {exc.title_ar || 'عطلة'}
+                          ⛔ {exc.title_ar || exc.reason || 'عطلة'}
                         </div>
                       ) : isSwap ? (
                         <div className="text-[10px] font-bold text-amber-300 bg-amber-900/60 px-1.5 py-0.5 rounded border border-amber-500/30 truncate">
                           🔄 {exc.title_ar || 'تبديل فرع'}
                         </div>
                       ) : null}
+                      <div className="text-[9px] text-slate-400 truncate flex items-center gap-1 font-mono">
+                        <Building2 className="w-2.5 h-2.5 inline" />
+                        <span>{branchLabel}</span>
+                      </div>
                     </div>
                   )}
                 </button>
@@ -291,11 +316,11 @@ export function ScheduleManager({
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-red-900/50 border border-red-500/50" />
-              <span>عطلة رسمية مغلقة (تعطيل الحجز فوراً)</span>
+              <span>عطلة رسمية (فرع محدد أو شامل)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-amber-900/50 border border-amber-500/50" />
-              <span>تبديل فرع مناوب (توجيه الواتساب للبديل)</span>
+              <span>تبديل فرع مناوب للعمل</span>
             </div>
           </div>
         </div>
@@ -306,7 +331,7 @@ export function ScheduleManager({
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#00B8A9]" />
               <h3 className="text-sm font-black text-white">
-                {selectedDateStr ? `تعديل يوم: ${selectedDateStr}` : 'اختر يوماً من التقويم'}
+                {selectedDateStr ? `تعديل استثناء: ${selectedDateStr}` : 'اختر يوماً من التقويم'}
               </h3>
             </div>
 
@@ -315,7 +340,7 @@ export function ScheduleManager({
                 type="button"
                 onClick={handleDelete}
                 disabled={isSaving}
-                className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all text-xs flex items-center gap-1"
+                className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all text-xs flex items-center gap-1 cursor-pointer"
                 title="إلغاء الاستثناء والعودة للمواعيد المعتادة"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -334,14 +359,14 @@ export function ScheduleManager({
                     setIsHolidayForm(true);
                     setHolidayTitle('عطلة رسمية — مغلق');
                   }}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     isHolidayForm
                       ? 'bg-red-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <CalendarOff className="w-3.5 h-3.5" />
-                  <span>عطلة كاملة</span>
+                  <span>عطلة / إغلاق</span>
                 </button>
                 <button
                   type="button"
@@ -349,7 +374,7 @@ export function ScheduleManager({
                     setIsHolidayForm(false);
                     setHolidayTitle(`تبديل للعمل بفرع بديل`);
                   }}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     !isHolidayForm
                       ? 'bg-[#00B8A9] text-slate-950 shadow-sm'
                       : 'text-slate-400 hover:text-white'
@@ -359,6 +384,38 @@ export function ScheduleManager({
                   <span>تبديل فرع</span>
                 </button>
               </div>
+
+              {/* Target Branch Selector for Holiday (All branches vs Specific Branch) */}
+              {isHolidayForm && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-[#00B8A9]" />
+                    <span>نطاق تطبيق العطلة (Target Branch / Scope)</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={targetHolidayBranch}
+                      onChange={(e) => setTargetHolidayBranch(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9] appearance-none cursor-pointer"
+                    >
+                      <option value="all" className="bg-slate-900 text-teal-400 font-bold">
+                        🌟 جميع الفروع بالكامل (تعطيل العيادة شاملاً)
+                      </option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id} className="bg-slate-900 text-white">
+                          🏢 {b.name_ar || b.nameAr || b.id} ({b.city_ar || b.cityAr || 'القاهرة'})
+                        </option>
+                      ))}
+                    </select>
+                    <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    {targetHolidayBranch === 'all'
+                      ? 'سيتم إيقاف المواعيد في كافة فروع العيادة في هذا اليوم.'
+                      : `سيتم إيقاف الحجز في ${getBranchName(targetHolidayBranch)} فقط مع استمرار باقي الفروع.`}
+                  </p>
+                </div>
+              )}
 
               {/* Title Field */}
               <div>
@@ -385,7 +442,7 @@ export function ScheduleManager({
                     <select
                       value={selectedOverrideBranch}
                       onChange={(e) => setSelectedOverrideBranch(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9] appearance-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9] appearance-none cursor-pointer"
                     >
                       {branches.map((b) => (
                         <option key={b.id} value={b.id} className="bg-slate-900 text-white">
@@ -419,19 +476,19 @@ export function ScheduleManager({
               <button
                 type="submit"
                 disabled={isSaving}
-                className={`w-full py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg ${
+                className={`w-full py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
                   isHolidayForm
                     ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/30'
                     : 'bg-[#00B8A9] hover:bg-teal-400 text-slate-950 shadow-[#00B8A9]/20'
                 } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isSaving ? (
-                  'جاري الحفظ والمزامنة...'
+                  'جاري الحفظ والمزامنة مع Supabase...'
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
                     <span>
-                      {isHolidayForm ? 'تطبيق العطلة وتعطيل الحجز' : 'تطبيق تبديل الفرع'}
+                      {isHolidayForm ? 'تطبيق العطلة وحفظ الاستثناء' : 'تطبيق تبديل الفرع'}
                     </span>
                   </>
                 )}

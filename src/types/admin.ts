@@ -26,12 +26,19 @@ export interface SiteSettingsRecord {
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 export type PaymentStatus = 'paid' | 'unpaid' | 'partial';
+export type VisitType =
+  | 'كشف جديد'
+  | 'استشارة ومتابعة'
+  | 'جلسة ليزر'
+  | 'إجراء تجميلي'
+  | 'كشف طارئ';
 
 export interface AppointmentRecord {
   id: string;
   patient_name: string;
   patient_phone: string;
   service_name: string;
+  visit_type?: VisitType | string;
   branch_id: string;
   branch_name_ar?: string;
   appointment_date: string; // YYYY-MM-DD
@@ -40,8 +47,18 @@ export interface AppointmentRecord {
   payment_status: PaymentStatus;
   amount: number; // in EGP
   notes?: string | null;
+  medical_notes?: string | null; // Doctor's preliminary diagnosis, prescription, or clinical plan
   created_at: string;
   updated_at?: string;
+}
+
+export interface BroadcastMessagePayload {
+  title: string;
+  message: string;
+  templateType: 'doctor_delay' | 'emergency_closure' | 'branch_relocation' | 'reminder' | 'custom';
+  branchFilter: string; // 'all' or branchId
+  dateFilter: 'today' | 'upcoming' | 'all';
+  statusFilter: string; // 'all' or status
 }
 
 export type ActivityActionType =
@@ -64,6 +81,8 @@ export interface ActivityLogRecord {
   entity_type?: string;
   entity_id?: string;
   admin_email?: string;
+  performed_by?: string;
+  device_info?: string;
   metadata?: Record<string, unknown> | null;
   created_at: string;
 }

@@ -15,7 +15,7 @@ export function exportAppointmentsPdfReport({
   branchName = 'جميع الفروع',
   appointments,
   dateRangeLabel = 'كافة المواعيد المسجلة',
-  generatedByEmail = 'admin@androderma.com',
+  generatedByEmail = 'مدير النظام',
 }: ExportReportOptions): void {
   // Filter appointments if specific branch selected
   const reportAppointments =

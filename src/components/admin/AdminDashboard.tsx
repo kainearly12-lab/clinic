@@ -43,7 +43,7 @@ interface AdminDashboardProps {
 
 type AdminTab = 'bookings' | 'schedule' | 'branches' | 'analytics' | 'settings' | 'logs';
 
-export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'admin@androderma.com' }: AdminDashboardProps) {
+export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير النظام' }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('bookings');
   const [exceptions, setExceptions] = useState<ScheduleExceptionRecord[]>([]);
   const [branches, setBranches] = useState<BranchRecord[]>([]);
@@ -254,8 +254,8 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'admin@an
             {/* Admin User Badge */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-teal-500/30 text-xs">
               <ShieldCheck className="w-3.5 h-3.5 text-[#00B8A9]" />
-              <span className="text-slate-300 font-mono text-[11px] max-w-[150px] truncate" title={adminEmail}>
-                {adminEmail}
+              <span className="text-slate-200 font-bold text-xs">
+                {adminEmail === 'admin@androderma.com' ? 'مدير النظام' : adminEmail}
               </span>
             </div>
 
