@@ -119,12 +119,11 @@ export const clinic: Clinic = {
 
 export const navLinks: NavLink[] = [
   { id: 'home', labelAr: 'الرئيسية', href: '#home' },
-  { id: 'services', labelAr: 'خدماتنا', href: '#services' },
+  { id: 'services', labelAr: 'الخدمات المتقدمة', href: '#services' },
+  { id: 'treatment-journey', labelAr: 'رحلة العلاج', href: '#treatment-journey' },
   { id: 'diagnostic-quiz', labelAr: 'تقييم البشرة', href: '#diagnostic-quiz' },
   { id: 'about', labelAr: 'عن العيادة', href: '#about' },
-  { id: 'gallery', labelAr: 'المعرض', href: '#gallery' },
   { id: 'reviews', labelAr: 'التقييمات', href: '#reviews' },
-  { id: 'faq', labelAr: 'الأسئلة الشائعة', href: '#faq' },
   { id: 'contact', labelAr: 'الفروع والمواعيد', href: '#contact' },
 ];
 

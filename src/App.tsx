@@ -22,10 +22,12 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 import { BookingButton, BookingModal } from '@/components/BookingModal';
 import { DoctorCard3D } from '@/components/DoctorCard3D';
+import { ServicesGrid } from '@/components/ServicesGrid';
+import { TreatmentJourneyTimeline } from '@/components/TreatmentJourneyTimeline';
 import { SkinDiagnosticQuiz } from '@/components/SkinDiagnosticQuiz';
 import { BranchHubWithMatrix } from '@/components/BranchHubWithMatrix';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
-import { clinic, faqs, galleryItems, reviews, services } from '@/data/clinicData';
+import { clinic, faqs, galleryItems, reviews } from '@/data/clinicData';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 
@@ -211,72 +213,6 @@ function Hero({ onBook }: { onBook: () => void }) {
           <span>اكتشف المزيد</span>
           <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
         </button>
-      </div>
-    </motion.section>
-  );
-}
-
-function Services({ onBook }: { onBook: () => void }) {
-  return (
-    <motion.section
-      id="services"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="bg-[#F8FAF9] dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
-    >
-      <div className="container-px">
-        <Reveal>
-          <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-            <div>
-              <span className="eyebrow">WHAT WE DO</span>
-              <h2 className="mt-4 max-w-xl text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
-                خدمات تضع <span className="text-teal-700 dark:text-teal-400">احتياجاتك</span> أولاً
-              </h2>
-            </div>
-            <p className="max-w-xs text-sm leading-relaxed font-medium text-slate-600 dark:text-gray-300">
-              الخدمات المتاحة تُقدم بعناية واهتمام بالتفاصيل، وتبدأ دائمًا من فهم ما تحتاجه بشرتك.
-            </p>
-          </div>
-        </Reveal>
-
-        <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
-          {services.map((service, i) => (
-            <motion.article
-              key={service.id}
-              variants={staggerItem}
-              whileHover={{ y: -8 }}
-              className={`group relative overflow-hidden rounded-3xl bg-white/90 dark:bg-charcoal-900 border border-teal-900/10 dark:border-gray-800/60 shadow-lg shadow-teal-950/5 dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] hover:shadow-2xl hover:border-teal-600/30 dark:hover:border-teal-500/50 transition-all duration-500 ${
-                i === 1 ? 'lg:translate-y-8' : ''
-              }`}
-            >
-              <div className="aspect-[0.85] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                <img
-                  src={service.image}
-                  alt={service.titleAr}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
-              </div>
-              <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                <span className="mb-2 inline-block rounded-full bg-white/20 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-teal-200">
-                  0{i + 1}
-                </span>
-                <h3 className="text-xl font-bold leading-relaxed">{service.titleAr}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-gray-200/90">{service.descriptionAr}</p>
-                <button
-                  onClick={onBook}
-                  className="mt-4 flex items-center gap-2 text-xs font-bold text-teal-300 transition-all group-hover:gap-3 group-hover:text-teal-200"
-                >
-                  {service.ctaAr}
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </motion.article>
-          ))}
-        </Stagger>
       </div>
     </motion.section>
   );
@@ -626,7 +562,8 @@ function App() {
       <main>
         <Hero onBook={() => handleOpenBooking()} />
         <TrustBar />
-        <Services onBook={() => handleOpenBooking()} />
+        <ServicesGrid onBookService={(serviceName) => handleOpenBooking(serviceName)} />
+        <TreatmentJourneyTimeline onBook={() => handleOpenBooking()} />
         <SkinDiagnosticQuiz onBook={(svc) => handleOpenBooking(svc)} />
         <About />
         <Gallery />
