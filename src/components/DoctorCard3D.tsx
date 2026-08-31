@@ -80,7 +80,7 @@ export function DoctorCard3D() {
           </div>
           <div className="flex items-center gap-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-700/50 px-2.5 py-1 text-[11px] font-bold text-teal-800 dark:text-teal-300 shadow-xs">
             <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-            <span>معتمد طبياً</span>
+            <span>استشاري معتمد</span>
           </div>
         </div>
 
@@ -98,7 +98,7 @@ export function DoctorCard3D() {
           >
             <img
               src="https://i.postimg.cc/m2W4gjwt/106929042-3317889038271540-2818272907474417516-n-1-removebg-preview.png"
-              alt="دكتور استشاري الجلدية والليزر - عيادات Androderma"
+              alt="د. أحمد زغلول - استشاري الأمراض الجلدية والتجميل والليزر"
               className="h-[96%] w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(15,118,110,0.22)] dark:drop-shadow-[0_15px_30px_rgba(0,0,0,0.65)] transition-transform duration-500"
               loading="eager"
             />
@@ -117,11 +117,11 @@ export function DoctorCard3D() {
                 <div className="flex items-center gap-1.5">
                   <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
                   <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
-                    نخبة استشاريي الجلدية والليزر
+                    د. أحمد زغلول
                   </h3>
                 </div>
-                <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5">
-                  تشخيص دقيق وخطة علاج مخصصة لكل حالة
+                <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+                  استشاري الأمراض الجلدية والتجميل والليزر
                 </p>
               </div>
               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-700/40 px-2.5 py-1 rounded-xl text-amber-900 dark:text-amber-300 text-xs font-bold shrink-0">
