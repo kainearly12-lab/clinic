@@ -14,6 +14,8 @@ export function useSmoothScroll() {
       wheelMultiplier: 1,
     });
 
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+
     // Synchronize Lenis with GSAP ticker
     function update(time: number) {
       lenis.raf(time * 1000);
@@ -25,6 +27,7 @@ export function useSmoothScroll() {
     return () => {
       gsap.ticker.remove(update);
       lenis.destroy();
+      delete (window as unknown as { __lenis?: Lenis }).__lenis;
     };
   }, []);
 }
