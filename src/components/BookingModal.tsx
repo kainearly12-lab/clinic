@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, ChevronLeft, Clock3, Sparkles } from 'lucide-react';
 import { branches } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
@@ -6,6 +6,8 @@ import { Modal } from './ui/Modal';
 interface BookingModalProps {
   open: boolean;
   onClose: () => void;
+  initialService?: string;
+  initialBranch?: string;
 }
 
 // Branch WhatsApp routing configuration
@@ -16,14 +18,22 @@ const branchWhatsAppNumbers: Record<string, string> = {
   'new-giza': '201154021248',
 };
 
-export function BookingModal({ open, onClose }: BookingModalProps) {
+export function BookingModal({ open, onClose, initialService = '', initialBranch = '' }: BookingModalProps) {
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [service, setService] = useState('');
+  const [service, setService] = useState(initialService);
   const [preferredDateTime, setPreferredDateTime] = useState('');
   const [notes, setNotes] = useState('');
-  const [branch, setBranch] = useState(branches[0]?.id || 'nasr-city');
+  const [branch, setBranch] = useState(initialBranch || branches[0]?.id || 'nasr-city');
+
+  // Synchronize when initialService or initialBranch changes
+  useEffect(() => {
+    if (open) {
+      if (initialService) setService(initialService);
+      if (initialBranch) setBranch(initialBranch);
+    }
+  }, [open, initialService, initialBranch]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
