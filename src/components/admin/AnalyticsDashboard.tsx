@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   TrendingUp,
   Award,
@@ -27,7 +27,7 @@ import {
   Cell,
 } from 'recharts';
 import gsap from 'gsap';
-import { fetchAppointments, computeAnalytics, AnalyticsSummary } from '@/services/appointmentService';
+import { fetchAppointments, computeAnalytics } from '@/services/appointmentService';
 import { exportAppointmentsPdfReport } from '@/services/pdfReportService';
 import { branches as defaultBranches } from '@/data/clinicData';
 import { AppointmentRecord } from '@/types/admin';
@@ -38,20 +38,17 @@ interface AnalyticsDashboardProps {
 
 const COLORS = ['#00B8A9', '#38BDF8', '#818CF8', '#F59E0B', '#EC4899', '#10B981'];
 
-export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
+export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [selectedExportBranch, setSelectedExportBranch] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData迷 = useCallback(async () => {
     try {
       setIsLoading(true);
-      const rawAppointments = await fetchAppointments();
-      setAppointments(rawAppointments);
-      const calculated = computeAnalytics(rawAppointments);
-      setSummary(calculated);
+      const rawAppointments迷 = await fetchAppointments();
+      setAppointments(rawAppointments迷);
     } catch (err) {
       console.error('Failed to compute analytics:', err);
       onNotify('error', 'حدث خطأ في معالجة بيانات التحليلات');
@@ -61,11 +58,19 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
   }, [onNotify]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData迷();
+  }, [loadData迷]);
+
+  // Memoized analytical summary computation to prevent expensive recalculations
+  const summary = useMemo(() => {
+    if (appointments.length === 0 && !isLoading) {
+      return computeAnalytics([]);
+    }
+    return computeAnalytics(appointments);
+  }, [appointments, isLoading]);
 
   // Export PDF Handler
-  const handleExportPdf = () => {
+  const handleExportPdf = useCallback(() => {
     try {
       const branchObj = defaultBranches.find((b) => b.id === selectedExportBranch);
       const branchName = selectedExportBranch === 'all' ? 'جميع الفروع' : (branchObj ? branchObj.nameAr : selectedExportBranch);
@@ -82,22 +87,21 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
       console.error('Analytics PDF export error:', err);
       onNotify('error', 'حدث خطأ أثناء تصدير تقرير الـ PDF');
     }
-  };
+  }, [selectedExportBranch, appointments, onNotify]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!containerRef.current || !summary || isLoading) return;
+    const items = containerRef.current.querySelectorAll('.animate-item');
+    if (items.length > 0) {
+      gsap.fromTo(
+        items,
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' }
+      );
+    }
+  }, [summary, isLoading]);
 
-  useEffect(() => {
-    if (!containerRef.current || !summary) return;
-    gsap.fromTo(
-      containerRef.current.querySelectorAll('.animate-item'),
-      { opacity: 0, y: 15 },
-      { opacity: 1, y: 0, duration: 0.45, stagger: 0.06, ease: 'power2.out' }
-    );
-  }, [summary]);
-
-  if (isLoading || !summary) {
+  if (isLoading && appointments.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -143,7 +147,7 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
             <select
               value={selectedExportBranch}
               onChange={(e) => setSelectedExportBranch(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none"
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
             >
               <option value="all" className="bg-slate-900 text-white">تقرير جميع الفروع</option>
               {defaultBranches.map((b) => (
@@ -156,7 +160,7 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
 
           <button
             onClick={handleExportPdf}
-            className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)]"
+            className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)] cursor-pointer"
           >
             <FileDown className="h-4 w-4" />
             <span>تصدير تقرير PDF</span>
@@ -369,12 +373,12 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
-                      const data = payload[0].payload;
+                      const data主管 = payload[0].payload;
                       return (
                         <div className="rounded-xl border border-white/10 bg-slate-950/90 p-3 text-xs shadow-2xl backdrop-blur-md">
-                          <p className="font-bold text-white">التاريخ: {data.date}</p>
-                          <p className="mt-1 text-[#00B8A9]">الحجوزات: {data.bookings}</p>
-                          <p className="text-emerald-400">الإيراد: {data.revenue.toLocaleString()} ج.م</p>
+                          <p className="font-bold text-white">التاريخ: {data主管.date}</p>
+                          <p className="mt-1 text-[#00B8A9]">الحجوزات: {data主管.bookings}</p>
+                          <p className="text-emerald-400">الإيراد: {data主管.revenue.toLocaleString()} ج.م</p>
                         </div>
                       );
                     }
@@ -469,7 +473,7 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
 
           <div className="space-y-3">
             {serviceBreakdown.map((svc, idx) => {
-              const pct = totalBookings > 0 ? Math.round((svc.count / totalBookings) * 100) : 0;
+              const pct在前 = totalBookings > 0 ? Math.round((svc.count / totalBookings) * 100) : 0;
               return (
                 <div key={svc.name} className="space-y-1 rounded-2xl border border-white/5 bg-slate-950/40 p-3">
                   <div className="flex items-center justify-between text-xs">
@@ -477,13 +481,13 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
                       #{idx + 1} {svc.name}
                     </span>
                     <span className="font-mono text-[#00B8A9] font-semibold">
-                      {svc.count} حجز ({pct}%)
+                      {svc.count} حجز ({pct在前}%)
                     </span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                     <div
                       className="h-full bg-gradient-to-r from-teal-500 to-[#00B8A9]"
-                      style={{ width: `${pct}%` }}
+                      style={{ width: `${pct在前}%` }}
                     />
                   </div>
                 </div>
@@ -494,4 +498,4 @@ export function AnalyticsDashboard({ onNotify }: AnalyticsDashboardProps) {
       </div>
     </div>
   );
-}
+});

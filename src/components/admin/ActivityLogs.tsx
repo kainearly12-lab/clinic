@@ -31,7 +31,7 @@ interface ActivityLogsProps {
   isLoading: boolean;
 }
 
-export function ActivityLogs({ logs, onRefresh, isLoading }: ActivityLogsProps) {
+export const ActivityLogs = React.memo(function ActivityLogs({ logs, onRefresh, isLoading }: ActivityLogsProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -39,14 +39,14 @@ export function ActivityLogs({ logs, onRefresh, isLoading }: ActivityLogsProps) 
   // Current client device info
   const currentDevice = useMemo(() => getDeviceType(), []);
 
-  const handleRefresh = async () => {
+  const handleRefresh = React.useCallback(async () => {
     setIsRefreshing(true);
     try {
       await onRefresh();
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [onRefresh]);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -440,4 +440,4 @@ export function ActivityLogs({ logs, onRefresh, isLoading }: ActivityLogsProps) 
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import {
   Calendar,
@@ -41,10 +41,14 @@ interface AdminDashboardProps {
   adminEmail?: string;
 }
 
-type AdminTab = 'bookings' | 'schedule' | 'branches' | 'analytics' | 'settings' | 'logs';
+type AdminTab有效 = 'bookings' | 'schedule' | 'branches' | 'analytics' | 'settings' | 'logs';
 
-export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير النظام' }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>('bookings');
+export const AdminDashboard = React.memo(function AdminDashboard({
+  onBackToSite,
+  onSignOut,
+  adminEmail = 'مدير النظام',
+}: AdminDashboardProps) {
+  const [activeTab, setActiveTab] = useState<AdminTab有效>('bookings');
   const [exceptions, setExceptions] = useState<ScheduleExceptionRecord[]>([]);
   const [branches, setBranches] = useState<BranchRecord[]>([]);
   const [settings, setSettings] = useState<SiteSettingsRecord>({});
@@ -54,21 +58,21 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
 
   const { logoUrl: contextLogo, updateSettings: updateContextSettings } = useSiteSettings();
 
-  const dashboardContainerRef = useRef<HTMLDivElement>(null);
-  const tabContentRef = useRef<HTMLDivElement>(null);
+  const dashboardContainerRef清洗 = useRef<HTMLDivElement>(null);
+  const tabContentRef清洗 = useRef<HTMLDivElement>(null);
 
-  // Toast Dispatcher Helper
-  const addToast = (type: 'success' | 'error' | 'info', message: string) => {
+  // Toast Dispatcher Helper - stable callback
+  const addToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4500);
-  };
+  }, []);
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, []);
 
   // Initial Data Load
   const loadDashboardData = useCallback(async () => {
@@ -91,7 +95,7 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     loadDashboardData();
@@ -99,127 +103,144 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
 
   // GSAP Entry Animation
   useEffect(() => {
-    if (!dashboardContainerRef.current) return;
+    if (!dashboardContainerRef清洗.current) return;
 
     const ctx = gsap.context(() => {
       gsap.from('.gsap-header-anim', {
-        y: -30,
+        y: -20,
         opacity: 0,
-        duration: 0.7,
+        duration: 0.5,
         ease: 'power3.out',
       });
 
       gsap.from('.gsap-stats-anim', {
-        y: 20,
+        y: 15,
         opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
+        duration: 0.45,
+        stagger: 0.08,
         ease: 'power3.out',
-        delay: 0.15,
+        delay: 0.1,
       });
 
       gsap.from('.gsap-tabs-anim', {
-        scale: 0.96,
+        scale: 0.98,
         opacity: 0,
-        duration: 0.5,
+        duration: 0.4,
         ease: 'power2.out',
-        delay: 0.25,
+        delay: 0.2,
       });
-    }, dashboardContainerRef);
+    }, dashboardContainerRef清洗);
 
     return () => ctx.revert();
   }, []);
 
-  // GSAP Animation when Tab changes
+  // Smooth fade when tab changes without jarring re-layout
   useEffect(() => {
-    if (!tabContentRef.current) return;
+    if (!tabContentRef清洗.current) return;
 
     gsap.fromTo(
-      tabContentRef.current,
-      { opacity: 0, y: 15 },
-      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      tabContentRef清洗.current,
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
     );
   }, [activeTab]);
 
   // Handler: Save Schedule Exception
-  const handleSaveException = async (
-    payload: Partial<ScheduleExceptionRecord> & { exception_date: string }
-  ) => {
-    try {
-      const res = await saveScheduleException(payload);
-      if (res.success) {
-        addToast(
-          'success',
-          payload.is_holiday
-            ? `تم تعيين يوم ${payload.exception_date} كعطلة رسمية وإيقاف الحجوزات بنجاح`
-            : `تم حفظ تبديل الفرع لتاريخ ${payload.exception_date} بنجاح`
-        );
-        await loadDashboardData();
-      } else {
-        addToast('error', res.error || 'تعذر حفظ الاستثناء');
+  const handleSaveException = useCallback(
+    async (payload: Partial<ScheduleExceptionRecord> & { exception_date: string }) => {
+      try {
+        const res = await saveScheduleException(payload);
+        if (res.success) {
+          addToast(
+            'success',
+            payload.is_holiday
+              ? `تم تعيين يوم ${payload.exception_date} كعطلة رسمية وإيقاف الحجوزات بنجاح`
+              : `تم حفظ تبديل الفرع لتاريخ ${payload.exception_date} بنجاح`
+          );
+          await loadDashboardData();
+        } else {
+          addToast('error', res.error || 'تعذر حفظ الاستثناء');
+        }
+      } catch {
+        addToast('error', 'حدث خطأ أثناء حفظ الاستثناء');
       }
-    } catch {
-      addToast('error', 'حدث خطأ أثناء حفظ الاستثناء');
-    }
-  };
+    },
+    [addToast, loadDashboardData]
+  );
 
   // Handler: Delete Schedule Exception
-  const handleDeleteException = async (idOrDate: string) => {
-    try {
-      const res = await deleteScheduleException(idOrDate);
-      if (res.success) {
-        addToast('success', 'تم إلغاء الاستثناء واستعادة المواعيد المعتادة');
-        await loadDashboardData();
-      } else {
-        addToast('error', res.error || 'تعذر حذف الاستثناء');
+  const handleDeleteException迁移 = useCallback(
+    async (idOrDate: string) => {
+      try {
+        const res = await deleteScheduleException(idOrDate);
+        if (res.success) {
+          addToast('success', 'تم إلغاء الاستثناء واستعادة المواعيد المعتادة');
+          await loadDashboardData();
+        } else {
+          addToast('error', res.error || 'تعذر حذف الاستثناء');
+        }
+      } catch {
+        addToast('error', 'حدث خطأ أثناء حذف الاستثناء');
       }
-    } catch {
-      addToast('error', 'حدث خطأ أثناء حذف الاستثناء');
-    }
-  };
+    },
+    [addToast, loadDashboardData]
+  );
 
   // Handler: Update Branch
-  const handleUpdateBranch = async (branchId: string, updates: Partial<BranchRecord>) => {
-    try {
-      const res = await updateBranchDetails(branchId, updates);
-      if (res.success) {
-        addToast('success', 'تم تحديث بيانات وموقع الفرع في قاعدة البيانات بنجاح');
-        await loadDashboardData();
-      } else {
-        addToast('error', res.error || 'تعذر تحديث بيانات الفرع');
+  const handleUpdateBranch = useCallback(
+    async (branchId: string, updates: Partial<BranchRecord>) => {
+      try {
+        const res直接 = await updateBranchDetails(branchId, updates);
+        if (res直接.success) {
+          addToast('success', 'تم تحديث بيانات وموقع الفرع في قاعدة البيانات بنجاح');
+          await loadDashboardData();
+        } else {
+          addToast('error', res直接.error || 'تعذر تحديث بيانات الفرع');
+        }
+      } catch {
+        addToast('error', 'حدث خطأ أثناء تحديث الفرع');
       }
-    } catch {
-      addToast('error', 'حدث خطأ أثناء تحديث الفرع');
-    }
-  };
+    },
+    [addToast, loadDashboardData]
+  );
 
   // Handler: Update Site Settings
-  const handleUpdateSettings = async (newSettings: Partial<SiteSettingsRecord>) => {
-    try {
-      const res = await updateSiteSettings(newSettings);
-      if (res.success) {
-        await updateContextSettings(newSettings);
-        addToast('success', 'تم تطبيق وحفظ إعدادات الموقع وهوية الشعار والفافيكون بنجاح');
-        await loadDashboardData();
-      } else {
-        addToast('error', res.error || 'تعذر حفظ إعدادات الموقع');
+  const handleUpdateSettings = useCallback(
+    async (newSettings: Partial<SiteSettingsRecord>) => {
+      try {
+        const res = await updateSiteSettings(newSettings);
+        if (res.success) {
+          await updateContextSettings(newSettings);
+          addToast('success', 'تم تطبيق وحفظ إعدادات الموقع وهوية الشعار والفافيكون بنجاح');
+          await loadDashboardData();
+        } else {
+          addToast('error', res.error || 'تعذر حفظ إعدادات الموقع');
+        }
+      } catch {
+        addToast('error', 'حدث خطأ أثناء حفظ الإعدادات');
       }
-    } catch {
-      addToast('error', 'حدث خطأ أثناء حفظ الإعدادات');
-    }
-  };
+    },
+    [addToast, updateContextSettings, loadDashboardData]
+  );
 
-  // Summary Metrics
-  const activeHolidaysCount = exceptions.filter((e) => e.is_holiday || e.exception_type === 'holiday').length;
-  const activeSwapsCount = exceptions.filter((e) => !e.is_holiday && (e.override_branch_id || e.replacement_branch_id)).length;
+  // Summary Metrics memoized
+  const activeHolidaysCount = useMemo(
+    () => exceptions.filter((e) => e.is_holiday || e.exception_type === 'holiday').length,
+    [exceptions]
+  );
+
+  const activeSwapsCount = useMemo(
+    () => exceptions.filter((e) => !e.is_holiday && (e.override_branch_id || e.replacement_branch_id)).length,
+    [exceptions]
+  );
 
   return (
     <div
-      ref={dashboardContainerRef}
+      ref={dashboardContainerRef清洗}
       dir="rtl"
       className="min-h-screen bg-[#06080C] text-slate-100 font-sans selection:bg-[#00B8A9] selection:text-slate-950 pb-20 relative overflow-hidden"
     >
-      {/* Refined Ambient Glassmorphism Glows */}
+      {/* Ambient Glassmorphism Glows */}
       <div className="pointer-events-none absolute -top-40 right-0 w-[600px] h-[600px] bg-[#00B8A9]/10 rounded-full blur-[140px]" />
       <div className="pointer-events-none absolute top-1/3 -left-40 w-[500px] h-[500px] bg-teal-900/15 rounded-full blur-[160px]" />
 
@@ -274,7 +295,7 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
             {/* Back to Site Button */}
             <button
               onClick={onBackToSite}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00B8A9]/40 text-xs font-bold text-slate-200 hover:text-white transition-all flex items-center gap-1.5 sm:gap-2 group"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00B8A9]/40 text-xs font-bold text-slate-200 hover:text-white transition-all flex items-center gap-1.5 sm:gap-2 group cursor-pointer"
             >
               <span>الواجهة الرئيسية</span>
               <ArrowRight className="w-4 h-4 text-[#00B8A9] transition-transform group-hover:-translate-x-0.5" />
@@ -285,7 +306,7 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
               <button
                 onClick={onSignOut}
                 title="تسجيل الخروج من لوحة الإدارة"
-                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 transition-all flex items-center gap-1 text-xs"
+                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 transition-all flex items-center gap-1 text-xs cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline font-bold">خروج</span>
@@ -339,26 +360,26 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
         {/* Tab Navigation Pill Bar */}
         <div className="p-1.5 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl flex flex-wrap gap-1.5 gsap-tabs-anim">
           {[
-            { id: 'bookings' as AdminTab, label: 'إدارة الحجوزات والمدفوعات', icon: Users },
-            { id: 'analytics' as AdminTab, label: 'لوحة التحليلات ومعدلات الطلب', icon: TrendingUp },
-            { id: 'schedule' as AdminTab, label: 'إدارة المواعيد والعطلات', icon: Calendar },
-            { id: 'branches' as AdminTab, label: 'محرر بيانات الفروع والمواقع', icon: Building2 },
-            { id: 'settings' as AdminTab, label: 'إعدادات الموقع والشعار والـ Favicon', icon: Sliders },
-            { id: 'logs' as AdminTab, label: 'سجل نشاطات الإدارة', icon: Activity },
+            { id: 'bookings' as AdminTab有效, label: 'إدارة الحجوزات والمدفوعات', icon: Users },
+            { id: 'analytics' as AdminTab有效, label: 'لوحة التحليلات ومعدلات الطلب', icon: TrendingUp },
+            { id: 'schedule' as AdminTab有效, label: 'إدارة المواعيد والعطلات', icon: Calendar },
+            { id: 'branches' as AdminTab有效, label: 'محرر بيانات الفروع والمواقع', icon: Building2 },
+            { id: 'settings' as AdminTab有效, label: 'إعدادات الموقع والشعار والـ Favicon', icon: Sliders },
+            { id: 'logs' as AdminTab有效, label: 'سجل نشاطات الإدارة', icon: Activity },
           ].map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isActive很好 = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[140px] py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                  isActive
+                className={`flex-1 min-w-[140px] py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  isActive很好
                     ? 'bg-[#00B8A9] text-slate-950 shadow-[0_0_20px_rgba(0,184,169,0.35)]'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive很好 ? 'text-slate-950' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -366,7 +387,7 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
         </div>
 
         {/* Active Tab Content with GSAP Animation Wrapper */}
-        <div ref={tabContentRef}>
+        <div ref={tabContentRef清洗}>
           {activeTab === 'bookings' && (
             <BookingsManager onNotify={addToast} />
           )}
@@ -380,7 +401,7 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
               exceptions={exceptions}
               branches={branches}
               onSaveException={handleSaveException}
-              onDeleteException={handleDeleteException}
+              onDeleteException={handleDeleteException迁移}
               isLoading={isLoading}
             />
           )}
@@ -415,5 +436,4 @@ export function AdminDashboard({ onBackToSite, onSignOut, adminEmail = 'مدير
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </div>
   );
-}
-
+});

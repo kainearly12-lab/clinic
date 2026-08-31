@@ -14,7 +14,7 @@ interface BranchEditorProps {
   isLoading?: boolean;
 }
 
-export function BranchEditor({
+export const BranchEditor = React.memo(function BranchEditor({
   branches,
   onUpdateBranch,
 }: BranchEditorProps) {
@@ -237,4 +237,4 @@ export function BranchEditor({
       </div>
     </div>
   );
-}
+});

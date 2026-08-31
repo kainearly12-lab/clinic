@@ -29,6 +29,7 @@ import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { getSupabaseClient } from '@/lib/supabase';
+import { getValidAdminSession, clearAdminSession } from '@/utils/adminAuth';
 
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
@@ -211,50 +212,37 @@ function App() {
   const [initialService, setInitialService] = useState('');
   const [initialBranch, setInitialBranch] = useState('');
 
-  // Admin Auth Gate State
+  // Admin Auth Gate State with Cryptographic Session Validation
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('androderma_admin_session');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          return Boolean(parsed?.email);
-        }
-      } catch {
-        return false;
-      }
-    }
-    return false;
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    const validSession = getValidAdminSession();
+    return Boolean(validSession);
   });
-  const [adminUserEmail, setAdminUserEmail] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('androderma_admin_session');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          return parsed?.email || 'admin@androderma.com';
-        }
-      } catch {
-        return 'admin@androderma.com';
-      }
-    }
-    return 'admin@androderma.com';
+  const [adminUserEmail, setAdminUserEmail] = useState<string>(() => {
+    const validSession = getValidAdminSession();
+    return validSession?.displayName || validSession?.email || 'مدير النظام';
   });
 
   // Initialize Lenis smooth momentum scroll
   useSmoothScroll();
 
-  // Check Supabase session on startup
+  // Check Supabase & local token session on startup
   useEffect(() => {
     const checkAuthSession = async () => {
+      const activeSession = getValidAdminSession();
+      if (activeSession) {
+        setIsAdminAuthenticated(true);
+        setAdminUserEmail(activeSession.displayName || 'مدير النظام');
+        return;
+      }
+
       const supabase = getSupabaseClient();
       if (!supabase) return;
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
           setIsAdminAuthenticated(true);
-          setAdminUserEmail(data.session.user.email || 'admin@androderma.com');
+          setAdminUserEmail('مدير النظام');
         }
       } catch (err) {
         console.warn('Error checking existing Supabase session:', err);
@@ -335,11 +323,7 @@ function App() {
         console.warn('Supabase sign out error:', err);
       }
     }
-    try {
-      localStorage.removeItem('androderma_admin_session');
-    } catch {
-      // Ignored
-    }
+    clearAdminSession();
     setIsAdminAuthenticated(false);
     setActiveTab('home');
     if (typeof window !== 'undefined') {

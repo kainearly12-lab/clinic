@@ -37,7 +37,7 @@ interface BookingsManagerProps {
   onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
 }
 
-export function BookingsManager({ onNotify }: BookingsManagerProps) {
+export const BookingsManager = React.memo(function BookingsManager({ onNotify }: BookingsManagerProps) {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -179,7 +179,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
   }, [appointments]);
 
   // Handle Save (Create / Update)
-  const handleSaveAppointment = async (e: React.FormEvent) => {
+  const handleSaveAppointment = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingAppointment) {
@@ -234,10 +234,10 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     } catch {
       onNotify('error', 'حدث خطأ غير متوقع');
     }
-  };
+  }, [editingAppointment, formState, loadData, onNotify]);
 
   // Open Edit Modal
-  const openEditModal = (apt: AppointmentRecord) => {
+  const openEditModal = useCallback((apt: AppointmentRecord) => {
     setEditingAppointment(apt);
     setFormState({
       patient_name: apt.patient_name,
@@ -253,10 +253,10 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       notes: apt.notes || '',
       medical_notes: apt.medical_notes || '',
     });
-  };
+  }, []);
 
   // Delete Action
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deletingAppointment) return;
     try {
       const res = await deleteAppointment(deletingAppointment.id);
@@ -270,10 +270,26 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     } catch {
       onNotify('error', 'حدث خطأ أثناء الحذف');
     }
-  };
+  }, [deletingAppointment, loadData, onNotify]);
+
+  // Helper for Status Label
+  const getStatusLabel = useCallback((status: AppointmentStatus) => {
+    switch (status) {
+      case 'confirmed':
+        return 'مؤكد (Confirmed)';
+      case 'pending':
+        return 'قيد الانتظار (Pending)';
+      case 'cancelled':
+        return 'ملغي (Cancelled)';
+      case 'completed':
+        return 'مكتمل (Completed)';
+      default:
+        return status;
+    }
+  }, []);
 
   // Quick Status Toggle
-  const handleQuickStatusChange = async (apt: AppointmentRecord, newStatus: AppointmentStatus) => {
+  const handleQuickStatusChange = useCallback(async (apt: AppointmentRecord, newStatus: AppointmentStatus) => {
     try {
       const res = await updateConfirmationStatus(apt.id, newStatus);
       if (res.success) {
@@ -283,19 +299,19 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     } catch {
       onNotify('error', 'فشل تغيير الحالة');
     }
-  };
+  }, [getStatusLabel, loadData, onNotify]);
 
   // Quick Payment Toggle
-  const handleTogglePayment = async (apt: AppointmentRecord) => {
+  const handleTogglePayment = useCallback((apt: AppointmentRecord) => {
     const nextStatus: PaymentStatus = apt.payment_status === 'paid' ? 'unpaid' : 'paid';
     setQuickPaymentModal({
       appointment: apt,
       amount: apt.amount || 1000,
       payment_status: nextStatus,
     });
-  };
+  }, []);
 
-  const handleConfirmQuickPayment = async () => {
+  const handleConfirmQuickPayment = useCallback(async () => {
     if (!quickPaymentModal) return;
     try {
       const res = await togglePaymentStatus(
@@ -314,10 +330,10 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
     } catch {
       onNotify('error', 'فشل تحديث حالة الدفع');
     }
-  };
+  }, [quickPaymentModal, loadData, onNotify]);
 
   // Export Branch-based PDF Report
-  const handleExportPdf = () => {
+  const handleExportPdf = useCallback(() => {
     try {
       const branchObj = defaultBranches.find((b) => b.id === selectedBranchFilter);
       const branchName = selectedBranchFilter === 'all' ? 'جميع الفروع' : (branchObj ? branchObj.nameAr : selectedBranchFilter);
@@ -339,23 +355,7 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       console.error('PDF export error:', err);
       onNotify('error', 'حدث خطأ أثناء إنشاء وتصدير ملف الـ PDF');
     }
-  };
-
-  // Helper for Status Label
-  const getStatusLabel = (status: AppointmentStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return 'مؤكد (Confirmed)';
-      case 'pending':
-        return 'قيد الانتظار (Pending)';
-      case 'cancelled':
-        return 'ملغي (Cancelled)';
-      case 'completed':
-        return 'مكتمل (Completed)';
-      default:
-        return status;
-    }
-  };
+  }, [selectedBranchFilter, selectedDateFilter, filteredAppointments, onNotify]);
 
   // Helper for Status Badge
   const getStatusBadge = (status: AppointmentStatus) => {
@@ -1149,4 +1149,4 @@ export function BookingsManager({ onNotify }: BookingsManagerProps) {
       />
     </div>
   );
-}
+});

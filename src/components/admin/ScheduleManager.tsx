@@ -27,7 +27,7 @@ const ARABIC_MONTHS = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
 ];
 
-export function ScheduleManager({
+export const ScheduleManager = React.memo(function ScheduleManager({
   exceptions,
   branches,
   onSaveException,
@@ -504,4 +504,4 @@ export function ScheduleManager({
       </div>
     </div>
   );
-}
+});

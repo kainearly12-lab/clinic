@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logAdminActivity } from '@/services/adminService';
+import { verifyAdminCredentials, createAdminSession } from '@/utils/adminAuth';
 
 interface AdminAuthModalProps {
   isOpen: boolean;
@@ -18,30 +19,29 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const performLoginSuccess = async (authenticatedEmail: string) => {
+  const performLoginSuccess = async (authenticatedEmail: string, customLabel?: string) => {
+    // Create cryptographic session token and persist in sessionStorage & localStorage
+    const session = createAdminSession(authenticatedEmail, customLabel || 'مدير النظام');
+
     try {
-      localStorage.setItem(
-        'androderma_admin_session',
-        JSON.stringify({ email: authenticatedEmail, loggedInAt: new Date().toISOString() })
-      );
-      await logAdminActivity('login', 'تسجيل دخول ناجح إلى لوحة تحكم مدير النظام');
+      await logAdminActivity('login', `تسجيل دخول ناجح للمسؤول (${session.displayName})`);
     } catch {
-      // Storage fallback
+      // Activity log fallback
     }
 
     setShowSuccess(true);
     setTimeout(() => {
       setIsLoading(false);
       setShowSuccess(false);
-      onSuccess(authenticatedEmail);
-    }, 450);
+      onSuccess(session.displayName || authenticatedEmail);
+    }, 400);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
     if (!cleanEmail) {
@@ -49,11 +49,16 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
       return;
     }
 
-    setIsLoading(true);
-    const supabase = getSupabaseClient();
+    if (!cleanPassword) {
+      setErrorMsg('يرجى إدخال كلمة المرور المعتمدة');
+      return;
+    }
 
-    // 1. Try Supabase Auth sign-in if password provided
-    if (supabase && cleanPassword) {
+    setIsLoading(true);
+
+    // 1. Try Supabase Auth sign-in first if configured
+    const supabase = getSupabaseClient();
+    if (supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
@@ -61,21 +66,22 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
         });
 
         if (!error && data?.user) {
-          await performLoginSuccess(data.user.email || cleanEmail);
+          await performLoginSuccess(data.user.email || cleanEmail, 'مدير النظام');
           return;
         }
-      } catch {
-        // Fall through to streamlined authorization
+      } catch (err) {
+        console.warn('Supabase Auth attempt exception:', err);
       }
     }
 
-    // 2. Streamlined & Flexible Admin Authorization
-    // Ensures authorized clinic admins can access management immediately without being blocked by external lookup errors
-    if (cleanEmail.includes('@')) {
-      await performLoginSuccess(cleanEmail);
+    // 2. Strict Credential Verification against authorized admin matrix
+    const verification = verifyAdminCredentials(cleanEmail, cleanPassword);
+
+    if (verification.isValid) {
+      await performLoginSuccess(cleanEmail, 'مدير النظام');
     } else {
       setIsLoading(false);
-      setErrorMsg('يرجى إدخال عنوان بريد إلكتروني صالح للإدارة الطبية');
+      setErrorMsg(verification.error || 'بيانات الدخول غير صحيحة. تم رفض تسجيل الدخول.');
     }
   };
 
@@ -125,7 +131,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                 بوابة الإدارة الطبية المعتمدة
               </h2>
               <p className="mt-1 text-xs text-slate-400 max-w-xs">
-                مزامنة حية مع قاعدة بيانات Supabase لإدارة المواعيد والمصفوفة التشغيلية
+                تسجيل دخول آمن مشفر لإدارة الحجوزات والمصفوفة التشغيلية لعيادات Androderma
               </p>
             </div>
 
@@ -149,7 +155,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                 className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-xs text-emerald-300 font-bold"
               >
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                <span>تم التحقق من صلاحيات الإدارة بنجاح. جاري نقلك...</span>
+                <span>تم التحقق من هوية المسؤول بنجاح. جاري فتح لوحة التحكم...</span>
               </motion.div>
             )}
 
@@ -178,11 +184,12 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                   <label className="block text-xs font-bold text-slate-300">
                     كلمة المرور (Password)
                   </label>
-                  <span className="text-[10px] text-teal-400 font-semibold">دخول فوري مفعل</span>
+                  <span className="text-[10px] text-teal-400 font-semibold">تحقق أمني صارم</span>
                 </div>
                 <div className="relative">
                   <input
                     type="password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -207,7 +214,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                   ) : (
                     <span className="flex items-center gap-2">
                       <Lock className="h-4 w-4" />
-                      تسجيل الدخول للوحة التحكم
+                      تسجيل الدخول المشفر للوحة التحكم
                     </span>
                   )}
                 </button>
@@ -227,8 +234,8 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
 
             {/* Modal Footer Note */}
             <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-              <span>Supabase Direct Sync Live</span>
-              <span className="text-teal-400 font-mono">v2.0 Admin Gate</span>
+              <span>جلسة آمنة مشفرة (Persistent Session)</span>
+              <span className="text-teal-400 font-mono">v2.5 Strict Gate</span>
             </div>
           </motion.div>
         </div>

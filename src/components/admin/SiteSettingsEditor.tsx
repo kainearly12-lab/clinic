@@ -28,7 +28,7 @@ const COLOR_PRESETS = [
   { name: 'بنفسجي فاخر', primary: '#8B5CF6', accent: '#6D28D9' },
 ];
 
-export function SiteSettingsEditor({
+export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   settings,
   onUpdateSettings,
 }: SiteSettingsEditorProps) {
@@ -440,5 +440,5 @@ export function SiteSettingsEditor({
       </form>
     </div>
   );
-}
+});
 
