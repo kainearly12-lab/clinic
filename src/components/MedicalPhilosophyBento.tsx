@@ -149,10 +149,10 @@ export function MedicalPhilosophyBento() {
                   variants={staggerItem}
                   whileHover={{ x: -6 }}
                   onMouseMove={handleCardMouseMove}
-                  className="group relative flex items-start gap-4 rounded-2xl bg-white/90 dark:bg-[#161a22]/90 border border-slate-200/90 dark:border-gray-800 p-5 shadow-xs transition-all duration-300 hover:border-emerald-500/50 hover:shadow-lg hover:bg-teal-50/20 dark:hover:bg-[#1a202c]/90 overflow-hidden"
+                  className="group relative flex items-start gap-4 sm:gap-5 rounded-2xl bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-xs transition-all duration-300 hover:border-[#00B8A9]/40 hover:bg-teal-50/20 dark:hover:bg-slate-900/60 group-hover:shadow-[0_10px_30px_-10px_rgba(0,184,169,0.1)] overflow-hidden"
                 >
                   {/* Timeline Connection Indicator Dot */}
-                  <span className="absolute -right-[27px] sm:-right-[31px] top-6 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
+                  <span className="absolute -right-[27px] sm:-right-[31px] top-8 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
 
                   {/* Top Ambient Glow + Dynamic Radial Spotlight */}
                   <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
@@ -164,14 +164,15 @@ export function MedicalPhilosophyBento() {
                     }}
                   />
 
-                  <div className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 transition-colors group-hover:bg-teal-700 group-hover:text-white shadow-xs">
+                  {/* Refined Minimal Icon Badge */}
+                  <div className="relative z-10 w-12 h-12 shrink-0 rounded-xl bg-[#00B8A9]/10 border border-[#00B8A9]/20 flex items-center justify-center text-[#00B8A9] shadow-sm transition-transform duration-300 group-hover:scale-105">
                     <Stethoscope className="h-5 w-5" />
                   </div>
                   <div className="relative z-10">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white text-right leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
                       استشارة مفصلة وتشخيص سريري دقيق
                     </h3>
-                    <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed font-medium">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/90 leading-relaxed text-right font-medium">
                       تقييم متعمق لتاريخ البشرة وعواملها الوراثية لتحديد السبب الجذري قبل البدء في أي إجراء.
                     </p>
                   </div>
@@ -182,10 +183,10 @@ export function MedicalPhilosophyBento() {
                   variants={staggerItem}
                   whileHover={{ x: -6 }}
                   onMouseMove={handleCardMouseMove}
-                  className="group relative flex items-start gap-4 rounded-2xl bg-white/90 dark:bg-[#161a22]/90 border border-slate-200/90 dark:border-gray-800 p-5 shadow-xs transition-all duration-300 hover:border-emerald-500/50 hover:shadow-lg hover:bg-teal-50/20 dark:hover:bg-[#1a202c]/90 overflow-hidden"
+                  className="group relative flex items-start gap-4 sm:gap-5 rounded-2xl bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-xs transition-all duration-300 hover:border-[#00B8A9]/40 hover:bg-teal-50/20 dark:hover:bg-slate-900/60 group-hover:shadow-[0_10px_30px_-10px_rgba(0,184,169,0.1)] overflow-hidden"
                 >
                   {/* Timeline Connection Indicator Dot */}
-                  <span className="absolute -right-[27px] sm:-right-[31px] top-6 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
+                  <span className="absolute -right-[27px] sm:-right-[31px] top-8 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
 
                   {/* Top Ambient Glow + Dynamic Radial Spotlight */}
                   <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
@@ -197,14 +198,15 @@ export function MedicalPhilosophyBento() {
                     }}
                   />
 
-                  <div className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 transition-colors group-hover:bg-teal-700 group-hover:text-white shadow-xs">
+                  {/* Refined Minimal Icon Badge */}
+                  <div className="relative z-10 w-12 h-12 shrink-0 rounded-xl bg-[#00B8A9]/10 border border-[#00B8A9]/20 flex items-center justify-center text-[#00B8A9] shadow-sm transition-transform duration-300 group-hover:scale-105">
                     <Zap className="h-5 w-5" />
                   </div>
                   <div className="relative z-10">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white text-right leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
                       أحدث التقنيات العالمية المعتمدة
                     </h3>
-                    <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed font-medium">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/90 leading-relaxed text-right font-medium">
                       أجهزة ليزر وتبريد فائقة وتقنيات حقن أصلية معتمدة من FDA لضمان أمان تام وفاعلية مثبتة.
                     </p>
                   </div>
@@ -215,10 +217,10 @@ export function MedicalPhilosophyBento() {
                   variants={staggerItem}
                   whileHover={{ x: -6 }}
                   onMouseMove={handleCardMouseMove}
-                  className="group relative flex items-start gap-4 rounded-2xl bg-white/90 dark:bg-[#161a22]/90 border border-slate-200/90 dark:border-gray-800 p-5 shadow-xs transition-all duration-300 hover:border-emerald-500/50 hover:shadow-lg hover:bg-teal-50/20 dark:hover:bg-[#1a202c]/90 overflow-hidden"
+                  className="group relative flex items-start gap-4 sm:gap-5 rounded-2xl bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-xs transition-all duration-300 hover:border-[#00B8A9]/40 hover:bg-teal-50/20 dark:hover:bg-slate-900/60 group-hover:shadow-[0_10px_30px_-10px_rgba(0,184,169,0.1)] overflow-hidden"
                 >
                   {/* Timeline Connection Indicator Dot */}
-                  <span className="absolute -right-[27px] sm:-right-[31px] top-6 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
+                  <span className="absolute -right-[27px] sm:-right-[31px] top-8 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
 
                   {/* Top Ambient Glow + Dynamic Radial Spotlight */}
                   <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
@@ -230,14 +232,15 @@ export function MedicalPhilosophyBento() {
                     }}
                   />
 
-                  <div className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 transition-colors group-hover:bg-teal-700 group-hover:text-white shadow-xs">
+                  {/* Refined Minimal Icon Badge */}
+                  <div className="relative z-10 w-12 h-12 shrink-0 rounded-xl bg-[#00B8A9]/10 border border-[#00B8A9]/20 flex items-center justify-center text-[#00B8A9] shadow-sm transition-transform duration-300 group-hover:scale-105">
                     <HeartPulse className="h-5 w-5" />
                   </div>
                   <div className="relative z-10">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white text-right leading-relaxed group-hover:text-teal-700 dark:group-hover:text-[#00B8A9] transition-colors">
                       بروتوكول فردي ومتابعة مستمرة
                     </h3>
-                    <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed font-medium">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/90 leading-relaxed text-right font-medium">
                       خطة علاجية مخصصة تجمع بين الجلسات والروتين المنزلي مع إشراف دائم حتى الوصول للنتيجة.
                     </p>
                   </div>
