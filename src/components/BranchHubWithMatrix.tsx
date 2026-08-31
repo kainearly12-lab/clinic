@@ -205,26 +205,34 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
               return (
                 <motion.button
                   key={item.dayNameAr}
-                  whileHover={{ y: -3 }}
+                  whileHover={{ y: -4 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveBranchId(item.branchId)}
-                  className={`relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 text-right transition-all duration-300 border ${
+                  className={`group relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 text-right backdrop-blur-xl transition-all duration-300 border ${
                     isToday
-                      ? 'bg-white dark:bg-[#19222e] border-teal-600 dark:border-teal-500 shadow-md ring-2 ring-teal-500/20'
+                      ? 'bg-gradient-to-b from-white via-teal-50/40 to-white dark:from-[#192534] dark:via-[#151c27] dark:to-[#121822] border-emerald-500 dark:border-emerald-400/80 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/20'
                       : isBranchActive
-                      ? 'bg-teal-50/70 dark:bg-teal-950/30 border-teal-400/50'
-                      : 'bg-white/80 dark:bg-[#161a22]/80 border-slate-200/80 dark:border-gray-800 hover:border-teal-400/40 hover:bg-white dark:hover:bg-[#1a202c]'
+                      ? 'bg-teal-50/80 dark:bg-slate-900/70 border-emerald-500/50 dark:border-emerald-500/40 shadow-md'
+                      : 'bg-white/75 dark:bg-slate-900/50 border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 hover:bg-white/90 dark:hover:bg-slate-900/80 hover:shadow-md'
                   }`}
                 >
-                  {/* Today Badge */}
+                  {/* Today Badge with Live Radar Pulse */}
                   {isToday && (
-                    <span className="absolute -top-2.5 right-3 rounded-full bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 shadow-xs">
-                      اليوم
-                    </span>
+                    <div className="absolute -top-2.5 right-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white text-[9px] font-black px-2.5 py-0.5 shadow-md">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-80" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                      </span>
+                      <span>اليوم</span>
+                    </div>
                   )}
 
-                  <div>
+                  {/* Top Ambient Glow on Card Hover */}
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
+
+                  <div className="relative z-10">
                     <div className="flex items-center justify-between">
-                      <span className="font-black text-sm text-slate-900 dark:text-white">
+                      <span className="font-black text-sm text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-emerald-300 transition-colors">
                         {item.dayNameAr}
                       </span>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-gray-500">
@@ -237,8 +245,8 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
                     </h4>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-gray-800/80 flex items-center gap-1 text-[10px] font-medium text-slate-500 dark:text-gray-400">
-                    <Clock3 className="h-3 w-3 text-teal-600 shrink-0" />
+                  <div className="relative z-10 mt-3 pt-2.5 border-t border-slate-100 dark:border-gray-800/80 flex items-center gap-1 text-[10px] font-medium text-slate-500 dark:text-gray-400">
+                    <Clock3 className="h-3 w-3 text-teal-600 dark:text-teal-400 shrink-0" />
                     <span>{item.hoursAr.split('—')[0]}</span>
                   </div>
                 </motion.button>
