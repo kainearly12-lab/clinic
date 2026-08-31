@@ -15,7 +15,7 @@ import {
 import { branches, clinic } from '@/data/clinicData';
 import { BookingButton } from '@/components/BookingModal';
 import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
-import { useTodaySchedule } from '@/hooks/useSchedule';
+import { useTodaySchedule, useWeeklySchedule } from '@/hooks/useSchedule';
 import { getBranchWhatsAppNumber, validateBookingDate } from '@/services/bookingValidationService';
 
 interface BranchHubWithMatrixProps {
@@ -94,6 +94,7 @@ const weeklyRotationSchedule: DaySchedule[] = [
 
 export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) {
   const { schedule } = useTodaySchedule();
+  const { scheduleList } = useWeeklySchedule();
 
   // Get current day of week (0-6)
   const currentDayIndex = useMemo(() => new Date().getDay(), []);
@@ -109,6 +110,7 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
         branchNameAr: schedule.activeBranch.nameAr,
         hoursAr: schedule.todayWorkingHours.formattedAr,
         isSpecialDay: schedule.todayWorkingHours.isSpecialHours,
+        isHoliday: Boolean(schedule.status.isHoliday),
       };
     }
     return (
@@ -116,6 +118,52 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
       weeklyRotationSchedule[0]
     );
   }, [schedule, currentDayIndex]);
+
+  // Combined rotation schedule reflecting database records
+  const dynamicWeeklyMatrix = useMemo(() => {
+    if (scheduleList && scheduleList.length > 0) {
+      return scheduleList.map((item) => {
+        // If today is an active holiday or has a branch swap exception, reflect it on today's matrix slot
+        if (item.dayIndex === currentDayIndex && schedule?.activeBranch) {
+          return {
+            dayIndex: item.dayIndex,
+            dayNameAr: item.dayNameAr,
+            dayNameEn: item.dayNameEn,
+            branchId: schedule.activeBranch.id,
+            branchNameAr: schedule.status.isHoliday
+              ? `مغلق (عطلة)`
+              : schedule.activeBranch.nameAr,
+            hoursAr: schedule.todayWorkingHours.formattedAr,
+            isSpecialDay: schedule.todayWorkingHours.isSpecialHours,
+            isHoliday: Boolean(schedule.status.isHoliday),
+          };
+        }
+
+        return {
+          dayIndex: item.dayIndex,
+          dayNameAr: item.dayNameAr,
+          dayNameEn: item.dayNameEn,
+          branchId: item.branch.id,
+          branchNameAr: item.branch.nameAr,
+          hoursAr: item.hoursAr,
+          isSpecialDay: item.isSpecialDay,
+          isHoliday: false,
+        };
+      });
+    }
+
+    return weeklyRotationSchedule.map((item) => {
+      if (item.dayIndex === currentDayIndex && schedule?.activeBranch) {
+        return {
+          ...item,
+          branchId: schedule.activeBranch.id,
+          branchNameAr: schedule.status.isHoliday ? 'مغلق (عطلة)' : schedule.activeBranch.nameAr,
+          hoursAr: schedule.todayWorkingHours.formattedAr,
+        };
+      }
+      return item;
+    });
+  }, [scheduleList, currentDayIndex, schedule]);
 
   // Active selected branch for the detailed card
   const [activeBranchId, setActiveBranchId] = useState<string>(
@@ -234,13 +282,13 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
-            {weeklyRotationSchedule.map((item) => {
+            {dynamicWeeklyMatrix.map((item) => {
               const isToday = item.dayIndex === currentDayIndex;
               const isBranchActive = activeBranchId === item.branchId;
 
               return (
                 <motion.button
-                  key={item.dayNameAr}
+                  key={`${item.dayNameAr}-${item.dayIndex}`}
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveBranchId(item.branchId)}

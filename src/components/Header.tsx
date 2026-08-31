@@ -8,10 +8,11 @@ import { MobileMenu } from './MobileMenu';
 import { BookingModal } from './BookingModal';
 import { TopScrollProgressBar } from './TopScrollProgressBar';
 import { useTheme } from '@/context/ThemeContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface HeaderProps {
-  activeTab?: 'home' | 'diagnostic';
-  onSelectTab?: (tab: 'home' | 'diagnostic', targetAnchor?: string) => void;
+  activeTab?: 'home' | 'diagnostic' | 'admin';
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
 }
 
@@ -20,6 +21,8 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
   const [bookingOpen, setBookingOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const { theme, toggleTheme } = useTheme();
+  const { logoUrl, clinicName } = useSiteSettings();
+
 
   useEffect(() => {
     if (activeTab === 'diagnostic') {
@@ -96,23 +99,27 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                 type="button"
                 onClick={(e) => handleNavClick(e, 'home', '#home')}
                 className="group flex items-center gap-3 text-right focus:outline-hidden"
-                aria-label={clinic.name}
+                aria-label={clinicName || clinic.name}
               >
                 <img
-                  src={CLINIC_LOGO}
+                  src={logoUrl || CLINIC_LOGO}
                   alt="Androderma Logo"
                   className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
                   loading="eager"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = CLINIC_LOGO;
+                  }}
                 />
                 <div className="flex flex-col">
                   <span className="font-display font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-[#00B8A9] transition-colors">
-                    عيادات Androderma
+                    {clinicName || 'عيادات Androderma'}
                   </span>
                   <span className="hidden sm:block text-[10px] font-bold tracking-wider text-teal-300">
                     عناية متقدمة بالجلدية والليزر
                   </span>
                 </div>
               </button>
+
 
               {/* Desktop Navigation Links */}
               <nav className="hidden lg:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
@@ -146,40 +153,40 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                 })}
               </nav>
 
-              {/* Header Actions: Theme Toggle + Booking CTA + Mobile Menu */}
-              <div className="flex items-center gap-2">
-                {/* Dark / Light Mode Toggle Button */}
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  aria-label={theme === 'dark' ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
-                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all duration-300 hover:scale-105 hover:bg-white/20 hover:border-[#00B8A9]/40"
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-4.5 w-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
-                  ) : (
-                    <Moon className="h-4.5 w-4.5 text-teal-300 transition-transform duration-300 hover:-rotate-12" />
-                  )}
-                </button>
+                {/* Header Actions: Theme Toggle + Booking CTA + Mobile Menu */}
+                <div className="flex items-center gap-2">
+                  {/* Dark / Light Mode Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label={theme === 'dark' ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
+                    className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all duration-300 hover:scale-105 hover:bg-white/20 hover:border-[#00B8A9]/40"
+                  >
+                    {theme === 'dark' ? (
+                      <Sun className="h-4.5 w-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
+                    ) : (
+                      <Moon className="h-4.5 w-4.5 text-teal-300 transition-transform duration-300 hover:-rotate-12" />
+                    )}
+                  </button>
 
-                {/* Primary Magnetic Booking Button */}
-                <MagneticButton
-                  onClick={handleOpenBookingModal}
-                  className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] transition-all duration-300"
-                >
-                  احجز كشفك الآن
-                </MagneticButton>
+                  {/* Primary Magnetic Booking Button */}
+                  <MagneticButton
+                    onClick={handleOpenBookingModal}
+                    className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] transition-all duration-300"
+                  >
+                    احجز كشفك الآن
+                  </MagneticButton>
 
-                {/* Mobile Hamburger Menu */}
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(true)}
-                  aria-label="القائمة الرئيسية"
-                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all hover:bg-white/20 lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-              </div>
+                  {/* Mobile Hamburger Menu */}
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen(true)}
+                    aria-label="القائمة الرئيسية"
+                    className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all hover:bg-white/20 lg:hidden"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </div>
             </div>
 
             {/* Top Scroll Progress Bar: Seamlessly Flush at the bottom edge of the navbar pill */}

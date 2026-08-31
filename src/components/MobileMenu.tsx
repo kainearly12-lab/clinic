@@ -3,17 +3,19 @@ import { Mail, Phone, X, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useTheme } from '@/context/ThemeContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
   active: string;
-  onSelectTab?: (tab: 'home' | 'diagnostic', targetAnchor?: string) => void;
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => void;
 }
 
 export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuProps) {
   const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
   const { theme, toggleTheme } = useTheme();
+  const { logoUrl, clinicName } = useSiteSettings();
 
   const handleLinkClick = (e: React.MouseEvent, linkId: string, href: string) => {
     e.preventDefault();
@@ -56,12 +58,17 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 px-6 py-5">
           <div className="flex items-center gap-3">
             <img
-              src={CLINIC_LOGO}
+              src={logoUrl || CLINIC_LOGO}
               alt="Androderma Logo"
               className="h-10 w-auto object-contain drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = CLINIC_LOGO;
+              }}
             />
             <div className="flex flex-col">
-              <span className="font-display text-xl font-extrabold leading-tight text-slate-900 dark:text-white">عيادات Androderma</span>
+              <span className="font-display text-xl font-extrabold leading-tight text-slate-900 dark:text-white">
+                {clinicName || 'عيادات Androderma'}
+              </span>
               <span className="text-[10px] font-bold tracking-wider text-teal-700 dark:text-teal-400">عناية متقدمة بالجلدية والليزر</span>
             </div>
           </div>
@@ -73,6 +80,7 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
             <X className="h-4 w-4" />
           </button>
         </div>
+
 
         {/* Theme Switcher within Mobile Menu */}
         <div className="px-6 pt-4 pb-2">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CalendarDays,
@@ -24,8 +24,11 @@ import { AnimatedStatsBar } from '@/components/AnimatedStatsBar';
 import { MedicalPhilosophyBento } from '@/components/MedicalPhilosophyBento';
 import { GoogleReviewsMarquee } from '@/components/GoogleReviewsMarquee';
 import { BentoFAQAccordion } from '@/components/BentoFAQAccordion';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
@@ -195,28 +198,94 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin'>('home');
   const [bookingOpen, setBookingOpen] = useState(false);
   const [initialService, setInitialService] = useState('');
   const [initialBranch, setInitialBranch] = useState('');
 
+  // Admin Auth Gate State
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminUserEmail, setAdminUserEmail] = useState('');
+
   // Initialize Lenis smooth momentum scroll
   useSmoothScroll();
 
-  // Listen to hash changes if someone navigates with #diagnostic-quiz
+  // Check existing Supabase session on startup
+  useEffect(() => {
+    const checkAuthSession = async () => {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data && data.session && data.session.user) {
+          setIsAdminAuthenticated(true);
+          setAdminUserEmail(data.session.user.email || '');
+        }
+      } catch (err) {
+        console.warn('Error checking existing Supabase session:', err);
+      }
+    };
+    checkAuthSession();
+  }, []);
+
+  // Secure Admin Access Trigger
+  const handleTriggerAdminAccess = useCallback(() => {
+    if (isAdminAuthenticated) {
+      setActiveTab('admin');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setIsAdminAuthModalOpen(true);
+    }
+  }, [isAdminAuthenticated]);
+
+  // Listen to hash changes if someone navigates with #diagnostic-quiz or #admin
   useEffect(() => {
     const handleHash = () => {
       if (window.location.hash === '#diagnostic-quiz') {
         setActiveTab('diagnostic');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (window.location.hash === '#admin') {
+        handleTriggerAdminAccess();
       }
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  }, [handleTriggerAdminAccess]);
 
-  const handleSelectTab = (tab: 'home' | 'diagnostic', targetAnchor?: string) => {
+  // Auth Success Handler from Modal
+  const handleAuthSuccess = (email: string) => {
+    setIsAdminAuthenticated(true);
+    setAdminUserEmail(email);
+    setIsAdminAuthModalOpen(false);
+    setActiveTab('admin');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Admin Sign Out Handler
+  const handleAdminSignOut = async () => {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Supabase sign out error:', err);
+      }
+    }
+    setIsAdminAuthenticated(false);
+    setActiveTab('home');
+    if (window.location.hash === '#admin') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
+  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => {
+    if (tab === 'admin') {
+      handleTriggerAdminAccess();
+      return;
+    }
+
     setActiveTab(tab);
     if (tab === 'diagnostic') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -239,6 +308,16 @@ function App() {
     setInitialBranch(branchId);
     setBookingOpen(true);
   };
+
+  if (activeTab === 'admin' && isAdminAuthenticated) {
+    return (
+      <AdminDashboard
+        onBackToSite={() => handleSelectTab('home')}
+        onSignOut={handleAdminSignOut}
+        adminEmail={adminUserEmail}
+      />
+    );
+  }
 
   return (
     <div className="overflow-hidden bg-[#F8FAF9] dark:bg-[#0c0e12] text-slate-900 dark:text-gray-100 min-h-screen">
@@ -288,7 +367,7 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <LuxuryFooter />
+      <LuxuryFooter onOpenAdmin={handleTriggerAdminAccess} />
       <ScrollToTopButton />
       {/* Strict note: No floating WhatsApp corner button */}
       <MobileBottomBar onBook={() => handleOpenBooking()} />
@@ -297,6 +376,11 @@ function App() {
         onClose={() => setBookingOpen(false)}
         initialService={initialService}
         initialBranch={initialBranch}
+      />
+      <AdminAuthModal
+        isOpen={isAdminAuthModalOpen}
+        onClose={() => setIsAdminAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );

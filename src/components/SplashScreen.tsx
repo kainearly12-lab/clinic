@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function SplashScreen() {
+  const { logoUrl, clinicName } = useSiteSettings();
   const [visible, setVisible] = useState(() => {
     try {
       return sessionStorage.getItem('androderma_preloaded') !== 'true';
@@ -16,6 +18,7 @@ export function SplashScreen() {
   const logoRef = useRef<HTMLImageElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     if (!visible) return;
@@ -117,17 +120,21 @@ export function SplashScreen() {
           <div className="absolute inset-0 rounded-full bg-[#00B8A9]/20 blur-2xl animate-pulse" />
           <img
             ref={logoRef}
-            src={CLINIC_LOGO}
+            src={logoUrl || CLINIC_LOGO}
             alt="Androderma Logo"
             className="relative w-28 sm:w-36 h-auto object-contain drop-shadow-[0_0_30px_rgba(0,184,169,0.35)]"
             loading="eager"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = CLINIC_LOGO;
+            }}
           />
         </div>
 
         {/* Brand Titles */}
         <h1 className="preloader-fade-in font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
-          عيادات Androderma
+          {clinicName || 'عيادات Androderma'}
         </h1>
+
         <p className="preloader-fade-in mt-1.5 text-xs sm:text-sm font-semibold tracking-wider text-teal-300">
           عناية متقدمة بالجلدية والتجميل والليزر
         </p>

@@ -1,8 +1,15 @@
-import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft, Lock } from 'lucide-react';
 import { clinic, branches, navLinks } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
-export function LuxuryFooter() {
+interface LuxuryFooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
+  const { logoUrl, clinicName } = useSiteSettings();
+
   return (
     <footer className="relative bg-[#121417] text-white overflow-hidden pt-16 sm:pt-20 pb-28 sm:pb-12 border-t border-charcoal-800">
       {/* Subtle ambient lighting */}
@@ -18,19 +25,23 @@ export function LuxuryFooter() {
             <div>
               <div className="flex items-center gap-3.5">
                 <img
-                  src={CLINIC_LOGO}
+                  src={logoUrl || CLINIC_LOGO}
                   alt="Androderma Logo"
                   className="h-12 w-auto object-contain drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = CLINIC_LOGO;
+                  }}
                 />
                 <div className="flex flex-col">
                   <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                    عيادات Androderma
+                    {clinicName || 'عيادات Androderma'}
                   </span>
                   <span className="text-xs font-bold tracking-wider text-sage-300">
                     عناية متقدمة بالجلدية والليزر
                   </span>
                 </div>
               </div>
+
 
               <p className="mt-5 text-sm leading-relaxed text-gray-300/80 max-w-md">
                 {clinic.taglineAr} — صرح طبي متكامل يجمع بين أحدث تقنيات الليزر والعناية بالبشرة تحت إشراف نخبة من كبار أطباء الجلدية والتجميل في مصر.
@@ -164,6 +175,17 @@ export function LuxuryFooter() {
             <span>© {new Date().getFullYear()} عيادات Androderma. جميع الحقوق محفوظة.</span>
             <span className="hidden sm:inline text-white/20">|</span>
             <span className="text-gray-400">العناية التي تبدأ من الفهم والتطور الطبي</span>
+            {onOpenAdmin && (
+              <button
+                type="button"
+                onClick={onOpenAdmin}
+                title="بوابة الفريق الطبي والإدارة"
+                aria-label="بوابة الإدارة"
+                className="opacity-40 hover:opacity-100 text-slate-400 hover:text-teal-400 p-1 transition-all"
+              >
+                <Lock className="h-3 w-3" />
+              </button>
+            )}
           </div>
 
           {/* Developer Credit explicitly preserved */}

@@ -4,6 +4,7 @@ import { branches } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
 import { MagneticButton } from './ui/MagneticButton';
 import { generateWhatsAppBookingUrl, validateBookingDate } from '@/services/bookingValidationService';
+import { createAppointment } from '@/services/appointmentService';
 
 interface BookingModalProps {
   open: boolean;
@@ -89,8 +90,29 @@ export function BookingModal({ open, onClose, initialService = '', initialBranch
       }
 
       // If override_branch_id (branch swap) active, automatically route to replacement branch
+      const activeBranchId = result.targetBranch?.id || branch;
+      const activeBranchName = result.targetBranch?.nameAr;
       if (result.isBranchSwapped && result.targetBranch) {
         setBranch(result.targetBranch.id);
+      }
+
+      // Record appointment in database/local state
+      try {
+        await createAppointment({
+          patient_name: name,
+          patient_phone: phone,
+          service_name: service,
+          branch_id: activeBranchId,
+          branch_name_ar: activeBranchName,
+          appointment_date: new Date().toISOString().split('T')[0],
+          appointment_time: preferredDateTime,
+          status: 'pending',
+          payment_status: 'unpaid',
+          amount: 0,
+          notes,
+        });
+      } catch (persistErr) {
+        console.warn('Could not record appointment in system:', persistErr);
       }
 
       // Open WhatsApp in new tab
@@ -103,6 +125,7 @@ export function BookingModal({ open, onClose, initialService = '', initialBranch
       setIsValidating(false);
     }
   };
+
 
   const handleClose = () => {
     onClose();
