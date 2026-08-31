@@ -120,6 +120,55 @@
   scrollbar-width: none;
 }
 
+/* Theme-Adaptive Global Custom Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+html.dark,
+html.dark * {
+  scrollbar-color: #00B8A9 #0B132B;
+}
+
+/* WebKit and Chromium browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Light mode track & thumb */
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Dark mode track & thumb */
+html.dark ::-webkit-scrollbar-track {
+  background: #0B132B;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #00B8A9;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(0, 184, 169, 0.4);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #00D1C1;
+  box-shadow: 0 0 14px rgba(0, 209, 193, 0.6);
+}
+
 /* Zero-gap seamless infinite marquee animations */
 @keyframes marquee-scroll {
   0% {
