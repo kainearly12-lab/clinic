@@ -20,16 +20,16 @@ export function LogoMark({ size = 'md', className = '' }: LogoMarkProps) {
 
   return (
     <div
-      className={`relative grid shrink-0 place-items-center bg-gradient-to-br from-charcoal-900 via-charcoal-950 to-charcoal-900 text-sage-300 shadow-md ring-1.5 ring-sage-400/40 ${dimensions} ${className}`}
+      className={`relative grid shrink-0 place-items-center bg-gradient-to-br from-teal-800 via-teal-900 to-slate-900 text-teal-300 shadow-md ring-1 ring-teal-500/30 ${dimensions} ${className}`}
     >
-      <div className="absolute inset-0 rounded-inherit bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sage-400/25 via-transparent to-transparent" />
+      <div className="absolute inset-0 rounded-inherit bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-400/30 via-transparent to-transparent" />
       <div className="relative flex items-center justify-center">
         {/* Modern luxury clinical vector icon (Medical Shield + Cross) */}
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className={`${svgSize} text-sage-300 transition-transform duration-300 group-hover:scale-105`}
+          className={`${svgSize} text-teal-300 transition-transform duration-300 group-hover:scale-105`}
         >
           {/* Outer Medical Shield */}
           <path
@@ -38,19 +38,19 @@ export function LogoMark({ size = 'md', className = '' }: LogoMarkProps) {
             strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-sage-400/80"
+            className="text-teal-400"
           />
           {/* Inner Clinical Medical Cross */}
           <path
             d="M12 8.5V15.5M8.5 12H15.5"
-            stroke="#faf8f5"
+            stroke="#ffffff"
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
       </div>
-      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-ivory-50 shadow-sm" />
+      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
     </div>
   );
 }

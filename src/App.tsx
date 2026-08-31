@@ -18,35 +18,39 @@ import {
   Building2,
   Navigation,
   CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LuxuryFooter } from '@/components/LuxuryFooter';
 import { SplashScreen } from '@/components/SplashScreen';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 import { BookingButton, BookingModal } from '@/components/BookingModal';
+import { DoctorCard3D } from '@/components/DoctorCard3D';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
 import { branches, clinic, faqs, galleryItems, reviews, services } from '@/data/clinicData';
 import { useCountUp } from '@/hooks/useCountUp';
+import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
 function TrustBar() {
   const [visible, setVisible] = useState(false);
   const reviewsValue = useCountUp(clinic.reviewsCount, 1100, visible);
+
   return (
     <motion.section
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 25 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="border-y border-ivory-300/80 dark:border-gray-800/80 bg-ivory-50 dark:bg-[#121419]"
+      className="border-y border-slate-200/80 dark:border-gray-800/80 bg-white/70 dark:bg-[#121419] backdrop-blur-md"
     >
-      <div className="container-px grid grid-cols-2 divide-x divide-x-reverse divide-ivory-300/80 dark:divide-gray-800/80 sm:grid-cols-4">
+      <div className="container-px grid grid-cols-2 divide-x divide-x-reverse divide-slate-200/80 dark:divide-gray-800/80 sm:grid-cols-4">
         {[
           { icon: Star, value: clinic.rating.toFixed(1), label: 'التقييم على Google', suffix: ' / 5' },
-          { icon: Quote, value: Math.round(reviewsValue).toString(), label: 'تقييمات Google', suffix: '' },
+          { icon: Quote, value: Math.round(reviewsValue).toString(), label: 'تقييمات موثقة', suffix: '+' },
           { icon: Building2, value: '4 فروع', label: 'القاهرة والجيزة', suffix: '' },
-          { icon: Clock3, value: '11 PM', label: 'يغلق', suffix: '' },
+          { icon: Clock3, value: '11 PM', label: 'يغلق يومياً', suffix: '' },
         ].map((item, i) => {
           const Icon = item.icon;
           return (
@@ -59,14 +63,14 @@ function TrustBar() {
               transition={{ delay: i * 0.08, duration: 0.5 }}
               className="flex min-h-[96px] flex-col justify-center gap-1 px-4 py-5 sm:px-7"
             >
-              <div className="flex items-center gap-2 text-sage-600 dark:text-sage-400">
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-lg font-bold text-charcoal-900 dark:text-white">
+              <div className="flex items-center gap-2 text-teal-700 dark:text-teal-400">
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="text-xl font-black text-slate-900 dark:text-white">
                   {item.value}
-                  <small className="text-xs font-medium">{item.suffix}</small>
+                  <small className="text-xs font-semibold mr-0.5">{item.suffix}</small>
                 </span>
               </div>
-              <span className="text-[11px] text-charcoal-800/55 dark:text-gray-400">{item.label}</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-gray-400">{item.label}</span>
             </motion.div>
           );
         })}
@@ -76,117 +80,129 @@ function TrustBar() {
 }
 
 function Hero({ onBook }: { onBook: () => void }) {
+  const scrollToServices = () => {
+    const el = document.getElementById('services');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <motion.section
       id="home"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="relative min-h-[720px] overflow-hidden bg-ivory-100 dark:bg-[#0c0e12] pt-32 sm:min-h-[800px] sm:pt-40"
+      className="relative min-h-[740px] overflow-hidden bg-gradient-to-b from-[#F8FAF9] via-[#F4F9F7] to-[#F8FAF9] dark:from-[#0c0e12] dark:via-[#0f1217] dark:to-[#0c0e12] pt-32 sm:min-h-[820px] sm:pt-36 lg:pt-40"
     >
-      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-sage-200/25 dark:bg-sage-600/10 blur-3xl" />
-      <div className="container-px relative grid items-center gap-12 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:pb-28">
+      {/* Refined Ambient Lighting Blobs */}
+      <div className="pointer-events-none absolute -left-32 top-24 h-[450px] w-[450px] rounded-full bg-teal-300/25 dark:bg-teal-600/10 blur-[100px]" />
+      <div className="pointer-events-none absolute right-0 top-10 h-[500px] w-[500px] rounded-full bg-emerald-200/20 dark:bg-emerald-600/10 blur-[120px]" />
+
+      <div className="container-px relative grid items-center gap-12 pb-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24">
+        {/* Left Column: Headlines & CTAs */}
         <div className="relative z-10 max-w-xl lg:order-2">
+          {/* Eyebrow badge */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.6 }}
-            className="mb-6 flex items-center gap-3"
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/90 dark:bg-slate-800/80 px-3.5 py-1.5 border border-teal-900/10 dark:border-teal-500/20 shadow-xs"
           >
-            <span className="h-px w-8 bg-sage-500" />
-            <span className="eyebrow">DERMATOLOGY & LASER CLINICS</span>
+            <span className="h-2 w-2 rounded-full bg-teal-600 animate-pulse" />
+            <span className="text-xs font-black tracking-wider text-teal-800 dark:text-teal-300 uppercase">
+              ANDRODERMA DERMATOLOGY & LASER
+            </span>
           </motion.div>
+
+          {/* Main Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 26 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-lg text-[2.5rem] font-extrabold leading-[1.45] tracking-normal text-charcoal-950 dark:text-white sm:text-5xl sm:leading-[1.4] lg:text-[3.9rem] lg:leading-[1.35]"
+            transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="text-[2.25rem] font-extrabold leading-[1.38] text-slate-900 dark:text-white sm:text-5xl sm:leading-[1.3] lg:text-[3.6rem] lg:leading-[1.25]"
           >
-            عناية متقدمة ببشرتك،<br className="hidden sm:block" />
-            <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">تبدأ من التشخيص الصحيح</span>
+            بشرتك تستحق خطة علاج تُبنى على{' '}
+            <span className="relative inline-block text-teal-700 dark:text-teal-400">
+              تشخيص حقيقي.
+              <span className="absolute bottom-1.5 inset-x-0 h-3 bg-teal-300/30 dark:bg-teal-500/20 -z-10 rounded-sm" />
+            </span>
           </motion.h1>
+
+          {/* Subheadline */}
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.7 }}
-            className="mt-6 max-w-md text-[15px] leading-relaxed text-charcoal-800/75 dark:text-gray-300 sm:text-base"
+            transition={{ delay: 0.45, duration: 0.7 }}
+            className="mt-6 text-base leading-relaxed text-slate-700 dark:text-gray-300 sm:text-lg font-medium"
           >
-            تجربة متكاملة للعناية بالبشرة والليزر بأحدث الأجهزة الطبية في 4 فروع مجهزة لراحتك.
+            جلدية، ليزر وتجميل طبي — بخطة مخصصة لكل حالة، في فروعنا بالقاهرة والجيزة.
           </motion.p>
+
+          {/* Action CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.62, duration: 0.7 }}
-            className="mt-8 flex flex-wrap items-center gap-3"
+            transition={{ delay: 0.58, duration: 0.7 }}
+            className="mt-8 flex flex-wrap items-center gap-3.5"
           >
-            <BookingButton onClick={onBook} />
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-secondary shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+            {/* Primary CTA */}
+            <BookingButton
+              onClick={onBook}
+              className="py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800"
             >
-              <MessageCircle className="h-4 w-4 text-sage-600 dark:text-sage-400" /> تواصل على واتساب
-            </a>
+              احجز كشفك الآن
+            </BookingButton>
+
+            {/* Secondary Discovery CTA */}
+            <button
+              onClick={scrollToServices}
+              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md"
+            >
+              <span>🧴 اكتشف الخدمة المناسبة لك</span>
+            </button>
           </motion.div>
+
+          {/* Trust Highlights */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.85, duration: 0.8 }}
-            className="mt-10 flex flex-wrap items-center gap-4 text-xs text-charcoal-800/55 dark:text-gray-400 sm:gap-5"
+            transition={{ delay: 0.75, duration: 0.8 }}
+            className="mt-9 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-gray-400 sm:gap-5"
           >
-            <span className="flex items-center gap-1.5 font-medium text-charcoal-800 dark:text-gray-200">
-              <MapPin className="h-3.5 w-3.5 text-sage-600 dark:text-sage-400" /> مدينة نصر • التجمع • المعادي • نيو جيزة
+            <span className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-gray-200">
+              <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" /> مدينة نصر • التجمع • المعادي • نيو جيزة
             </span>
-            <span className="hidden h-3 w-px bg-ivory-400 dark:bg-gray-700 sm:inline-block" />
-            <span className="flex items-center gap-1.5">
-              <Star className="h-3.5 w-3.5 fill-champagne-400 text-champagne-400" /> 3.9 • 54 Google Reviews
+            <span className="hidden h-3.5 w-px bg-slate-300 dark:bg-gray-700 sm:inline-block" />
+            <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-gray-300">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 3.9 • 54 تقييم على Google
             </span>
           </motion.div>
         </div>
+
+        {/* Right Column: 3D Doctor Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 1.04 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto w-full max-w-[550px] lg:order-1 lg:mx-0"
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative lg:order-1"
         >
-          <div className="relative aspect-[0.82] overflow-hidden rounded-[2rem] bg-sage-200 dark:bg-sage-950 shadow-lift sm:aspect-[0.9]">
-            <img
-              src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80"
-              alt="أجواء فاخرة وتجهيزات طبية متطورة في عيادات Androderma"
-              className="h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/40 via-transparent to-ivory-50/10 dark:to-transparent" />
-          </div>
-          <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="glass-dark absolute -right-3 bottom-8 max-w-[190px] rounded-2xl border border-ivory-50/20 dark:border-emerald-500/30 px-4 py-3 text-ivory-50 shadow-lift dark:shadow-[0_0_25px_rgba(16,185,129,0.18)] sm:-right-8"
-          >
-            <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-sage-300/20">
-              <Sparkles className="h-3.5 w-3.5 text-sage-200" />
-            </span>
-            <p className="text-xs leading-relaxed text-ivory-100/90">
-              أحدث تقنيات الليزر<br />
-              <span className="text-sage-200 font-semibold">بمعايير طبية عالمية</span>
-            </p>
-          </motion.div>
-          <div className="absolute -left-4 top-8 hidden rounded-2xl border border-ivory-50/50 dark:border-gray-700/60 dark:hover:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.08)] dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.18)] bg-ivory-50 dark:bg-[#181b22] px-4 py-3 shadow-soft sm:block transition-all duration-300">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-charcoal-900 dark:text-white">4</span>
-              <div>
-                <span className="block text-[11px] font-bold text-charcoal-900 dark:text-white">فروع معتمدة</span>
-                <span className="text-[9px] text-charcoal-800/50 dark:text-gray-400">القاهرة & الجيزة</span>
-              </div>
-            </div>
-          </div>
-          <div className="pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full border border-sage-300/50 dark:border-sage-700/50" />
+          <DoctorCard3D />
         </motion.div>
       </div>
-      <div className="container-px hidden items-center justify-between border-t border-ivory-300/70 dark:border-gray-800/80 py-4 text-[10px] tracking-[0.25em] text-charcoal-800/35 dark:text-gray-500 sm:flex">
-        <span>SKIN / LASER / CARE</span>
-        <span>SCROLL TO DISCOVER ↓</span>
+
+      {/* Hero Bottom Bar */}
+      <div className="container-px hidden items-center justify-between border-t border-slate-200/80 dark:border-gray-800/80 py-3.5 text-[11px] font-bold tracking-[0.2em] text-slate-500 dark:text-gray-400 sm:flex">
+        <span className="flex items-center gap-2 text-teal-800 dark:text-teal-400 font-sans">
+          <Sparkles className="h-3.5 w-3.5" /> CLINICAL EXCELLENCE & ADVANCED LASER
+        </span>
+        <button
+          onClick={scrollToServices}
+          className="flex items-center gap-1 text-slate-600 dark:text-gray-300 hover:text-teal-700 transition-colors"
+        >
+          <span>اكتشف المزيد</span>
+          <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
+        </button>
       </div>
     </motion.section>
   );
@@ -200,48 +216,51 @@ function Services({ onBook }: { onBook: () => void }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-50 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
+      className="bg-[#F8FAF9] dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">WHAT WE DO</span>
-              <h2 className="mt-4 max-w-xl text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-                خدمات تضع <span className="text-sage-600 dark:text-sage-400">احتياجاتك</span> أولاً
+              <h2 className="mt-4 max-w-xl text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+                خدمات تضع <span className="text-teal-700 dark:text-teal-400">احتياجاتك</span> أولاً
               </h2>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
+            <p className="max-w-xs text-sm leading-relaxed font-medium text-slate-600 dark:text-gray-300">
               الخدمات المتاحة تُقدم بعناية واهتمام بالتفاصيل، وتبدأ دائمًا من فهم ما تحتاجه بشرتك.
             </p>
           </div>
         </Reveal>
+
         <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
           {services.map((service, i) => (
             <motion.article
               key={service.id}
               variants={staggerItem}
-              whileHover={{ y: -7 }}
-              className={`group relative overflow-hidden rounded-2xl bg-charcoal-900 border border-transparent dark:border-gray-800/60 shadow-md transition-all duration-500 dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.22)] dark:hover:border-emerald-500/50 ${
+              whileHover={{ y: -8 }}
+              className={`group relative overflow-hidden rounded-3xl bg-white/90 dark:bg-charcoal-900 border border-teal-900/10 dark:border-gray-800/60 shadow-lg shadow-teal-950/5 dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] hover:shadow-2xl hover:border-teal-600/30 dark:hover:border-teal-500/50 transition-all duration-500 ${
                 i === 1 ? 'lg:translate-y-8' : ''
               }`}
             >
-              <div className="aspect-[0.82] overflow-hidden">
+              <div className="aspect-[0.85] overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
                   src={service.image}
                   alt={service.titleAr}
                   loading="lazy"
-                  className="h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-105 group-hover:opacity-90"
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/35 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
               </div>
-              <div className="absolute inset-x-0 bottom-0 p-5 text-ivory-50">
-                <span className="mb-2 block text-xs font-medium text-sage-200">0{i + 1}</span>
+              <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                <span className="mb-2 inline-block rounded-full bg-white/20 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-teal-200">
+                  0{i + 1}
+                </span>
                 <h3 className="text-xl font-bold leading-relaxed">{service.titleAr}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-ivory-100/70">{service.descriptionAr}</p>
+                <p className="mt-2 text-xs leading-relaxed text-gray-200/90">{service.descriptionAr}</p>
                 <button
                   onClick={onBook}
-                  className="mt-4 flex items-center gap-2 text-xs font-semibold text-sage-200 transition-all group-hover:gap-3"
+                  className="mt-4 flex items-center gap-2 text-xs font-bold text-teal-300 transition-all group-hover:gap-3 group-hover:text-teal-200"
                 >
                   {service.ctaAr}
                   <ArrowLeft className="h-3.5 w-3.5" />
@@ -263,49 +282,52 @@ function About() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="overflow-hidden bg-charcoal-900 dark:bg-[#0e1014] py-24 text-ivory-50 sm:py-32 border-y border-transparent dark:border-gray-800/80"
+      className="overflow-hidden bg-white/80 dark:bg-[#0e1014] py-24 text-slate-900 dark:text-ivory-50 sm:py-32 border-y border-slate-200/80 dark:border-gray-800/80"
     >
       <div className="container-px grid items-center gap-14 lg:grid-cols-[1fr_0.9fr]">
         <Reveal className="relative order-2 lg:order-1">
           <div className="relative mx-auto max-w-md">
-            <div className="aspect-[0.82] overflow-hidden rounded-[2rem] bg-sage-700">
+            <div className="aspect-[0.82] overflow-hidden rounded-[2.25rem] bg-teal-700/10 shadow-lift">
               <img
                 src="https://images.pexels.com/photos/3738348/pexels-photo-3738348.jpeg?auto=compress&cs=tinysrgb&w=1000"
                 alt="مساحة هادئة للعناية في عيادات Androderma"
                 loading="lazy"
-                className="h-full w-full object-cover opacity-80"
+                className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-6 -left-5 hidden w-44 rounded-2xl border border-ivory-50/15 dark:border-emerald-500/30 bg-charcoal-800 p-4 sm:block dark:shadow-[0_0_25px_rgba(16,185,129,0.18)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.28)] dark:hover:border-emerald-500/50 transition-all duration-300">
-              <span className="eyebrow text-sage-300">THE EXPERIENCE</span>
-              <p className="mt-2 text-sm leading-relaxed text-ivory-100/80">احترافية تبدأ من أول لحظة.</p>
+            <div className="absolute -bottom-6 -left-5 hidden w-48 rounded-2xl border border-teal-900/10 dark:border-teal-500/30 bg-white/95 dark:bg-charcoal-800 p-4 sm:block shadow-lg">
+              <span className="eyebrow text-teal-700 dark:text-teal-300">THE EXPERIENCE</span>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-slate-800 dark:text-ivory-100/90">
+                احترافية تبدأ من أول لحظة.
+              </p>
             </div>
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-sage-500/40" />
+            <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border border-teal-500/20" />
           </div>
         </Reveal>
+
         <Reveal delay={0.15} className="order-1 lg:order-2">
-          <span className="eyebrow text-sage-300">A DIFFERENT APPROACH</span>
-          <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-ivory-50 sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+          <span className="eyebrow text-teal-700 dark:text-teal-300">A DIFFERENT APPROACH</span>
+          <h2 className="mt-4 max-w-lg text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-ivory-50 sm:text-4xl lg:text-5xl">
             لأن العناية الحقيقية<br className="hidden sm:block" />
-            <span className="text-sage-300 block mt-2 sm:mt-1">تبدأ بالاستماع</span>
+            <span className="text-teal-700 dark:text-teal-300 block mt-2 sm:mt-1">تبدأ بالاستماع والتشخيص</span>
           </h2>
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-ivory-100/70">
+          <p className="mt-6 max-w-md text-sm leading-relaxed text-slate-700 dark:text-ivory-100/80 font-medium">
             في عيادات Androderma، نؤمن أن كل بشرة لها قصتها الخاصة. لذلك نمنحك مساحة هادئة لفهم احتياجاتك، ونعمل معك على تجربة عناية تناسبك في كافة فروعنا.
           </p>
-          <div className="mt-9 grid max-w-md grid-cols-2 gap-5 border-t border-ivory-50/15 pt-6">
-            <div className="rounded-xl p-3.5 dark:bg-charcoal-800/50 dark:border dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all duration-300">
-              <span className="mb-2 block text-sage-300">
+          <div className="mt-9 grid max-w-md grid-cols-2 gap-4 border-t border-slate-200/80 dark:border-ivory-50/15 pt-6">
+            <div className="rounded-2xl p-4 bg-slate-50 dark:bg-charcoal-800/50 border border-slate-200/80 dark:border-teal-500/20 shadow-xs">
+              <span className="mb-2 block text-teal-700 dark:text-teal-300">
                 <Sparkles className="h-5 w-5" />
               </span>
-              <h3 className="text-sm font-bold leading-relaxed">اهتمام بالتفاصيل</h3>
-              <p className="mt-1 text-xs leading-relaxed text-ivory-100/60">كل خطوة محسوبة لراحتك.</p>
+              <h3 className="text-sm font-bold leading-relaxed text-slate-900 dark:text-white">اهتمام بالتفاصيل</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-ivory-100/60">كل خطوة محسوبة لراحتك.</p>
             </div>
-            <div className="rounded-xl p-3.5 dark:bg-charcoal-800/50 dark:border dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all duration-300">
-              <span className="mb-2 block text-sage-300">
+            <div className="rounded-2xl p-4 bg-slate-50 dark:bg-charcoal-800/50 border border-slate-200/80 dark:border-teal-500/20 shadow-xs">
+              <span className="mb-2 block text-teal-700 dark:text-teal-300">
                 <CalendarDays className="h-5 w-5" />
               </span>
-              <h3 className="text-sm font-bold leading-relaxed">تواصل أسهل</h3>
-              <p className="mt-1 text-xs leading-relaxed text-ivory-100/60">نحن هنا للإجابة عن أسئلتك.</p>
+              <h3 className="text-sm font-bold leading-relaxed text-slate-900 dark:text-white">تواصل أسهل</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-ivory-100/60">نحن هنا للإجابة عن أسئلتك.</p>
             </div>
           </div>
         </Reveal>
@@ -323,18 +345,18 @@ function Gallery() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-100 dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
+      className="bg-[#F8FAF9] dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-12 flex items-end justify-between">
             <div>
               <span className="eyebrow">A GLIMPSE INSIDE</span>
-              <h2 className="mt-4 text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-                من داخل <span className="text-sage-600 dark:text-sage-400">عيادات Androderma</span>
+              <h2 className="mt-4 text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+                من داخل <span className="text-teal-700 dark:text-teal-400">عيادات Androderma</span>
               </h2>
             </div>
-            <span className="hidden text-xs text-charcoal-800/50 dark:text-gray-400 sm:block">اضغط على الصورة للتكبير</span>
+            <span className="hidden text-xs font-bold text-slate-600 dark:text-gray-400 sm:block">اضغط على الصورة للتكبير</span>
           </div>
         </Reveal>
         <div className="grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[220px] sm:grid-cols-4 sm:gap-5">
@@ -343,7 +365,7 @@ function Gallery() {
               key={item.id}
               onClick={() => setSelected(item.src)}
               whileHover={{ scale: 0.985 }}
-              className={`group relative overflow-hidden rounded-2xl text-right border border-transparent dark:border-gray-800/50 dark:hover:border-emerald-500/40 dark:shadow-[0_0_15px_rgba(16,185,129,0.05)] dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all duration-300 ${
+              className={`group relative overflow-hidden rounded-2xl text-right border border-slate-200/80 dark:border-gray-800/50 shadow-sm transition-all duration-300 ${
                 item.span === 'tall' ? 'row-span-2' : item.span === 'wide' ? 'col-span-2' : ''
               }`}
             >
@@ -351,33 +373,33 @@ function Gallery() {
                 src={item.src}
                 alt={item.alt}
                 loading="lazy"
-                className="h-full w-full object-cover grayscale-[15%] transition duration-700 group-hover:scale-105 group-hover:grayscale-0"
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-charcoal-950/0 transition group-hover:bg-charcoal-950/20" />
-              <span className="absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-ivory-50/90 dark:bg-gray-800 text-charcoal-900 dark:text-white opacity-0 shadow-soft transition group-hover:opacity-100">
+              <div className="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/20" />
+              <span className="absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-white/95 dark:bg-gray-800 text-slate-900 dark:text-white opacity-0 shadow-md transition group-hover:opacity-100">
                 <ExternalLink className="h-3.5 w-3.5" />
               </span>
             </motion.button>
           ))}
-          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-transparent dark:border-gray-800/50 dark:hover:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.08)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.22)] transition-all duration-300">
+          <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-3xl border border-slate-200/80 dark:border-gray-800/50 shadow-md transition-all duration-300">
             <img
               src="https://images.pexels.com/photos/6899554/pexels-photo-6899554.jpeg?auto=compress&cs=tinysrgb&w=1200"
               alt="مساحة العيادة الداخلية"
               loading="lazy"
               className="h-full w-full object-cover opacity-90 transition duration-700 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/80 via-charcoal-950/25 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-              <ImageIcon className="mb-4 h-5 w-5 text-sage-200" />
-              <span className="eyebrow text-sage-200">OUR SPACE</span>
-              <p className="mt-3 text-lg font-semibold leading-relaxed text-ivory-50">
+              <ImageIcon className="mb-4 h-5 w-5 text-teal-300" />
+              <span className="eyebrow text-teal-300">OUR SPACE</span>
+              <p className="mt-3 text-lg font-bold leading-relaxed text-white">
                 مساحة صُممت لتشعر فيها بالراحة والثقة.
               </p>
               <a
                 href={clinic.mapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-5 flex items-center gap-2 text-xs font-bold text-sage-200 transition-all hover:gap-3"
+                className="mt-5 flex items-center gap-2 text-xs font-bold text-teal-300 transition-all hover:gap-3"
               >
                 اكتشف فروعنا <ArrowLeft className="h-3.5 w-3.5" />
               </a>
@@ -391,13 +413,13 @@ function Gallery() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-charcoal-950/85 backdrop-blur-sm p-5"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-5"
             onClick={() => setSelected(null)}
           >
             <button
               aria-label="إغلاق"
               onClick={() => setSelected(null)}
-              className="absolute left-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-ivory-50/10 text-ivory-50 hover:bg-ivory-50/20"
+              className="absolute left-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-white/20 text-white hover:bg-white/30"
             >
               <X className="h-5 w-5" />
             </button>
@@ -423,34 +445,36 @@ function Reviews() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-50 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
+      className="bg-white/60 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300 border-y border-slate-200/80 dark:border-gray-800/80"
     >
       <div className="container-px">
         <Reveal>
           <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <span className="eyebrow">GOOGLE REVIEWS</span>
-              <h2 className="mt-4 max-w-lg text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+              <h2 className="mt-4 max-w-lg text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
                 تجارب حقيقية،<br className="hidden sm:block" />
-                <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">بكلمات أصحابها</span>
+                <span className="text-teal-700 dark:text-teal-400 block mt-2 sm:mt-1">بكلمات أصحابها</span>
               </h2>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 bg-white dark:bg-[#181b22] px-5 py-3 rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-xs">
               <div>
-                <div className="text-4xl font-bold text-charcoal-950 dark:text-white">3.9</div>
+                <div className="text-3xl font-black text-slate-900 dark:text-white">3.9</div>
                 <div className="mt-1 flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star
                       key={n}
-                      className={`h-3 w-3 ${
-                        n < 4 ? 'fill-champagne-400 text-champagne-400' : 'text-champagne-300'
+                      className={`h-3.5 w-3.5 ${
+                        n < 4 ? 'fill-amber-400 text-amber-400' : 'text-slate-300'
                       }`}
                     />
                   ))}
                 </div>
               </div>
-              <div className="h-10 w-px bg-ivory-300 dark:bg-gray-800" />
-              <span className="max-w-[100px] text-xs leading-relaxed text-charcoal-800/60 dark:text-gray-400">54 تقييمًا على Google</span>
+              <div className="h-10 w-px bg-slate-200 dark:bg-gray-800" />
+              <span className="max-w-[100px] text-xs font-bold leading-relaxed text-slate-600 dark:text-gray-400">
+                54 تقييمًا على Google
+              </span>
             </div>
           </div>
         </Reveal>
@@ -459,14 +483,16 @@ function Reviews() {
             <motion.blockquote
               key={review.id}
               variants={staggerItem}
-              className="relative rounded-2xl border border-ivory-300 dark:border-gray-800 bg-ivory-100 dark:bg-[#181b22] p-7 shadow-soft sm:p-9 hover:shadow-md dark:shadow-[0_0_20px_rgba(16,185,129,0.06)] dark:hover:shadow-[0_0_28px_rgba(16,185,129,0.2)] dark:hover:border-emerald-500/40 transition-all duration-300"
+              className="relative rounded-3xl border border-teal-900/10 dark:border-gray-800 bg-white/90 dark:bg-[#181b22] p-7 shadow-sm sm:p-9 hover:shadow-lg dark:hover:border-teal-500/40 transition-all duration-300"
             >
-              <Quote className="mb-5 h-7 w-7 text-sage-400" />
-              <p className="text-base font-medium leading-relaxed text-charcoal-800 dark:text-gray-200 sm:text-lg">{review.text}</p>
-              <footer className="mt-7 flex items-center justify-between border-t border-ivory-300 dark:border-gray-800 pt-5">
-                <span className="text-xs text-charcoal-800/50 dark:text-gray-400">{review.author ?? 'مراجع Google'}</span>
-                <span className="flex items-center gap-1 text-[10px] text-charcoal-800/50 dark:text-gray-400">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-white dark:bg-gray-700 text-[9px] font-bold text-blue-500 dark:text-blue-400">
+              <Quote className="mb-5 h-7 w-7 text-teal-600 dark:text-teal-400" />
+              <p className="text-base font-medium leading-relaxed text-slate-800 dark:text-gray-200 sm:text-lg">
+                {review.text}
+              </p>
+              <footer className="mt-7 flex items-center justify-between border-t border-slate-100 dark:border-gray-800 pt-5">
+                <span className="text-xs font-bold text-slate-700 dark:text-gray-400">{review.author ?? 'مراجع Google'}</span>
+                <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-gray-400">
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-blue-50 dark:bg-gray-700 text-[10px] font-black text-blue-600 dark:text-blue-400">
                     G
                   </span>{' '}
                   Google Reviews
@@ -489,36 +515,41 @@ function FAQ() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-ivory-100 dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
+      className="bg-[#F8FAF9] dark:bg-[#0c0e12] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px grid gap-12 lg:grid-cols-[0.75fr_1fr] lg:gap-24">
         <Reveal>
           <span className="eyebrow">NEED TO KNOW</span>
-          <h2 className="mt-4 max-w-sm text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
+          <h2 className="mt-4 max-w-sm text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
             أسئلة قد<br className="hidden sm:block" />
-            <span className="text-sage-600 dark:text-sage-400 block mt-2 sm:mt-1">تخطر ببالك</span>
+            <span className="text-teal-700 dark:text-teal-400 block mt-2 sm:mt-1">تخطر ببالك</span>
           </h2>
-          <p className="mt-6 max-w-xs text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">
+          <p className="mt-6 max-w-xs text-sm font-medium leading-relaxed text-slate-600 dark:text-gray-300">
             لم تجد إجابتك؟ تواصل معنا مباشرة وسيسعد فريقنا بمساعدتك في أي من فروعنا.
           </p>
-          <a href={waLink} target="_blank" rel="noreferrer" className="btn-ghost mt-6 -mr-5 text-sage-700 dark:text-sage-300">
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-ghost mt-6 -mr-4 text-teal-800 dark:text-teal-300 font-bold"
+          >
             اسألنا على واتساب <ArrowLeft className="h-4 w-4" />
           </a>
         </Reveal>
         <div>
           {faqs.map((faq, i) => (
             <Reveal key={faq.q} delay={i * 0.06}>
-              <div className="border-b border-ivory-300 dark:border-gray-800">
+              <div className="border-b border-slate-200/90 dark:border-gray-800">
                 <button
                   onClick={() => setOpen(open === i ? -1 : i)}
                   className="flex w-full items-center justify-between gap-4 py-5 text-right"
                 >
-                  <span className="text-sm font-semibold text-charcoal-900 dark:text-white leading-relaxed">{faq.q}</span>
+                  <span className="text-base font-bold text-slate-900 dark:text-white leading-relaxed">{faq.q}</span>
                   <span
                     className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition ${
                       open === i
-                        ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white'
-                        : 'bg-ivory-200 dark:bg-gray-800 text-charcoal-800 dark:text-gray-200'
+                        ? 'bg-teal-700 text-white'
+                        : 'bg-slate-200/80 dark:bg-gray-800 text-slate-800 dark:text-gray-200'
                     }`}
                   >
                     {open === i ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -532,7 +563,9 @@ function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-5 pl-12 text-sm leading-relaxed text-charcoal-800/70 dark:text-gray-300">{faq.a}</p>
+                      <p className="pb-5 pl-12 text-sm font-medium leading-relaxed text-slate-700 dark:text-gray-300">
+                        {faq.a}
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -556,21 +589,21 @@ function Location({ onBook }: { onBook: () => void }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-sage-100/70 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
+      className="bg-slate-100/70 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300"
     >
       <div className="container-px">
         <div className="mb-12 text-center sm:text-right">
-          <span className="eyebrow text-sage-700 dark:text-sage-400">OUR BRANCHES</span>
-          <h2 className="mt-3 text-3xl font-bold leading-[1.65] text-charcoal-950 dark:text-white sm:text-4xl lg:text-5xl sm:leading-[1.5]">
-            فروعنا <span className="text-sage-600 dark:text-sage-400">في خدمتك</span>
+          <span className="eyebrow text-teal-800 dark:text-teal-400">OUR BRANCHES</span>
+          <h2 className="mt-3 text-3xl font-extrabold leading-[1.45] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+            فروعنا <span className="text-teal-700 dark:text-teal-400">في خدمتك</span>
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-charcoal-800/75 dark:text-gray-300 max-w-2xl">
+          <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600 dark:text-gray-300 max-w-2xl">
             اختر الفرع الأقرب إليك لعرض العنوان المباشر، أرقام التواصل، وخريطة الوصول التفاعلية
           </p>
         </div>
 
         {/* Branch Selector Tabs */}
-        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-charcoal-900/10 dark:border-gray-800 bg-ivory-50/80 dark:bg-[#181b22]/90 p-2 shadow-soft dark:shadow-[0_0_25px_rgba(16,185,129,0.06)] sm:gap-3">
+        <div className="mb-8 flex flex-wrap gap-2.5 rounded-2xl border border-slate-200/90 dark:border-gray-800 bg-white/90 dark:bg-[#181b22]/90 p-2 shadow-xs sm:gap-3">
           {branches.map((b) => {
             const isActive = b.id === currentBranch.id;
             return (
@@ -579,11 +612,11 @@ function Location({ onBook }: { onBook: () => void }) {
                 onClick={() => setActiveBranchId(b.id)}
                 className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-all duration-300 sm:text-sm ${
                   isActive
-                    ? 'bg-charcoal-900 dark:bg-sage-600 text-ivory-50 dark:text-white shadow-md dark:shadow-[0_0_20px_rgba(16,185,129,0.35)] scale-[1.02]'
-                    : 'text-charcoal-800 dark:text-gray-300 hover:bg-ivory-200/90 dark:hover:bg-gray-800 hover:-translate-y-0.5'
+                    ? 'bg-teal-700 dark:bg-teal-600 text-white shadow-md scale-[1.02]'
+                    : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 hover:-translate-y-0.5'
                 }`}
               >
-                <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-sage-300 dark:text-white' : 'text-sage-600 dark:text-sage-400'}`} />
+                <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-teal-200' : 'text-teal-700 dark:text-teal-400'}`} />
                 <span>{b.nameAr}</span>
               </button>
             );
@@ -591,31 +624,31 @@ function Location({ onBook }: { onBook: () => void }) {
         </div>
 
         {/* Main Branch Details & Interactive Map Card */}
-        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-charcoal-900 dark:bg-[#161920] text-ivory-50 border border-charcoal-800/80 dark:border-gray-800/80 shadow-lift transition-all duration-500 hover:shadow-2xl hover:border-sage-500/30 dark:border-emerald-500/25 dark:shadow-[0_0_35px_rgba(16,185,129,0.12)] dark:hover:shadow-[0_0_45px_rgba(16,185,129,0.25)] dark:hover:border-emerald-500/50 lg:grid-cols-[1.05fr_0.95fr] group/card">
+        <div className="grid items-stretch overflow-hidden rounded-[2.25rem] bg-white dark:bg-[#161920] text-slate-900 dark:text-ivory-50 border border-slate-200/90 dark:border-gray-800/80 shadow-lift transition-all duration-500 lg:grid-cols-[1.05fr_0.95fr] group/card">
           <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-12 lg:p-14">
-            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-sage-400/20 transition-all duration-700 group-hover/card:scale-110 group-hover/card:border-sage-400/35" />
+            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full border border-teal-500/10" />
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="eyebrow text-sage-300">BRANCH DETAILS</span>
-                <span className="rounded-full bg-sage-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-sage-300">
+                <span className="eyebrow text-teal-800 dark:text-teal-300">BRANCH DETAILS</span>
+                <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-700/50 px-2.5 py-0.5 text-[11px] font-bold text-teal-800 dark:text-teal-300">
                   {currentBranch.cityAr}
                 </span>
               </div>
 
-              <h3 className="mt-4 text-2xl font-bold leading-relaxed sm:text-3xl lg:text-4xl text-ivory-50">
+              <h3 className="mt-4 text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl text-slate-900 dark:text-white">
                 {currentBranch.nameAr}
               </h3>
 
-              <div className="mt-8 space-y-5 border-t border-ivory-50/15 pt-7 text-xs sm:text-sm">
+              <div className="mt-8 space-y-5 border-t border-slate-100 dark:border-ivory-50/15 pt-7 text-xs sm:text-sm">
                 {/* Address */}
                 <div className="flex items-start gap-3.5">
-                  <MapPin className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
+                  <MapPin className="mt-1 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
+                    <span className="mb-1 block text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-ivory-100/50">
                       العنوان
                     </span>
-                    <p className="leading-relaxed text-ivory-100/90 font-medium">
+                    <p className="leading-relaxed text-slate-800 dark:text-ivory-100/90 font-semibold">
                       {currentBranch.addressAr}
                     </p>
                   </div>
@@ -623,9 +656,9 @@ function Location({ onBook }: { onBook: () => void }) {
 
                 {/* Clickable Phone(s) */}
                 <div className="flex items-start gap-3.5">
-                  <Phone className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
+                  <Phone className="mt-1 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
+                    <span className="mb-1 block text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-ivory-100/50">
                       أرقام الهاتف المباشرة (اضغط للاتصال)
                     </span>
                     <div className="flex flex-wrap gap-2.5 pt-1">
@@ -634,9 +667,9 @@ function Location({ onBook }: { onBook: () => void }) {
                           key={p.number}
                           href={`tel:${p.number}`}
                           dir="ltr"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-sage-400/30 dark:border-emerald-500/30 bg-charcoal-800/80 dark:bg-charcoal-800/90 px-3 py-1.5 font-semibold text-ivory-100 transition hover:border-sage-300 dark:hover:border-emerald-400 hover:bg-sage-600 dark:hover:bg-sage-600 hover:text-white dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-teal-700/20 bg-teal-50/80 dark:bg-charcoal-800/90 px-3.5 py-1.5 font-bold text-teal-900 dark:text-teal-200 transition hover:border-teal-600 hover:bg-teal-700 hover:text-white"
                         >
-                          <Phone className="h-3 w-3 text-sage-300" />
+                          <Phone className="h-3.5 w-3.5" />
                           <span>{p.display}</span>
                         </a>
                       ))}
@@ -646,14 +679,14 @@ function Location({ onBook }: { onBook: () => void }) {
 
                 {/* Email */}
                 <div className="flex items-start gap-3.5">
-                  <Mail className="mt-1 h-4 w-4 shrink-0 text-sage-300" />
+                  <Mail className="mt-1 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
                   <div>
-                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-ivory-100/50">
+                    <span className="mb-1 block text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-ivory-100/50">
                       البريد الإلكتروني
                     </span>
                     <a
                       href={`mailto:${clinic.email}`}
-                      className="inline-block font-medium text-sage-200 transition hover:underline hover:text-white"
+                      className="inline-block font-semibold text-teal-800 dark:text-teal-200 transition hover:underline"
                     >
                       Email Us: {clinic.email}
                     </a>
@@ -662,74 +695,69 @@ function Location({ onBook }: { onBook: () => void }) {
 
                 {/* Closing / Operating Hours */}
                 <div className="flex items-center gap-3.5">
-                  <Clock3 className="h-4 w-4 shrink-0 text-sage-300" />
+                  <Clock3 className="h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
                   <div>
-                    <span className="mb-0.5 block text-[10px] uppercase tracking-wider text-ivory-100/50">
+                    <span className="mb-0.5 block text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-ivory-100/50">
                       مواعيد العمل
                     </span>
-                    <p className="text-ivory-100/85">{clinic.closingNote}</p>
+                    <p className="text-slate-700 dark:text-ivory-100/85 font-medium">{clinic.closingNote}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-9 flex flex-wrap gap-3 pt-6 border-t border-ivory-50/15">
-              <BookingButton onClick={onBook}>احجز في هذا الفرع</BookingButton>
+            <div className="mt-9 flex flex-wrap gap-3 pt-6 border-t border-slate-100 dark:border-ivory-50/15">
+              <BookingButton onClick={onBook}>احجز كشفك في هذا الفرع</BookingButton>
               <a
                 href={waLink}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-secondary border-ivory-50/20 bg-transparent text-ivory-50 hover:bg-ivory-50/10"
+                className="btn-secondary"
               >
-                <MessageCircle className="h-4 w-4 text-sage-300" /> واتساب
+                <MessageCircle className="h-4 w-4 text-teal-700" /> واتساب
               </a>
             </div>
           </div>
 
-          {/* Luxury High-End Interactive Location & Directions Card */}
-          <div className="relative flex flex-col justify-between overflow-hidden border-t border-ivory-50/10 bg-gradient-to-br from-charcoal-950 via-[#13161c] to-charcoal-900 p-7 sm:p-10 lg:border-r lg:border-t-0">
-            {/* Background Aesthetic Grid Pattern */}
-            <div className="pointer-events-none absolute inset-0 opacity-10 [background-image:radial-gradient(#5d7a6b_1px,transparent_1px)] [background-size:16px_16px]" />
-            <div className="pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-sage-500/10 blur-2xl" />
-
+          {/* Interactive Location & Directions Card */}
+          <div className="relative flex flex-col justify-between overflow-hidden border-t border-slate-200/80 bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-100 dark:from-charcoal-950 dark:via-[#13161c] dark:to-charcoal-900 p-7 sm:p-10 lg:border-r lg:border-t-0">
             <div className="relative z-10">
-              {/* Header badge */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sage-300">
-                  <Navigation className="h-4 w-4 animate-pulse text-sage-400" />
+                <div className="flex items-center gap-2 text-teal-800 dark:text-teal-300">
+                  <Navigation className="h-4 w-4 animate-pulse text-teal-600" />
                   <span className="text-xs font-bold tracking-wider">الموقع الدقيق على الخريطة</span>
                 </div>
-                <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle2 className="h-3 w-3" /> موقع موثّق ومعتمد
+                <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> موقع موثّق ومعتمد
                 </span>
               </div>
 
-              {/* Central Map Illustration Card */}
-              <div className="mt-6 rounded-2xl border border-ivory-50/10 dark:border-emerald-500/25 bg-charcoal-850/90 dark:bg-[#14171e]/90 p-6 backdrop-blur-sm shadow-inner dark:shadow-[0_0_25px_rgba(16,185,129,0.12)] dark:hover:border-emerald-500/40 transition-all duration-300">
+              {/* Central Map Preview Card */}
+              <div className="mt-6 rounded-2xl border border-slate-200/80 dark:border-emerald-500/25 bg-white/90 dark:bg-[#14171e]/90 p-6 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sage-600/20 border border-sage-400/30 text-sage-300 shadow-md">
-                    <MapPin className="h-7 w-7 text-sage-300" />
+                  <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-teal-100 dark:bg-teal-900/40 border border-teal-300/50 text-teal-800 dark:text-teal-300 shadow-xs">
+                    <MapPin className="h-7 w-7 text-teal-700 dark:text-teal-400" />
                     <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sage-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-sage-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-teal-600"></span>
                     </span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-ivory-50">{currentBranch.nameAr}</h4>
-                    <p className="text-xs text-ivory-100/70 mt-0.5 line-clamp-2 leading-relaxed">
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">{currentBranch.nameAr}</h4>
+                    <p className="text-xs text-slate-600 dark:text-ivory-100/70 mt-0.5 line-clamp-2 leading-relaxed font-medium">
                       {currentBranch.addressAr}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-4 text-xs">
-                  <div className="rounded-xl bg-charcoal-900/80 dark:bg-[#161920] p-3 border border-ivory-50/5 dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300">
-                    <span className="block text-[10px] text-ivory-100/50 mb-0.5">سهولة الوصول</span>
-                    <span className="font-semibold text-ivory-100">موقع حيوي ومواقف متوفرة</span>
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-ivory-50/10 pt-4 text-xs">
+                  <div className="rounded-xl bg-slate-50 dark:bg-[#161920] p-3 border border-slate-200/70 dark:border-emerald-500/20">
+                    <span className="block text-[10px] font-bold text-slate-500 dark:text-ivory-100/50 mb-0.5">سهولة الوصول</span>
+                    <span className="font-bold text-slate-800 dark:text-ivory-100">موقع حيوي ومواقف متوفرة</span>
                   </div>
-                  <div className="rounded-xl bg-charcoal-900/80 dark:bg-[#161920] p-3 border border-ivory-50/5 dark:border-emerald-500/20 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300">
-                    <span className="block text-[10px] text-ivory-100/50 mb-0.5">التوجيه المباشر</span>
-                    <span className="font-semibold text-ivory-100">GPS دقيق خطوة بخطوة</span>
+                  <div className="rounded-xl bg-slate-50 dark:bg-[#161920] p-3 border border-slate-200/70 dark:border-emerald-500/20">
+                    <span className="block text-[10px] font-bold text-slate-500 dark:text-ivory-100/50 mb-0.5">التوجيه المباشر</span>
+                    <span className="font-bold text-slate-800 dark:text-ivory-100">GPS دقيق خطوة بخطوة</span>
                   </div>
                 </div>
               </div>
@@ -741,13 +769,13 @@ function Location({ onBook }: { onBook: () => void }) {
                 href={currentBranch.mapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-sage-600 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-500 hover:shadow-sage-600/30 hover:scale-[1.02] active:scale-95"
+                className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-teal-700 px-6 py-4 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-teal-800 hover:shadow-teal-700/25 hover:scale-[1.01] active:scale-98"
               >
-                <MapPin className="h-4 w-4 text-sage-100 transition-transform group-hover:scale-110" />
+                <MapPin className="h-4 w-4 text-teal-100 transition-transform group-hover:scale-110" />
                 <span>افتح على خرائط جوجل (Google Maps)</span>
-                <ExternalLink className="h-4 w-4 text-sage-200 transition-transform group-hover:translate-x-[-3px]" />
+                <ExternalLink className="h-4 w-4 text-teal-200 transition-transform group-hover:translate-x-[-3px]" />
               </a>
-              <p className="text-center text-[11px] text-ivory-100/50">
+              <p className="text-center text-[11px] font-medium text-slate-500 dark:text-ivory-100/50">
                 سيتم فتح اللوكيشن الرسمي المباشر للفرع في تطبيق خرائط Google لتوجيهك بدقة.
               </p>
             </div>
@@ -760,15 +788,15 @@ function Location({ onBook }: { onBook: () => void }) {
 
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   return (
-    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-ivory-300/80 dark:border-emerald-500/30 p-2 shadow-lift dark:shadow-[0_0_25px_rgba(16,185,129,0.15)] sm:hidden">
+    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-slate-200/90 dark:border-emerald-500/30 p-2 shadow-lift sm:hidden">
       <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold">
-        <CalendarDays className="h-3.5 w-3.5" /> احجز موعدك
+        <CalendarDays className="h-3.5 w-3.5" /> احجز كشفك الآن
       </button>
       <a
         href={waLink}
         target="_blank"
         rel="noreferrer"
-        className="grid w-14 place-items-center rounded-xl bg-sage-600 text-ivory-50 transition hover:bg-sage-700 shadow-sm"
+        className="grid w-14 place-items-center rounded-xl bg-teal-700 text-white transition hover:bg-teal-800 shadow-sm"
         aria-label="واتساب"
       >
         <MessageCircle className="h-5 w-5" />
@@ -779,8 +807,12 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 
 function App() {
   const [bookingOpen, setBookingOpen] = useState(false);
+
+  // Initialize Lenis smooth momentum scroll
+  useSmoothScroll();
+
   return (
-    <div className="overflow-hidden bg-ivory-100 dark:bg-[#0c0e12] text-charcoal-900 dark:text-gray-100 min-h-screen">
+    <div className="overflow-hidden bg-[#F8FAF9] dark:bg-[#0c0e12] text-slate-900 dark:text-gray-100 min-h-screen">
       <SplashScreen />
       <Header />
       <main>
@@ -795,15 +827,7 @@ function App() {
       </main>
       <LuxuryFooter />
       <ScrollToTopButton />
-      <a
-        href={waLink}
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-20 left-4 sm:bottom-6 sm:left-6 z-40 flex h-12 w-12 items-center justify-center rounded-2xl sm:rounded-full bg-sage-600 text-ivory-50 shadow-lift transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-sage-500 active:scale-95 border border-white/20 dark:border-emerald-500/40 dark:shadow-[0_0_20px_rgba(16,185,129,0.25)] dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.4)]"
-        aria-label="تواصل عبر واتساب"
-      >
-        <MessageCircle className="h-5 w-5" />
-      </a>
+      {/* Strict note: No floating WhatsApp corner button */}
       <MobileBottomBar onBook={() => setBookingOpen(true)} />
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </div>
