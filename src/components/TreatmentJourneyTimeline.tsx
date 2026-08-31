@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   CheckCircle2,
 } from 'lucide-react';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 
 // Register GSAP ScrollTrigger plugin
 if (typeof window !== 'undefined') {
@@ -151,9 +152,9 @@ export function TreatmentJourneyTimeline({ onBook }: { onBook: () => void }) {
             <Sparkles className="h-4 w-4 text-teal-600 dark:text-teal-400" />
             <span>CLINICAL TREATMENT JOURNEY</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-[1.35]">
-            رحلتك العلاجية <span className="text-teal-700 dark:text-teal-400">داخل العيادة</span>
-          </h2>
+          <GsapTextReveal className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-[1.35]">
+            رحلتك العلاجية <span className="text-teal-700 dark:text-[#00B8A9]">داخل العيادة</span>
+          </GsapTextReveal>
           <p className="mt-3 text-sm sm:text-base font-medium text-slate-600 dark:text-gray-300 leading-relaxed">
             منهجية طبية من 5 خطوات محكمة تضمن حصولك على أقصى فائدة وأعلى مستويات الأمان مع د. أحمد زغلول
           </p>

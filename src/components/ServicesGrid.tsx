@@ -10,6 +10,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 
 interface ServicesGridProps {
   onBookService: (serviceTitle: string) => void;
@@ -105,9 +106,9 @@ export function ServicesGrid({ onBookService }: ServicesGridProps) {
                 <Sparkles className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 <span>EXCELLENCE IN CLINICAL DERMATOLOGY</span>
               </div>
-              <h2 className="max-w-2xl text-3xl font-extrabold leading-[1.4] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
-                خدمات تضع <span className="text-teal-700 dark:text-teal-400">صحة وجمال بشرتك</span> في المقام الأول
-              </h2>
+              <GsapTextReveal className="max-w-2xl text-3xl font-extrabold leading-[1.4] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+                خدمات تضع <span className="text-teal-700 dark:text-[#00B8A9]">صحة وجمال بشرتك</span> في المقام الأول
+              </GsapTextReveal>
             </div>
             <p className="max-w-md text-sm leading-relaxed font-medium text-slate-600 dark:text-gray-300 text-right">
               جميع الخدمات تُقدم تحت الإشراف المباشر لـ د. أحمد زغلول، وتعتمد على تشخيص طبي متكامل وبروتوكولات فردية مصممة لكل حالة.

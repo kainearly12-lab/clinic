@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Menu, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
+import { MagneticButton } from './ui/MagneticButton';
 import { MobileMenu } from './MobileMenu';
 import { BookingModal } from './BookingModal';
 import { TopScrollProgressBar } from './TopScrollProgressBar';
@@ -161,14 +162,13 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                   )}
                 </button>
 
-                {/* Primary Booking Button */}
-                <button
-                  type="button"
+                {/* Primary Magnetic Booking Button */}
+                <MagneticButton
                   onClick={handleOpenBookingModal}
-                  className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] hover:-translate-y-0.5 transition-all duration-300"
+                  className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] transition-all duration-300"
                 >
                   احجز كشفك الآن
-                </button>
+                </MagneticButton>
 
                 {/* Mobile Hamburger Menu */}
                 <button

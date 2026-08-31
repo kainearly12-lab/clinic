@@ -1,5 +1,6 @@
 import { Star, MessageSquareQuote, CheckCircle2 } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 import { reviews, clinic } from '@/data/clinicData';
 
 export function GoogleReviewsMarquee() {
@@ -24,10 +25,10 @@ export function GoogleReviewsMarquee() {
                 <MessageSquareQuote className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 <span>VERIFIED PATIENT EXPERIENCES</span>
               </div>
-              <h2 className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+              <GsapTextReveal className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
                 تجارب حقيقية، <br />
-                <span className="text-teal-700 dark:text-teal-400">بكلمات مراجعينا على Google</span>
-              </h2>
+                <span className="text-teal-700 dark:text-[#00B8A9]">بكلمات مراجعينا على Google</span>
+              </GsapTextReveal>
             </div>
 
             {/* Google Rating Overview Glass Box */}

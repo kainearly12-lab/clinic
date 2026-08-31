@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, ChevronLeft, Clock3, Sparkles } from 'lucide-react';
 import { branches } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
+import { MagneticButton } from './ui/MagneticButton';
 
 interface BookingModalProps {
   open: boolean;
@@ -211,13 +212,13 @@ export function BookingButton({
   className?: string;
 }) {
   return (
-    <button
+    <MagneticButton
       onClick={onClick}
-      className={`btn-primary shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${className}`}
+      className={`btn-primary shadow-md hover:shadow-xl transition-all duration-300 ${className}`}
     >
       {children}
       <ChevronLeft className="h-4 w-4" />
-    </button>
+    </MagneticButton>
   );
 }
 

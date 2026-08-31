@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { clinic } from '@/data/clinicData';
+import { FaceAssessment3D } from '@/components/3d/FaceAssessment3D';
 
 interface SkinDiagnosticQuizProps {
   onBook: (serviceName: string) => void;
@@ -165,7 +166,8 @@ const durationOptions = [
 
 export function SkinDiagnosticQuiz({ onBook, onBackToHome }: SkinDiagnosticQuizProps) {
   const [step, setStep] = useState<number>(1);
-  const [selectedConcern, setSelectedConcern] = useState<string>('acne');
+  const [step1Mode, setStep1Mode] = useState<'3d' | 'list'>('3d');
+  const [selectedConcern, setSelectedConcern] = useState<string>('aging');
   const [selectedDuration, setSelectedDuration] = useState<string>('medium');
 
   const currentConcernObj =
@@ -190,7 +192,11 @@ export function SkinDiagnosticQuiz({ onBook, onBackToHome }: SkinDiagnosticQuizP
       <div className="pointer-events-none absolute -left-20 top-1/4 h-80 w-80 rounded-full bg-teal-400/10 dark:bg-teal-500/10 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 bottom-1/4 h-80 w-80 rounded-full bg-emerald-400/10 dark:bg-emerald-500/10 blur-[100px]" />
 
-      <div className="container-px relative mx-auto max-w-4xl">
+      <div
+        className={`container-px relative mx-auto transition-all duration-500 ${
+          step === 1 && step1Mode === '3d' ? 'max-w-6xl' : 'max-w-4xl'
+        }`}
+      >
         {/* Navigation Breadcrumb / Back Button */}
         {onBackToHome && (
           <div className="mb-6 flex items-center justify-between">
@@ -257,7 +263,7 @@ export function SkinDiagnosticQuiz({ onBook, onBackToHome }: SkinDiagnosticQuizP
         {/* Compact Multi-Step Card Box */}
         <div className="relative rounded-3xl bg-white/95 dark:bg-[#151922]/95 border border-teal-900/10 dark:border-white/10 p-5 sm:p-7 lg:p-8 shadow-xl backdrop-blur-xl transition-all duration-500">
           <AnimatePresence mode="wait">
-            {/* STEP 1: CONCERN SELECTION */}
+            {/* STEP 1: CONCERN SELECTION (3D FACE MESH OR FULL CATEGORY LIST) */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -265,77 +271,122 @@ export function SkinDiagnosticQuiz({ onBook, onBackToHome }: SkinDiagnosticQuizP
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-5"
+                className="space-y-6"
               >
-                <div className="text-right">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
-                    السؤال الأول
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
-                    ما أكثر مشكلة تزعجك في بشرتك أو شعرك؟
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-0.5 font-medium">
-                    اختر المشكلة الرئيسية ليتم توجيه التشخيص بأعلى دقة
-                  </p>
+                {/* Step 1 Header & View Switcher */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-right">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                      الخطوة الأولى
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                      حدد المشكلة أو المنطقة المستهدفة في الوجه والجلد
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-gray-400 mt-0.5 font-medium">
+                      يمكنك استخدام مجسم الوجه 3D التفاعلي لتحديد المنطقة أو استعراض القائمة الشاملة
+                    </p>
+                  </div>
+
+                  {/* Mode Switcher Pills */}
+                  <div className="flex items-center gap-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => setStep1Mode('3d')}
+                      className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                        step1Mode === '3d'
+                          ? 'bg-teal-700 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-gray-300 hover:text-slate-900'
+                      }`}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>خريطة الوجه 3D</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep1Mode('list')}
+                      className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                        step1Mode === 'list'
+                          ? 'bg-teal-700 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-gray-300 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>كل الحالات ({concernOptions.length})</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* Cards Grid */}
-                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 pt-1">
-                  {concernOptions.map((opt) => {
-                    const isSelected = selectedConcern === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setSelectedConcern(opt.id)}
-                        className={`group relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 text-right transition-all duration-300 border ${
-                          isSelected
-                            ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.01] ring-2 ring-teal-500/20'
-                            : 'bg-white dark:bg-[#1a202c]/60 border-slate-200/90 dark:border-gray-800/80 hover:border-teal-500/50 hover:bg-slate-50/80 dark:hover:bg-[#1e2533]'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <span className="text-xl">{opt.emoji}</span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                {/* 3D Face Wireframe Mode */}
+                {step1Mode === '3d' ? (
+                  <FaceAssessment3D
+                    onSelectServiceAndProceed={(serviceId) => {
+                      setSelectedConcern(serviceId);
+                      setStep(2);
+                    }}
+                    onQuickBook={(treatmentTitle) => {
+                      onBook(treatmentTitle);
+                    }}
+                  />
+                ) : (
+                  /* Standard Grid Mode */
+                  <div className="space-y-5">
+                    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 pt-1">
+                      {concernOptions.map((opt) => {
+                        const isSelected = selectedConcern === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setSelectedConcern(opt.id)}
+                            className={`group relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 text-right transition-all duration-300 border ${
                               isSelected
-                                ? 'bg-teal-700 text-white'
-                                : 'bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300'
+                                ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.01] ring-2 ring-teal-500/20'
+                                : 'bg-white dark:bg-[#1a202c]/60 border-slate-200/90 dark:border-gray-800/80 hover:border-teal-500/50 hover:bg-slate-50/80 dark:hover:bg-[#1e2533]'
                             }`}
                           >
-                            {opt.categoryTag}
-                          </span>
-                        </div>
-                        <div className="mt-2.5">
-                          <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
-                            {opt.title}
-                          </h4>
-                          <p className="text-[11px] text-slate-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">
-                            {opt.subtitle}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-teal-700 dark:text-teal-400">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span>تم الاختيار</span>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                            <div className="flex items-start justify-between">
+                              <span className="text-xl">{opt.emoji}</span>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                                  isSelected
+                                    ? 'bg-teal-700 text-white'
+                                    : 'bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300'
+                                }`}
+                              >
+                                {opt.categoryTag}
+                              </span>
+                            </div>
+                            <div className="mt-2.5">
+                              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
+                                {opt.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">
+                                {opt.subtitle}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-teal-700 dark:text-teal-400">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>تم الاختيار</span>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                {/* Footer Controls */}
-                <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-gray-800/80">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="btn-primary py-2.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg gap-2"
-                  >
-                    <span>المتابعة للسؤال التالي</span>
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                </div>
+                    {/* Footer Controls */}
+                    <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-gray-800/80">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="btn-primary py-2.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg gap-2"
+                      >
+                        <span>المتابعة للسؤال التالي</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 

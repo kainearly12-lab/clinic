@@ -8,6 +8,7 @@ import {
   HeartPulse,
 } from 'lucide-react';
 import { Reveal, Stagger, staggerItem } from '@/components/ui/Reveal';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 
 export function MedicalPhilosophyBento() {
   return (
@@ -82,10 +83,10 @@ export function MedicalPhilosophyBento() {
                 <Sparkles className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 <span>A DIFFERENT CLINICAL APPROACH</span>
               </div>
-              <h2 className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+              <GsapTextReveal className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
                 لأن العناية الحقيقية <br />
-                <span className="text-teal-700 dark:text-teal-400">تبدأ بالاستماع والتشخيص</span>
-              </h2>
+                <span className="text-teal-700 dark:text-[#00B8A9]">تبدأ بالاستماع والتشخيص</span>
+              </GsapTextReveal>
               <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-gray-300 font-medium max-w-xl">
                 في عيادات Androderma، لا نعتمد على الحلول السريعة أو القوالب الجاهزة. نمنحك وقتاً كاملاً لفهم طبيعة بشرتك، وبناء بروتوكول طبي فردي يحقق أقصى نتائج آمنة ومستدامة.
               </p>

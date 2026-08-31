@@ -12,6 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 import { faqs, clinic } from '@/data/clinicData';
 
 type FAQCategory = 'all' | 'consultation' | 'laser' | 'booking';
@@ -83,10 +84,10 @@ export function BentoFAQAccordion() {
               <HelpCircle className="h-4 w-4 text-teal-600 dark:text-teal-400" />
               <span>FREQUENTLY ASKED QUESTIONS</span>
             </div>
-            <h2 className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+            <GsapTextReveal className="text-3xl font-extrabold leading-[1.35] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
               إجابات طبية واضحة <br />
-              <span className="text-teal-700 dark:text-teal-400">عن كل ما يدور في ذهنك</span>
-            </h2>
+              <span className="text-teal-700 dark:text-[#00B8A9]">عن كل ما يدور في ذهنك</span>
+            </GsapTextReveal>
             <p className="mt-3 max-w-xl text-sm sm:text-base font-medium leading-relaxed text-slate-600 dark:text-gray-300">
               اختر التصنيف للاطلاع على تفاصيل الاستشارات، أجهزة الليزر، وتسهيلات الحجز في كافة فروعنا.
             </p>

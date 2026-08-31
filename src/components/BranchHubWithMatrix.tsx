@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { branches, clinic } from '@/data/clinicData';
 import { BookingButton } from '@/components/BookingModal';
+import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 
 interface BranchHubWithMatrixProps {
   onBookBranch: (branchId: string) => void;
@@ -129,9 +130,9 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
             <Building2 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
             <span>نظام الفروع الأربعة وتناوب العيادات</span>
           </div>
-          <h2 className="text-3xl font-extrabold leading-[1.4] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
-            فروعنا الأربعة <span className="text-teal-700 dark:text-teal-400">في خدمتك أسبوعياً</span>
-          </h2>
+          <GsapTextReveal className="text-3xl font-extrabold leading-[1.4] text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+            فروعنا الأربعة <span className="text-teal-700 dark:text-[#00B8A9]">في خدمتك أسبوعياً</span>
+          </GsapTextReveal>
           <p className="mt-3 text-sm sm:text-base font-medium leading-relaxed text-slate-600 dark:text-gray-300 max-w-2xl">
             مواعيد منظمة تضمن تواجد د. أحمد زغلول شخصياً لتقديم الاستشارات وإجراء الجلسات في فروع القاهرة والجيزة
           </p>

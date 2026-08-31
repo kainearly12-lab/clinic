@@ -14,6 +14,7 @@ import { LuxuryFooter } from '@/components/LuxuryFooter';
 import { SplashScreen } from '@/components/SplashScreen';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 import { BookingButton, BookingModal } from '@/components/BookingModal';
+import { LiveAvailabilityBadge } from '@/components/ui/LiveAvailabilityBadge';
 import { DoctorCard3D } from '@/components/DoctorCard3D';
 import { ServicesGrid } from '@/components/ServicesGrid';
 import { TreatmentJourneyTimeline } from '@/components/TreatmentJourneyTimeline';
@@ -93,14 +94,24 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
             جلدية، ليزر وتجميل طبي — بخطة مخصصة لكل حالة، في فروعنا بالقاهرة والجيزة.
           </motion.p>
 
-          {/* Action CTAs */}
+          {/* Live Availability Micro-Badge Floating Directly Above CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.52, duration: 0.6 }}
+            className="mt-7 flex items-center"
+          >
+            <LiveAvailabilityBadge count={3} branchName="التجمع" />
+          </motion.div>
+
+          {/* Action CTAs with Magnetic Physics */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.58, duration: 0.7 }}
-            className="mt-8 flex flex-wrap items-center gap-3.5"
+            className="mt-4 flex flex-wrap items-center gap-3.5"
           >
-            {/* Primary CTA */}
+            {/* Primary Magnetic CTA */}
             <BookingButton
               onClick={onBook}
               className="py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800"
@@ -115,7 +126,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
               className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600"
             >
               <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              <span>🧴 اكتشف الخدمة المناسبة لك</span>
+              <span>🧴 فحص البشرة 3D التفاعلي</span>
             </button>
           </motion.div>
 
