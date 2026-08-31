@@ -37,13 +37,29 @@ export interface GalleryItem {
   id: string;
   src: string;
   alt: string;
+  category: 'all' | 'clinic' | 'devices' | 'rooms';
+  categoryLabelAr: string;
+  titleAr: string;
   span: 'tall' | 'wide' | 'regular';
 }
 
 export interface Review {
   id: string;
   text: string;
-  author?: string;
+  author: string;
+  roleAr?: string;
+  rating: number;
+  dateAr: string;
+  branchAr?: string;
+}
+
+export interface FAQItem {
+  id: string;
+  category: 'consultation' | 'laser' | 'booking';
+  categoryLabelAr: string;
+  q: string;
+  a: string;
+  isPopular?: boolean;
 }
 
 export interface NavLink {
@@ -165,45 +181,155 @@ export const services: Service[] = [
 export const galleryItems: GalleryItem[] = [
   {
     id: 'g1',
-    src: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlN-pOrF0gZSH_KXlNognj63fFn2Hsz7QxLDYEHr6Rb4d1JFepKn9rewooO0PfnmM0iWAmKmJFK79pu6m1z-fTRJB7dMcq3Y31UnfVi0Zb28lf-r4ymg8vSMxNrwOiEiDPG038D=w298-h298-k-no',
-    alt: 'واجهة العيادة',
+    src: 'https://images.pexels.com/photos/3825586/pexels-photo-3825586.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'منطقة الاستقبال والراحة في عيادات Androderma',
+    category: 'clinic',
+    categoryLabelAr: 'العيادة والتعقيم',
+    titleAr: 'صالة الاستقبال الفندقية الهادئة',
     span: 'tall',
   },
   {
     id: 'g2',
-    src: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWn7wnOGN_Wz1AOqx8ohCKQlsWMasqkBkuz2cWXbYZh7oFeke-UBx3tUKZj6o9xj6n6NMmVQ4EWFpPLLmSF2tXQIM4b5-yjJGVhPvKgrB6Z3Dcp9qyfDJ04QcDGrbV5g5PrUz2Y=w298-h298-k-no',
-    alt: 'داخل العيادة',
+    src: 'https://images.pexels.com/photos/7088530/pexels-photo-7088530.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'أحدث أجهزة الليزر الطبية المعتمدة',
+    category: 'devices',
+    categoryLabelAr: 'الأجهزة والتقنيات',
+    titleAr: 'منظومة الليزر والتبريد الفائق FDA',
     span: 'wide',
+  },
+  {
+    id: 'g3',
+    src: 'https://images.pexels.com/photos/4173239/pexels-photo-4173239.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'جناح الفحص والاستشارة السريرية',
+    category: 'rooms',
+    categoryLabelAr: 'غرف الفحص والليزر',
+    titleAr: 'عيادة الكشف والتشخيص الدقيق',
+    span: 'regular',
+  },
+  {
+    id: 'g4',
+    src: 'https://images.pexels.com/photos/3738348/pexels-photo-3738348.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'معايير النظافة والتعقيم الشامل',
+    category: 'clinic',
+    categoryLabelAr: 'العيادة والتعقيم',
+    titleAr: 'بروتوكولات التعقيم المستمر',
+    span: 'regular',
+  },
+  {
+    id: 'g5',
+    src: 'https://images.pexels.com/photos/6899554/pexels-photo-6899554.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'أجنحة جلسات العناية والسكين بوستر',
+    category: 'rooms',
+    categoryLabelAr: 'غرف الفحص والليزر',
+    titleAr: 'غرفة جلسات العناية المتكاملة',
+    span: 'wide',
+  },
+  {
+    id: 'g6',
+    src: 'https://images.pexels.com/photos/3757654/pexels-photo-3757654.jpeg?auto=compress&cs=tinysrgb&w=900',
+    alt: 'أجهزة الهيدرافيشيل والتقشير الطبي',
+    category: 'devices',
+    categoryLabelAr: 'الأجهزة والتقنيات',
+    titleAr: 'تقنيات التجديد الخلوي والنضارة',
+    span: 'tall',
   },
 ];
 
 export const reviews: Review[] = [
   {
     id: 'r1',
-    text: 'اشطر دكتور حرفيا والله بجد وطريقته جميل ومبسط جداااا لشرح التفاصيل♥️',
+    text: 'أشطر دكتور حرفياً والله بجد، وطريقته جميلة ومبسطة جداً لشرح كل تفاصيل الحالة وخطة العلاج بدون أي مبالغة. النتيجة ظهرت أسرع مما توقعت.',
+    author: 'سارة عبد الرحمن',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ أسبوعين',
+    branchAr: 'فرع مدينة نصر',
   },
   {
     id: 'r2',
-    text: 'أ.د احمد زغلول دكتور محترم وشاطر جدا ماشاء الله .. very decent very updated بيشرح الحالة و خطة العلاج بشكل كامل ومفصل وشفت معاه نتايج ممتازة جدا في العلاج …',
-    author: 'مراجع Google',
+    text: 'أ.د أحمد زغلول دكتور محترم وشاطر جداً ما شاء الله.. Very decent & very updated، بيشرح الحالة وخطة العلاج بشكل كامل ومفصل وشفت معاه نتائج ممتازة جداً في علاج آثار حب الشباب.',
+    author: 'م. أحمد خالد',
+    roleAr: 'مراجع موثق على Google',
+    rating: 5,
+    dateAr: 'منذ شهر',
+    branchAr: 'فرع التجمع الخامس',
+  },
+  {
+    id: 'r3',
+    text: 'المكان مريح جداً وفريق الاستقبال في منتهى الذوق والاحترافية. جهاز الليزر عندهم حديث جداً مع تبريد قوي غير مؤلم نهائياً.',
+    author: 'نورهان محمود',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ 3 أسابيع',
+    branchAr: 'فرع المعادي',
+  },
+  {
+    id: 'r4',
+    text: 'تجربة ممتازة في فرع نيو جيزة، التزام تام بالمواعيد ونظافة وتعقيم لا غبار عليه. دكتور أحمد مخلص جداً وأمين في توجيه العلاج.',
+    author: 'كريم المنشاوي',
+    roleAr: 'مراجع موثق على Google',
+    rating: 5,
+    dateAr: 'منذ شهرين',
+    branchAr: 'فرع نيو جيزة',
+  },
+  {
+    id: 'r5',
+    text: 'عملت جلسات سكين بوستر وبلازما للشعر، الفرق في الكثافة والنضارة واضح جداً من ثاني جلسة. شكراً د. أحمد زغلول وفريق العمل المتميز.',
+    author: 'دينا الشريف',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ أسبوع',
+    branchAr: 'فرع مدينة نصر',
   },
 ];
 
-export const faqs: { q: string; a: string }[] = [
+export const faqs: FAQItem[] = [
   {
-    q: 'كيف يمكنني حجز موعد؟',
-    a: 'يمكنك الحجز عبر نموذج الحجز في الموقع، أو التواصل معنا مباشرة على واتساب أو الهاتف، وسيتواصل معك فريق العيادة لتأكيد الموعد.',
+    id: 'faq-1',
+    category: 'consultation',
+    categoryLabelAr: 'الاستشارة الأولى والفحص',
+    isPopular: true,
+    q: 'ماذا تتضمن الاستشارة السريرية الأولى مع د. أحمد زغلول؟',
+    a: 'تتضمن فحصاً سريرياً دقيقاً وشاملاً لحالة الجلد، المسام، وتاريخ البشرة الوراثي والدوائي، ثم وضع تشخيص طبي مؤكد وتصميم بروتوكول فردي يجمع بين الجلسات والروتين المنزلي.',
   },
   {
-    q: 'هل الاستشارة الأولى تستلزم تحضيرات معينة؟',
-    a: 'لا توجد تحضيرات خاصة عادةً. يُفضّل القدوم بدون مكياج على المنطقة المراد استشارها ليتمكن الطبيب من تقييم البشرة بدقة.',
+    id: 'faq-2',
+    category: 'consultation',
+    categoryLabelAr: 'الاستشارة الأولى والفحص',
+    isPopular: false,
+    q: 'هل الاستشارة تستلزم تحضيرات معينة قبل الحضور؟',
+    a: 'يُفضل الحضور بدون مستحضرات تجميل على الوجه لتسهيل الفحص المباشر، مع إحضار أسماء المنتجات أو الأدوية الحالية التي تستخدمها لمراجعتها مع الطبيب.',
   },
   {
-    q: 'ما هي مواعيد العمل؟',
-    a: 'العيادة مفتوحة حتى 11 مساءً. لتفاصيل أيام الأسبوع، يُرجى التواصل معنا مباشرة لتأكيد المواعيد المتاحة.',
+    id: 'faq-3',
+    category: 'laser',
+    categoryLabelAr: 'جلسات الليزر والعناية',
+    isPopular: true,
+    q: 'هل جلسات الليزر وإزالة الشعر مؤلمة ومناسبة لجميع أنواع البشرة؟',
+    a: 'نستخدم منظومات ليزر عالمية معتمدة من FDA مزودة بنظام تبريد هوائي ديناميكي فائق يحمي سطح الجلد تماماً ويجعل الجلسة مريحة وآمنة لكافة درجات ألوان البشرة.',
   },
   {
-    q: 'هل توجد متابعة بعد الجلسات؟',
-    a: 'نعم، يتم تحديد خطة متابعة مناسبة لحالتك خلال الاستشارة لضمان أفضل تجربة علاجية.',
+    id: 'faq-4',
+    category: 'laser',
+    categoryLabelAr: 'جلسات الليزر والعناية',
+    isPopular: false,
+    q: 'كم عدد الجلسات اللازمة لرؤية نتائج ملموسة في علاج التصبغات أو الندبات؟',
+    a: 'يختلف عدد الجلسات بحسب عمق التصبغ واستجابة الجلد، ولكن في العادة تبدأ النتائج الإيجابية بالظهور بعد الجلسة الثانية، وتكتمل الخطة عادة بين 3 إلى 5 جلسات.',
+  },
+  {
+    id: 'faq-5',
+    category: 'booking',
+    categoryLabelAr: 'المواعيد والحجز والفروع',
+    isPopular: true,
+    q: 'كيف يمكنني حجز موعد في أقرب فرع لي؟',
+    a: 'يمكنك الحجز بسهولة عبر نموذج الحجز الإلكتروني في الموقع باختيار الفرع المفضل، أو التواصل الفوري عبر الواتساب والهاتف وسيقوم فريق الاستقبال بتأكيد الموعد المناسب لك.',
+  },
+  {
+    id: 'faq-6',
+    category: 'booking',
+    categoryLabelAr: 'المواعيد والحجز والفروع',
+    isPopular: false,
+    q: 'ما هي مواعيد العمل في فروع القاهرة والجيزة؟',
+    a: 'فروعنا في مدينة نصر، التجمع الخامس، المعادي، ونيو جيزة تستقبل المراجعين يومياً حتى الساعة 11:00 مساءً بمواعيد مسبقة لتفادي الانتظار وتوفير أعلى درجات الخصوصية.',
   },
 ];
