@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, Sun, Moon } from 'lucide-react';
+import { Menu, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
 import { LogoMark } from './LogoMark';
 import { MobileMenu } from './MobileMenu';
@@ -8,28 +8,74 @@ import { BookingModal } from './BookingModal';
 import { TopScrollProgressBar } from './TopScrollProgressBar';
 import { useTheme } from '@/context/ThemeContext';
 
-export function Header() {
+interface HeaderProps {
+  activeTab?: 'home' | 'diagnostic';
+  onSelectTab?: (tab: 'home' | 'diagnostic', targetAnchor?: string) => void;
+  onOpenBooking?: () => void;
+}
+
+export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [active, setActive] = useState('home');
+  const [activeSection, setActiveSection] = useState('home');
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    const ids = navLinks.map((l) => l.id);
+    if (activeTab === 'diagnostic') {
+      setActiveSection('diagnostic-quiz');
+      return;
+    }
+
+    const ids = navLinks.filter((l) => l.id !== 'diagnostic-quiz').map((l) => l.id);
     const sections = ids
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) setActive(e.target.id);
+          if (e.isIntersecting) setActiveSection(e.target.id);
         });
       },
       { rootMargin: '-30% 0px -50% 0px' },
     );
     sections.forEach((s) => observer.observe(s));
     return () => observer.disconnect();
-  }, []);
+  }, [activeTab]);
+
+  const handleNavClick = (e: React.MouseEvent, linkId: string, href: string) => {
+    e.preventDefault();
+    if (linkId === 'diagnostic-quiz') {
+      if (onSelectTab) {
+        onSelectTab('diagnostic');
+      } else {
+        const el = document.getElementById('diagnostic-quiz');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
+    if (activeTab === 'diagnostic') {
+      if (onSelectTab) {
+        onSelectTab('home', linkId);
+      }
+    } else {
+      const el = document.getElementById(linkId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.location.hash = href;
+      }
+    }
+  };
+
+  const handleOpenBookingModal = () => {
+    if (onOpenBooking) {
+      onOpenBooking();
+    } else {
+      setBookingOpen(true);
+    }
+  };
 
   return (
     <>
@@ -40,39 +86,56 @@ export function Header() {
         className="fixed top-2.5 sm:top-4 inset-x-0 z-50 px-3 sm:px-6 pointer-events-none"
       >
         <div className="mx-auto max-w-7xl w-full pointer-events-auto">
-          {/* Main Ultra-Transparent Glassmorphic Container matching Floating Light Glass Dock */}
-          <div className="relative overflow-hidden backdrop-blur-xl bg-white/80 dark:bg-[#12141a]/85 border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-xl rounded-2xl sm:rounded-full transition-all duration-300">
+          {/* Glassmorphism Luxury Floating Header */}
+          <div className="relative overflow-hidden backdrop-blur-xl bg-slate-900/50 dark:bg-slate-900/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300 hover:border-[#00B8A9]/50 hover:shadow-[0_0_20px_rgba(0,184,169,0.2)] text-white">
             
-            <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+            <div className="flex items-center justify-between">
               {/* Brand Logo & Name */}
-              <a href="#home" className="group flex items-center gap-3" aria-label={clinic.name}>
+              <button
+                type="button"
+                onClick={(e) => handleNavClick(e, 'home', '#home')}
+                className="group flex items-center gap-3 text-right focus:outline-hidden"
+                aria-label={clinic.name}
+              >
                 <LogoMark size="sm" />
                 <div className="flex flex-col">
-                  <span className="font-display font-black text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
+                  <span className="font-display font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-[#00B8A9] transition-colors">
                     عيادات Androderma
                   </span>
-                  <span className="hidden sm:block text-[10px] font-bold tracking-wider text-teal-700 dark:text-teal-400">
+                  <span className="hidden sm:block text-[10px] font-bold tracking-wider text-teal-300">
                     عناية متقدمة بالجلدية والليزر
                   </span>
                 </div>
-              </a>
+              </button>
 
               {/* Desktop Navigation Links */}
-              <nav className="hidden lg:flex items-center gap-1 bg-slate-100/70 dark:bg-charcoal-800/60 p-1 rounded-full border border-slate-200/60 dark:border-white/10">
+              <nav className="hidden lg:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
                 {navLinks.map((link) => {
-                  const isActive = active === link.id;
+                  const isCurrent =
+                    activeTab === 'diagnostic'
+                      ? link.id === 'diagnostic-quiz'
+                      : activeSection === link.id;
+
                   return (
-                    <a
+                    <button
                       key={link.id}
-                      href={link.href}
-                      className={`relative rounded-full px-4 py-1.5 text-sm font-bold transition-all duration-200 ${
-                        isActive
-                          ? 'text-white bg-teal-700 dark:bg-teal-600 shadow-xs'
-                          : 'text-slate-700 dark:text-gray-200 hover:text-teal-800 dark:hover:text-white hover:bg-white/80 dark:hover:bg-white/10'
+                      type="button"
+                      onClick={(e) => handleNavClick(e, link.id, link.href)}
+                      className={`relative rounded-full px-3.5 py-1.5 text-xs xl:text-sm font-bold transition-all duration-200 ${
+                        isCurrent
+                          ? 'text-white bg-[#00B8A9] shadow-[0_0_12px_rgba(0,184,169,0.4)]'
+                          : 'text-gray-200 hover:text-white hover:bg-white/10'
                       }`}
                     >
-                      {link.labelAr}
-                    </a>
+                      {link.id === 'diagnostic-quiz' ? (
+                        <span className="flex items-center gap-1">
+                          <Stethoscope className="h-3.5 w-3.5" />
+                          <span>{link.labelAr}</span>
+                        </span>
+                      ) : (
+                        link.labelAr
+                      )}
+                    </button>
                   );
                 })}
               </nav>
@@ -81,30 +144,33 @@ export function Header() {
               <div className="flex items-center gap-2">
                 {/* Dark / Light Mode Toggle Button */}
                 <button
+                  type="button"
                   onClick={toggleTheme}
                   aria-label={theme === 'dark' ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
-                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-slate-200/90 dark:border-gray-700/50 bg-white/90 dark:bg-gray-800/70 text-slate-800 dark:text-yellow-300 shadow-xs transition-all duration-300 hover:scale-105 hover:bg-white dark:hover:bg-gray-800"
+                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all duration-300 hover:scale-105 hover:bg-white/20 hover:border-[#00B8A9]/40"
                 >
                   {theme === 'dark' ? (
                     <Sun className="h-4.5 w-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
                   ) : (
-                    <Moon className="h-4.5 w-4.5 text-slate-700 transition-transform duration-300 hover:-rotate-12" />
+                    <Moon className="h-4.5 w-4.5 text-teal-300 transition-transform duration-300 hover:-rotate-12" />
                   )}
                 </button>
 
                 {/* Primary Booking Button */}
                 <button
-                  onClick={() => setBookingOpen(true)}
-                  className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+                  type="button"
+                  onClick={handleOpenBookingModal}
+                  className="btn-primary py-2 px-4 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] hover:-translate-y-0.5 transition-all duration-300"
                 >
                   احجز كشفك الآن
                 </button>
 
                 {/* Mobile Hamburger Menu */}
                 <button
+                  type="button"
                   onClick={() => setMenuOpen(true)}
                   aria-label="القائمة الرئيسية"
-                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-slate-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800 text-slate-900 dark:text-white shadow-xs transition-all hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden"
+                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all hover:bg-white/20 lg:hidden"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
@@ -120,7 +186,15 @@ export function Header() {
         </div>
       </motion.header>
 
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} active={active} />
+      <MobileMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        active={activeTab === 'diagnostic' ? 'diagnostic-quiz' : activeSection}
+        onSelectTab={(tab, anchor) => {
+          setMenuOpen(false);
+          if (onSelectTab) onSelectTab(tab, anchor);
+        }}
+      />
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
   );

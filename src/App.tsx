@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CalendarDays,
   MapPin,
@@ -7,6 +7,7 @@ import {
   Sparkles,
   Star,
   ChevronDown,
+  Stethoscope,
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LuxuryFooter } from '@/components/LuxuryFooter';
@@ -20,7 +21,6 @@ import { SkinDiagnosticQuiz } from '@/components/SkinDiagnosticQuiz';
 import { BranchHubWithMatrix } from '@/components/BranchHubWithMatrix';
 import { AnimatedStatsBar } from '@/components/AnimatedStatsBar';
 import { MedicalPhilosophyBento } from '@/components/MedicalPhilosophyBento';
-import { InteractiveBentoGallery } from '@/components/InteractiveBentoGallery';
 import { GoogleReviewsMarquee } from '@/components/GoogleReviewsMarquee';
 import { BentoFAQAccordion } from '@/components/BentoFAQAccordion';
 import { clinic } from '@/data/clinicData';
@@ -28,17 +28,12 @@ import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
-function Hero({ onBook }: { onBook: () => void }) {
-  const scrollToDiagnostic = () => {
-    const el = document.getElementById('diagnostic-quiz');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      const servicesEl = document.getElementById('services');
-      if (servicesEl) servicesEl.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+interface HeroProps {
+  onBook: () => void;
+  onOpenDiagnostic: () => void;
+}
 
+function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
   const scrollToServices = () => {
     const el = document.getElementById('services');
     if (el) {
@@ -113,11 +108,13 @@ function Hero({ onBook }: { onBook: () => void }) {
               احجز كشفك الآن
             </BookingButton>
 
-            {/* Secondary Discovery CTA */}
+            {/* Secondary Discovery CTA - Navigates to dedicated Skin Diagnostic Quiz Tab */}
             <button
-              onClick={scrollToDiagnostic}
-              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md"
+              type="button"
+              onClick={onOpenDiagnostic}
+              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600"
             >
+              <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
               <span>🧴 اكتشف الخدمة المناسبة لك</span>
             </button>
           </motion.div>
@@ -134,7 +131,7 @@ function Hero({ onBook }: { onBook: () => void }) {
             </span>
             <span className="hidden h-3.5 w-px bg-slate-300 dark:bg-gray-700 sm:inline-block" />
             <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-gray-300">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 3.9 • 54 تقييم على Google
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.7 • 54 تقييم على Google
             </span>
           </motion.div>
         </div>
@@ -187,12 +184,44 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 }
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic'>('home');
   const [bookingOpen, setBookingOpen] = useState(false);
   const [initialService, setInitialService] = useState('');
   const [initialBranch, setInitialBranch] = useState('');
 
   // Initialize Lenis smooth momentum scroll
   useSmoothScroll();
+
+  // Listen to hash changes if someone navigates with #diagnostic-quiz
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#diagnostic-quiz') {
+        setActiveTab('diagnostic');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleSelectTab = (tab: 'home' | 'diagnostic', targetAnchor?: string) => {
+    setActiveTab(tab);
+    if (tab === 'diagnostic') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (targetAnchor) {
+      setTimeout(() => {
+        const el = document.getElementById(targetAnchor);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const handleOpenBooking = (serviceName = '', branchId = '') => {
     setInitialService(serviceName);
@@ -203,19 +232,51 @@ function App() {
   return (
     <div className="overflow-hidden bg-[#F8FAF9] dark:bg-[#0c0e12] text-slate-900 dark:text-gray-100 min-h-screen">
       <SplashScreen />
-      <Header />
+      <Header
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        onOpenBooking={() => handleOpenBooking()}
+      />
+
       <main>
-        <Hero onBook={() => handleOpenBooking()} />
-        <AnimatedStatsBar />
-        <ServicesGrid onBookService={(serviceName) => handleOpenBooking(serviceName)} />
-        <TreatmentJourneyTimeline onBook={() => handleOpenBooking()} />
-        <SkinDiagnosticQuiz onBook={(svc) => handleOpenBooking(svc)} />
-        <MedicalPhilosophyBento />
-        <InteractiveBentoGallery />
-        <GoogleReviewsMarquee />
-        <BentoFAQAccordion />
-        <BranchHubWithMatrix onBookBranch={(branchId) => handleOpenBooking('', branchId)} />
+        <AnimatePresence mode="wait">
+          {activeTab === 'diagnostic' ? (
+            <motion.div
+              key="diagnostic-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.35 }}
+            >
+              <SkinDiagnosticQuiz
+                onBook={(svc) => handleOpenBooking(svc)}
+                onBackToHome={() => handleSelectTab('home')}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="home-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+            >
+              <Hero
+                onBook={() => handleOpenBooking()}
+                onOpenDiagnostic={() => handleSelectTab('diagnostic')}
+              />
+              <AnimatedStatsBar />
+              <ServicesGrid onBookService={(serviceName) => handleOpenBooking(serviceName)} />
+              <TreatmentJourneyTimeline onBook={() => handleOpenBooking()} />
+              <MedicalPhilosophyBento />
+              <GoogleReviewsMarquee />
+              <BentoFAQAccordion />
+              <BranchHubWithMatrix onBookBranch={(branchId) => handleOpenBooking('', branchId)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
+
       <LuxuryFooter />
       <ScrollToTopButton />
       {/* Strict note: No floating WhatsApp corner button */}

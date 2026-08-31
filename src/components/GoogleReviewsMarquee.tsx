@@ -1,29 +1,24 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Star, MessageSquareQuote, CheckCircle2 } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
 import { reviews, clinic } from '@/data/clinicData';
 
 export function GoogleReviewsMarquee() {
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Duplicate reviews array to create seamless infinite loop marquee
-  const marqueeItems = [...reviews, ...reviews, ...reviews];
+  // Quadruple review list so 1st half (16 items) and 2nd half (16 items) are perfectly identical
+  const marqueeCards = [...reviews, ...reviews, ...reviews, ...reviews];
 
   return (
     <section
       id="reviews"
-      className="relative overflow-hidden bg-white/80 dark:bg-[#121419] py-24 sm:py-32 transition-colors duration-300 border-y border-slate-200/80 dark:border-gray-800/80"
+      className="relative overflow-hidden bg-white/80 dark:bg-[#121419] py-20 sm:py-28 transition-colors duration-300 border-b border-slate-200/80 dark:border-gray-800/80"
     >
-      {/* Background Glows */}
+      {/* Background Ambient Glows */}
       <div className="pointer-events-none absolute -left-20 top-1/3 h-80 w-80 rounded-full bg-teal-400/10 dark:bg-teal-500/5 blur-[120px]" />
       <div className="pointer-events-none absolute -right-20 bottom-1/3 h-80 w-80 rounded-full bg-amber-400/10 dark:bg-amber-500/5 blur-[120px]" />
 
       <div className="container-px mx-auto max-w-7xl">
-        
         {/* Section Header with Google Summary Badge */}
         <Reveal>
-          <div className="mb-14 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div className="text-right">
               <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-700/50 px-3.5 py-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 shadow-xs mb-3">
                 <MessageSquareQuote className="h-4 w-4 text-teal-600 dark:text-teal-400" />
@@ -36,20 +31,39 @@ export function GoogleReviewsMarquee() {
             </div>
 
             {/* Google Rating Overview Glass Box */}
-            <div className="flex items-center gap-4 rounded-2xl bg-white dark:bg-[#181b22] border border-slate-200/90 dark:border-gray-800 p-4 shadow-sm">
+            <div className="flex items-center gap-4 rounded-2xl bg-white/95 dark:bg-[#181b24]/95 border border-[#00B8A9]/40 p-4 shadow-[0_0_15px_rgba(0,184,169,0.15)]">
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-slate-900 dark:text-white font-sans">
                   {clinic.rating.toFixed(1)}
                 </span>
-                <div className="mt-1 flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={`h-3.5 w-3.5 ${
-                        s <= 4 ? 'fill-amber-400 text-amber-400' : 'fill-amber-400/30 text-amber-400/30'
-                      }`}
-                    />
-                  ))}
+                <div className="mt-1 flex gap-0.5" title="تقييم 4.7 من 5 نجوم">
+                  {[1, 2, 3, 4, 5].map((s) => {
+                    if (s <= 4) {
+                      return (
+                        <Star
+                          key={s}
+                          className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
+                        />
+                      );
+                    }
+                    if (s === 5) {
+                      // 4.7 Rating -> 70% filled star for the 5th star
+                      return (
+                        <div key={s} className="relative h-3.5 w-3.5">
+                          <Star className="absolute inset-0 h-3.5 w-3.5 fill-slate-200 text-slate-300 dark:fill-gray-700 dark:text-gray-600" />
+                          <div className="absolute inset-0 overflow-hidden w-[70%]">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Star
+                        key={s}
+                        className="h-3.5 w-3.5 fill-slate-200 text-slate-300 dark:fill-gray-700 dark:text-gray-600"
+                      />
+                    );
+                  })}
                 </div>
               </div>
               <div className="h-10 w-px bg-slate-200 dark:bg-gray-800" />
@@ -80,81 +94,70 @@ export function GoogleReviewsMarquee() {
                 </span>
               </div>
             </div>
-
           </div>
         </Reveal>
       </div>
 
-      {/* Infinite Moving Marquee Slider (Smooth Auto-Scrolling with Pause on Hover) */}
-      <div
-        className="relative w-full overflow-hidden py-4"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
+      {/* Infinite Zero-Gap Moving Marquee Slider (Smooth Continuous Auto-Scrolling with Pause on Hover) */}
+      <div className="relative w-full overflow-hidden py-4">
         {/* Left & Right Soft Blur Fade Edges */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 sm:w-32 bg-gradient-to-r from-white dark:from-[#121419] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 sm:w-32 bg-gradient-to-l from-white dark:from-[#121419] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 sm:w-36 bg-gradient-to-r from-white dark:from-[#121419] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 sm:w-36 bg-gradient-to-l from-white dark:from-[#121419] to-transparent" />
 
-        <motion.div
-          animate={{ x: isPaused ? undefined : ['0%', '-50%'] }}
-          transition={{
-            repeat: Infinity,
-            ease: 'linear',
-            duration: 35,
-          }}
-          className="flex w-max gap-6 px-4"
-        >
-          {marqueeItems.map((review, idx) => (
-            <div
-              key={`${review.id}-${idx}`}
-              className="w-[340px] sm:w-[420px] shrink-0 rounded-3xl bg-white/95 dark:bg-[#181b24]/95 border border-slate-200/90 dark:border-gray-800 p-6 sm:p-7 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:border-teal-500/50 hover:shadow-xl hover:-translate-y-1.5 text-right flex flex-col justify-between"
-            >
-              <div>
-                {/* Card Header: Google Badge & Stars */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="grid h-6 w-6 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-black text-xs font-sans">
-                      G
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-gray-400">
-                      {review.branchAr ?? 'عيادات Androderma'}
-                    </span>
+        <div dir="ltr" className="w-full overflow-hidden">
+          <div className="flex w-max gap-6 pr-6 animate-marquee-infinite hover:[animation-play-state:paused]">
+            {marqueeCards.map((review, idx) => (
+              <div
+                key={`rev-card-${review.id}-${idx}`}
+                dir="rtl"
+                className="w-[340px] sm:w-[420px] shrink-0 rounded-3xl bg-white/90 dark:bg-[#181b24]/90 backdrop-blur-md border border-[#00B8A9]/40 hover:border-[#00B8A9] p-6 sm:p-7 shadow-[0_0_15px_rgba(0,184,169,0.15)] hover:shadow-[0_0_25px_rgba(0,184,169,0.25)] hover:-translate-y-1.5 transition-all duration-300 text-right flex flex-col justify-between select-none"
+              >
+                <div>
+                  {/* Card Header: Google Badge & Stars */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-black text-xs font-sans">
+                        G
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-gray-400">
+                        {review.branchAr ?? 'عيادات Androderma'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
+                  {/* Review Body */}
+                  <p className="text-sm sm:text-base font-medium text-slate-800 dark:text-gray-200 leading-relaxed">
+                    "{review.text}"
+                  </p>
                 </div>
 
-                {/* Review Body */}
-                <p className="text-sm sm:text-base font-medium text-slate-800 dark:text-gray-200 leading-relaxed">
-                  "{review.text}"
-                </p>
-              </div>
+                {/* Card Footer: Patient Name & Verification */}
+                <div className="mt-6 flex items-center justify-between border-t border-slate-100 dark:border-gray-800/80 pt-4">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                      {review.author}
+                    </h4>
+                    <span className="text-[10px] sm:text-[11px] font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>{review.roleAr ?? 'مراجعة موثقة'}</span>
+                    </span>
+                  </div>
 
-              {/* Card Footer: Patient Name & Verification */}
-              <div className="mt-6 flex items-center justify-between border-t border-slate-100 dark:border-gray-800/80 pt-4">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
-                    {review.author}
-                  </h4>
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>{review.roleAr ?? 'مراجعة موثقة'}</span>
+                  <span className="text-[10px] font-medium text-slate-600 dark:text-gray-400">
+                    {review.dateAr}
                   </span>
                 </div>
-
-                <span className="text-[10px] font-medium text-slate-600 dark:text-gray-400">
-                  {review.dateAr}
-                </span>
               </div>
-            </div>
-          ))}
-        </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
-
     </section>
   );
 }

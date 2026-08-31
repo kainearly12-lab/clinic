@@ -41,7 +41,7 @@ export function LuxuryFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-sage-600 hover:text-white hover:border-sage-500 shadow-sm"
+                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
                 >
                   <Instagram className="h-4 w-4" />
                 </a>
@@ -50,7 +50,7 @@ export function LuxuryFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-sage-600 hover:text-white hover:border-sage-500 shadow-sm"
+                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
                 >
                   <Facebook className="h-4 w-4" />
                 </a>
@@ -59,20 +59,48 @@ export function LuxuryFooter() {
               <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
                 <a
                   href={`tel:${clinic.phone}`}
-                  className="inline-flex items-center gap-1.5 hover:text-sage-300 transition-colors"
+                  className="inline-flex items-center gap-1.5 hover:text-teal-300 transition-colors"
                 >
-                  <Phone className="h-3.5 w-3.5 text-sage-400" />
+                  <Phone className="h-3.5 w-3.5 text-teal-400" />
                   <span dir="ltr">{clinic.phoneDisplay}</span>
                 </a>
                 <span className="text-white/20">•</span>
                 <a
                   href={`mailto:${clinic.email}`}
-                  className="inline-flex items-center gap-1.5 hover:text-sage-300 transition-colors"
+                  className="inline-flex items-center gap-1.5 hover:text-teal-300 transition-colors"
                 >
-                  <Mail className="h-3.5 w-3.5 text-sage-400" />
+                  <Mail className="h-3.5 w-3.5 text-teal-400" />
                   {clinic.email}
                 </a>
               </div>
+            </div>
+
+            {/* Official Booking Channels: Vezeeta Integration */}
+            <div className="pt-3 border-t border-white/10">
+              <span className="block text-[11px] font-bold text-gray-400 mb-2">
+                قنوات الحجز المعتمدة عبر المنصات الطبية:
+              </span>
+              <a
+                href="https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-[#0070CD]/15 border border-white/15 hover:border-[#0070CD]/50 transition-all duration-300 shadow-sm hover:shadow-[0_0_20px_rgba(0,112,205,0.2)]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-xl bg-[#0070CD] flex items-center justify-center text-white font-bold text-xs shadow-xs">
+                    V
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-xs font-black text-white group-hover:text-[#60a5fa] transition-colors">
+                      احجز كشفك عبر منصة فيزيتا (Vezeeta)
+                    </span>
+                    <span className="block text-[10px] text-gray-400">
+                      تقييمات معتمدة ومواعيد مؤكدة فورياً
+                    </span>
+                  </div>
+                </div>
+                <ArrowUpLeft className="h-4 w-4 text-[#60a5fa] transition-transform duration-300 group-hover:-translate-x-1 group-hover:-translate-y-0.5" />
+              </a>
             </div>
           </div>
 

@@ -10,11 +10,13 @@ import {
   ShieldCheck,
   Stethoscope,
   Info,
+  ArrowRight,
 } from 'lucide-react';
 import { clinic } from '@/data/clinicData';
 
 interface SkinDiagnosticQuizProps {
   onBook: (serviceName: string) => void;
+  onBackToHome?: () => void;
 }
 
 interface ConcernOption {
@@ -161,7 +163,7 @@ const durationOptions = [
   },
 ];
 
-export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
+export function SkinDiagnosticQuiz({ onBook, onBackToHome }: SkinDiagnosticQuizProps) {
   const [step, setStep] = useState<number>(1);
   const [selectedConcern, setSelectedConcern] = useState<string>('acne');
   const [selectedDuration, setSelectedDuration] = useState<string>('medium');
@@ -182,44 +184,62 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
   return (
     <section
       id="diagnostic-quiz"
-      className="relative overflow-hidden bg-gradient-to-b from-[#F8FAF9] via-[#F0FDF4]/30 to-[#F8FAF9] dark:from-[#0c0e12] dark:via-[#11161d] dark:to-[#0c0e12] py-24 sm:py-32 border-b border-slate-200/80 dark:border-gray-800/80 transition-colors duration-300"
+      className="relative min-h-[85vh] overflow-hidden bg-gradient-to-b from-[#F8FAF9] via-[#F0FDF4]/40 to-[#F8FAF9] dark:from-[#0c0e12] dark:via-[#11161d] dark:to-[#0c0e12] pt-28 pb-16 sm:pt-36 sm:pb-24 transition-colors duration-300"
     >
       {/* Ambient background glows */}
       <div className="pointer-events-none absolute -left-20 top-1/4 h-80 w-80 rounded-full bg-teal-400/10 dark:bg-teal-500/10 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 bottom-1/4 h-80 w-80 rounded-full bg-emerald-400/10 dark:bg-emerald-500/10 blur-[100px]" />
 
-      <div className="container-px relative mx-auto max-w-5xl">
+      <div className="container-px relative mx-auto max-w-4xl">
+        {/* Navigation Breadcrumb / Back Button */}
+        {onBackToHome && (
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-800/80 px-4 py-2 text-xs font-bold text-slate-700 dark:text-gray-200 border border-slate-200 dark:border-white/10 shadow-xs hover:border-[#00B8A9] hover:text-[#00B8A9] transition-all"
+            >
+              <ArrowRight className="h-4 w-4" />
+              <span>العودة إلى الصفحة الرئيسية</span>
+            </button>
+
+            <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400">
+              تبويب تقييم البشرة المخصص
+            </span>
+          </div>
+        )}
+
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-700/50 px-3.5 py-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 shadow-xs mb-4">
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-700/50 px-3.5 py-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 shadow-xs mb-3">
             <Sparkles className="h-4 w-4 text-teal-600 dark:text-teal-400 animate-spin-slow" />
             <span>أداة تقييم البشرة والجلدية الذكية</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-[1.35]">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white leading-[1.3]">
             اكتشف الخطة العلاجية <span className="text-teal-700 dark:text-teal-400">الأنسب لبشرتك</span>
-          </h2>
-          <p className="mt-3 text-sm sm:text-base font-medium text-slate-600 dark:text-gray-300 leading-relaxed">
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-300 leading-relaxed">
             أجب عن سؤالين سريعين للحصول على التوصية الطبية والبروتوكول الأنسب لحالتك مع د. أحمد زغلول
           </p>
 
-          {/* Progress Indicators */}
-          <div className="flex items-center justify-center gap-3 mt-8">
+          {/* Compact Progress Indicators */}
+          <div className="flex items-center justify-center gap-2.5 mt-6">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center gap-2">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
                     step === s
-                      ? 'bg-teal-700 text-white shadow-md scale-110'
+                      ? 'bg-teal-700 text-white shadow-md scale-105'
                       : step > s
                       ? 'bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300'
                       : 'bg-slate-200 dark:bg-gray-800 text-slate-500 dark:text-gray-400'
                   }`}
                 >
-                  {step > s ? <CheckCircle2 className="h-4 w-4 text-teal-700 dark:text-teal-300" /> : s}
+                  {step > s ? <CheckCircle2 className="h-3.5 w-3.5 text-teal-700 dark:text-teal-300" /> : s}
                 </div>
                 {s < 3 && (
                   <div
-                    className={`h-1 w-8 sm:w-12 rounded-full transition-colors duration-300 ${
+                    className={`h-0.5 w-6 sm:w-10 rounded-full transition-colors duration-300 ${
                       step > s ? 'bg-teal-600' : 'bg-slate-200 dark:bg-gray-800'
                     }`}
                   />
@@ -227,15 +247,15 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
               </div>
             ))}
           </div>
-          <p className="text-xs font-bold text-teal-800 dark:text-teal-400 mt-2">
+          <p className="text-[11px] font-bold text-teal-800 dark:text-teal-400 mt-2">
             {step === 1 && 'الخطوة 1 من 3: تحديد المشكلة الأساسية'}
             {step === 2 && 'الخطوة 2 من 3: مدة ظهور المشكلة'}
             {step === 3 && 'الخطوة 3 من 3: التوصية والبروتوكول الطبي المقترح'}
           </p>
         </div>
 
-        {/* Multi-Step Card Box */}
-        <div className="relative rounded-[2.25rem] bg-white/95 dark:bg-[#151922]/95 border border-teal-900/10 dark:border-white/10 p-5 sm:p-9 lg:p-12 shadow-xl backdrop-blur-xl transition-all duration-500">
+        {/* Compact Multi-Step Card Box */}
+        <div className="relative rounded-3xl bg-white/95 dark:bg-[#151922]/95 border border-teal-900/10 dark:border-white/10 p-5 sm:p-7 lg:p-8 shadow-xl backdrop-blur-xl transition-all duration-500">
           <AnimatePresence mode="wait">
             {/* STEP 1: CONCERN SELECTION */}
             {step === 1 && (
@@ -244,23 +264,23 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.35 }}
-                className="space-y-6"
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
               >
                 <div className="text-right">
-                  <span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
                     السؤال الأول
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                     ما أكثر مشكلة تزعجك في بشرتك أو شعرك؟
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 font-medium">
+                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-0.5 font-medium">
                     اختر المشكلة الرئيسية ليتم توجيه التشخيص بأعلى دقة
                   </p>
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 pt-1">
                   {concernOptions.map((opt) => {
                     const isSelected = selectedConcern === opt.id;
                     return (
@@ -268,16 +288,16 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                         key={opt.id}
                         type="button"
                         onClick={() => setSelectedConcern(opt.id)}
-                        className={`group relative flex flex-col justify-between rounded-2xl p-4 sm:p-5 text-right transition-all duration-300 border ${
+                        className={`group relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 text-right transition-all duration-300 border ${
                           isSelected
-                            ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.02] ring-2 ring-teal-500/20'
+                            ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.01] ring-2 ring-teal-500/20'
                             : 'bg-white dark:bg-[#1a202c]/60 border-slate-200/90 dark:border-gray-800/80 hover:border-teal-500/50 hover:bg-slate-50/80 dark:hover:bg-[#1e2533]'
                         }`}
                       >
                         <div className="flex items-start justify-between">
-                          <span className="text-2xl">{opt.emoji}</span>
+                          <span className="text-xl">{opt.emoji}</span>
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
                               isSelected
                                 ? 'bg-teal-700 text-white'
                                 : 'bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300'
@@ -286,17 +306,17 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                             {opt.categoryTag}
                           </span>
                         </div>
-                        <div className="mt-4">
-                          <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-relaxed">
+                        <div className="mt-2.5">
+                          <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
                             {opt.title}
                           </h4>
-                          <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">
+                          <p className="text-[11px] text-slate-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">
                             {opt.subtitle}
                           </p>
                         </div>
                         {isSelected && (
-                          <div className="mt-3 flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-400">
-                            <CheckCircle2 className="h-4 w-4" />
+                          <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-teal-700 dark:text-teal-400">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                             <span>تم الاختيار</span>
                           </div>
                         )}
@@ -306,11 +326,11 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-gray-800/80">
+                <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-gray-800/80">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="btn-primary py-3 px-7 text-sm font-bold shadow-md hover:shadow-lg gap-2"
+                    className="btn-primary py-2.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg gap-2"
                   >
                     <span>المتابعة للسؤال التالي</span>
                     <ChevronLeft className="h-4 w-4" />
@@ -326,22 +346,22 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.35 }}
-                className="space-y-6"
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
               >
                 <div className="text-right">
-                  <span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
                     السؤال الثاني
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                     منذ متى تعاني من هذه المشكلة؟
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 font-medium">
+                  <p className="text-xs text-slate-600 dark:text-gray-400 mt-0.5 font-medium">
                     المدة الزمنية تساعد في تقدير عدد الجلسات والبروتوكول العلاجي المناسب
                   </p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3 pt-2">
+                <div className="grid gap-3 sm:grid-cols-3 pt-1">
                   {durationOptions.map((d) => {
                     const isSelected = selectedDuration === d.id;
                     return (
@@ -349,15 +369,15 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                         key={d.id}
                         type="button"
                         onClick={() => setSelectedDuration(d.id)}
-                        className={`group relative flex flex-col justify-between rounded-2xl p-5 text-right transition-all duration-300 border ${
+                        className={`group relative flex flex-col justify-between rounded-2xl p-4 text-right transition-all duration-300 border ${
                           isSelected
-                            ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.02] ring-2 ring-teal-500/20'
+                            ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-600 dark:border-teal-500 shadow-md scale-[1.01] ring-2 ring-teal-500/20'
                             : 'bg-white dark:bg-[#1a202c]/60 border-slate-200/90 dark:border-gray-800/80 hover:border-teal-500/50 hover:bg-slate-50/80 dark:hover:bg-[#1e2533]'
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-black text-slate-900 dark:text-white">
+                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
                               {d.title}
                             </span>
                             <span
@@ -370,11 +390,11 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                               {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed font-medium">
+                          <p className="text-[11px] text-slate-600 dark:text-gray-400 mt-1.5 leading-relaxed font-medium">
                             {d.desc}
                           </p>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-gray-800/80 text-[11px] font-bold text-teal-800 dark:text-teal-300">
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-gray-800/80 text-[10px] font-bold text-teal-800 dark:text-teal-300">
                           {d.tag}
                         </div>
                       </button>
@@ -383,11 +403,11 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-gray-800/80">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-gray-800/80">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="btn-secondary py-2.5 px-5 text-xs font-bold gap-1.5"
+                    className="btn-secondary py-2 px-4 text-xs font-bold gap-1.5"
                   >
                     <ChevronRight className="h-4 w-4" />
                     <span>الرجوع للخطوة السابقة</span>
@@ -396,9 +416,9 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="btn-primary py-3 px-7 text-sm font-bold shadow-md hover:shadow-lg gap-2"
+                    className="btn-primary py-2.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg gap-2"
                   >
-                    <span>عرض التوصية الطبية والبروتوكول</span>
+                    <span>عرض التوصية والبروتوكول</span>
                     <Sparkles className="h-4 w-4" />
                   </button>
                 </div>
@@ -409,72 +429,72 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
             {step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, scale: 0.96 }}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.4 }}
-                className="space-y-6 text-right"
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.35 }}
+                className="space-y-5 text-right"
               >
                 {/* Result Header Badge */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800/80 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-teal-700 text-white shadow-sm">
-                      <Stethoscope className="h-5 w-5" />
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800/80 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-9 w-9 place-items-center rounded-xl bg-teal-700 text-white shadow-sm">
+                      <Stethoscope className="h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
                         التوصية الطبية المخصصة
                       </span>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                        بإشراف: د. أحمد زغلول
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        بإشراف: أ.د. أحمد زغلول
                       </h3>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300/60 dark:border-emerald-700/50 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                    <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300/60 dark:border-emerald-700/50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>تشخيص سريري موثوق</span>
                   </div>
                 </div>
 
                 {/* Primary Recommendation Card */}
-                <div className="rounded-2xl border border-teal-900/10 dark:border-teal-500/30 bg-gradient-to-br from-teal-50/80 via-white to-slate-50 dark:from-[#131b22] dark:via-[#161d27] dark:to-[#12161f] p-6 sm:p-8 shadow-sm">
-                  <span className="inline-block rounded-lg bg-teal-700 px-3 py-1 text-xs font-bold text-white mb-3">
+                <div className="rounded-2xl border border-teal-900/10 dark:border-teal-500/30 bg-gradient-to-br from-teal-50/70 via-white to-slate-50 dark:from-[#131b22] dark:via-[#161d27] dark:to-[#12161f] p-5 sm:p-6 shadow-xs">
+                  <span className="inline-block rounded-md bg-teal-700 px-2.5 py-0.5 text-[10px] font-bold text-white mb-2">
                     الخدمة الموصى بها لحالتك
                   </span>
 
-                  <h4 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-relaxed">
+                  <h4 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-relaxed">
                     {currentConcernObj.recommendation.serviceName}
                   </h4>
 
-                  <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-gray-300 font-medium">
+                  <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-gray-300 font-medium">
                     {currentConcernObj.recommendation.description}
                   </p>
 
-                  <div className="mt-6 grid gap-4 sm:grid-cols-3 border-t border-slate-200/80 dark:border-gray-800 pt-5 text-xs">
-                    <div className="rounded-xl bg-white/90 dark:bg-[#1a202c] p-3.5 border border-slate-200/70 dark:border-gray-700/60">
-                      <span className="block text-[10px] font-bold text-slate-500 dark:text-gray-400 mb-1">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3 border-t border-slate-200/70 dark:border-gray-800 pt-4 text-xs">
+                    <div className="rounded-xl bg-white/90 dark:bg-[#1a202c] p-3 border border-slate-200/70 dark:border-gray-700/60">
+                      <span className="block text-[10px] font-bold text-slate-500 dark:text-gray-400 mb-0.5">
                         البروتوكول العلاجي
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-gray-100">
+                      <span className="font-bold text-slate-800 dark:text-gray-100 text-[11px]">
                         {currentConcernObj.recommendation.protocol}
                       </span>
                     </div>
 
-                    <div className="rounded-xl bg-white/90 dark:bg-[#1a202c] p-3.5 border border-slate-200/70 dark:border-gray-700/60">
-                      <span className="block text-[10px] font-bold text-slate-500 dark:text-gray-400 mb-1">
+                    <div className="rounded-xl bg-white/90 dark:bg-[#1a202c] p-3 border border-slate-200/70 dark:border-gray-700/60">
+                      <span className="block text-[10px] font-bold text-slate-500 dark:text-gray-400 mb-0.5">
                         الجلسات المتوقعة
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-gray-100">
+                      <span className="font-bold text-slate-800 dark:text-gray-100 text-[11px]">
                         {currentConcernObj.recommendation.sessions}
                       </span>
                     </div>
 
-                    <div className="rounded-xl bg-teal-50 dark:bg-teal-950/70 p-3.5 border border-teal-300/60 dark:border-teal-700/50">
-                      <span className="block text-[10px] font-bold text-teal-800 dark:text-teal-300 mb-1">
+                    <div className="rounded-xl bg-teal-50 dark:bg-teal-950/70 p-3 border border-teal-300/60 dark:border-teal-700/50">
+                      <span className="block text-[10px] font-bold text-teal-800 dark:text-teal-300 mb-0.5">
                         التكلفة التقديرية (بالجنيه)
                       </span>
-                      <span className="font-extrabold text-teal-950 dark:text-teal-200">
+                      <span className="font-extrabold text-teal-950 dark:text-teal-200 text-[11px]">
                         {currentConcernObj.recommendation.estimatedPrice}
                       </span>
                     </div>
@@ -482,38 +502,38 @@ export function SkinDiagnosticQuiz({ onBook }: SkinDiagnosticQuizProps) {
                 </div>
 
                 {/* Important Clinical Notice */}
-                <div className="flex items-start gap-2.5 rounded-xl bg-slate-50 dark:bg-[#181d26] p-3.5 border border-slate-200/80 dark:border-gray-800 text-xs font-medium text-slate-600 dark:text-gray-300">
-                  <Info className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 rounded-xl bg-slate-50 dark:bg-[#181d26] p-3 border border-slate-200/80 dark:border-gray-800 text-[11px] font-medium text-slate-600 dark:text-gray-300">
+                  <Info className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
                     هذا التقييم يعتبر تقديراً استرشادياً أولياً؛ ويتم تأكيد الخطة العلاجية وعدد الجلسات بدقة متناهية أثناء جلسة الكشف السريري مع د. أحمد زغلول.
                   </p>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
                     onClick={handleRestart}
-                    className="btn-secondary py-2.5 px-4 text-xs font-bold gap-1.5"
+                    className="btn-secondary py-2 px-3.5 text-xs font-bold gap-1.5"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    <span>إعادة التقييم لاختيار آخر</span>
+                    <span>إعادة التقييم</span>
                   </button>
 
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <a
                       href={waServiceLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-secondary py-3 px-5 text-xs sm:text-sm font-bold text-teal-800 dark:text-teal-300"
+                      className="btn-secondary py-2.5 px-4 text-xs font-bold text-teal-800 dark:text-teal-300"
                     >
-                      استفسار سريع على واتساب
+                      استفسار على واتساب
                     </a>
 
                     <button
                       type="button"
                       onClick={() => onBook(currentConcernObj.recommendation.serviceName)}
-                      className="btn-primary py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800 gap-2"
+                      className="btn-primary py-2.5 px-5 text-xs sm:text-sm font-black shadow-md hover:shadow-lg gap-2"
                     >
                       <CalendarDays className="h-4 w-4" />
                       <span>احجز استشارتك لهذه الخدمة</span>

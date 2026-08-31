@@ -13,7 +13,7 @@ export function MedicalPhilosophyBento() {
   return (
     <section
       id="about"
-      className="relative overflow-hidden bg-white/80 dark:bg-[#0e1014] py-24 sm:py-32 transition-colors duration-300 border-y border-slate-200/80 dark:border-gray-800/80"
+      className="relative overflow-hidden bg-white/80 dark:bg-[#0e1014] py-20 sm:py-28 transition-colors duration-300 border-b border-slate-200/80 dark:border-gray-800/80"
     >
       {/* Soft Ambient Light Blobs */}
       <div className="pointer-events-none absolute -right-24 top-1/4 h-96 w-96 rounded-full bg-teal-400/10 dark:bg-teal-500/5 blur-[120px]" />

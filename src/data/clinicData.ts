@@ -128,7 +128,7 @@ export const clinic: Clinic = {
   addressAr: '12 شارع أبو داوود الظاهري متفرع من شارع مكرم عبيد، مدينة نصر، القاهرة',
   plusCode: '3962+GG',
   mapsUrl: 'https://maps.app.goo.gl/4RqWp38sa7P9zvji9',
-  rating: 3.9,
+  rating: 4.7,
   reviewsCount: 54,
   closingNote: 'مفتوح — يغلق 11 مساءً',
 };
@@ -138,7 +138,6 @@ export const navLinks: NavLink[] = [
   { id: 'services', labelAr: 'الخدمات المتقدمة', href: '#services' },
   { id: 'treatment-journey', labelAr: 'رحلة العلاج', href: '#treatment-journey' },
   { id: 'diagnostic-quiz', labelAr: 'تقييم البشرة', href: '#diagnostic-quiz' },
-  { id: 'about', labelAr: 'عن العيادة', href: '#about' },
   { id: 'reviews', labelAr: 'التقييمات', href: '#reviews' },
   { id: 'contact', labelAr: 'الفروع والمواعيد', href: '#contact' },
 ];
@@ -236,6 +235,33 @@ export const galleryItems: GalleryItem[] = [
 ];
 
 export const reviews: Review[] = [
+  {
+    id: 'r-gihad',
+    text: 'لقد حظيت بتجربة رائعة في هذه العيادة. شرح الطبيب كل شيء بوضوح وجعلني أشعر بالراحة. أوصي بشدة بهذا المكان.',
+    author: 'Gihad',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ 8 أشهر',
+    branchAr: 'عيادات Androderma',
+  },
+  {
+    id: 'r-shery',
+    text: 'عيادة وموظفون موثوق بهم للغاية',
+    author: 'Shery Safwat',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ 10 أشهر',
+    branchAr: 'عيادات Androderma',
+  },
+  {
+    id: 'r-aya',
+    text: 'دكتور محترم جدا و اسلوب التعامل راقي جدا من افضل عيادات الجلدية و الليزر في مصر',
+    author: 'Aya Mahmoud',
+    roleAr: 'مراجعة موثقة على Google',
+    rating: 5,
+    dateAr: 'منذ 10 أشهر',
+    branchAr: 'عيادات Androderma',
+  },
   {
     id: 'r1',
     text: 'أشطر دكتور حرفياً والله بجد، وطريقته جميلة ومبسطة جداً لشرح كل تفاصيل الحالة وخطة العلاج بدون أي مبالغة. النتيجة ظهرت أسرع مما توقعت.',
