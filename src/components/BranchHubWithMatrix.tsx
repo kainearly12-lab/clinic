@@ -15,6 +15,8 @@ import {
 import { branches, clinic } from '@/data/clinicData';
 import { BookingButton } from '@/components/BookingModal';
 import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
+import { useTodaySchedule } from '@/hooks/useSchedule';
+import { getBranchWhatsAppNumber, validateBookingDate } from '@/services/bookingValidationService';
 
 interface BranchHubWithMatrixProps {
   onBookBranch: (branchId: string) => void;
@@ -91,16 +93,29 @@ const weeklyRotationSchedule: DaySchedule[] = [
 ];
 
 export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) {
+  const { schedule } = useTodaySchedule();
+
   // Get current day of week (0-6)
   const currentDayIndex = useMemo(() => new Date().getDay(), []);
 
-  // Today's schedule
+  // Today's schedule with exception awareness
   const todaySchedule = useMemo(() => {
+    if (schedule?.activeBranch) {
+      return {
+        dayIndex: schedule.dayOfWeek,
+        dayNameAr: schedule.dayNameAr,
+        dayNameEn: schedule.dayNameEn,
+        branchId: schedule.activeBranch.id,
+        branchNameAr: schedule.activeBranch.nameAr,
+        hoursAr: schedule.todayWorkingHours.formattedAr,
+        isSpecialDay: schedule.todayWorkingHours.isSpecialHours,
+      };
+    }
     return (
       weeklyRotationSchedule.find((s) => s.dayIndex === currentDayIndex) ||
       weeklyRotationSchedule[0]
     );
-  }, [currentDayIndex]);
+  }, [schedule, currentDayIndex]);
 
   // Active selected branch for the detailed card
   const [activeBranchId, setActiveBranchId] = useState<string>(
@@ -110,9 +125,30 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
   const currentBranch =
     branches.find((b) => b.id === activeBranchId) || branches[0];
 
-  const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(
+  const targetWhatsApp = getBranchWhatsAppNumber(currentBranch.id);
+
+  const waLink = `https://wa.me/${targetWhatsApp}?text=${encodeURIComponent(
     `مرحبًا عيادات Androderma، أرغب بالاستفسار عن حجز كشف مع د. أحمد زغلول بفرع (${currentBranch.nameAr})`
   )}`;
+
+  const handleWhatsAppBranchClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If today is an active holiday, prevent WhatsApp generation and alert user
+    if (schedule?.status?.isHoliday) {
+      e.preventDefault();
+      alert('عذراً، العيادة مغلقة في هذا اليوم');
+      return;
+    }
+
+    try {
+      const validation = await validateBookingDate(new Date(), currentBranch.id);
+      if (validation.isHoliday || !validation.isValid) {
+        e.preventDefault();
+        alert('عذراً، العيادة مغلقة في هذا اليوم');
+      }
+    } catch {
+      // Proceed gracefully
+    }
+  };
 
   return (
     <section
@@ -393,6 +429,7 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
                 </BookingButton>
                 <a
                   href={waLink}
+                  onClick={handleWhatsAppBranchClick}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-secondary"

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Check, ChevronLeft, Clock3, Sparkles } from 'lucide-react';
+import { AlertCircle, Check, ChevronLeft, Clock3, Sparkles } from 'lucide-react';
 import { branches } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
 import { MagneticButton } from './ui/MagneticButton';
+import { generateWhatsAppBookingUrl, validateBookingDate } from '@/services/bookingValidationService';
 
 interface BookingModalProps {
   open: boolean;
@@ -10,14 +11,6 @@ interface BookingModalProps {
   initialService?: string;
   initialBranch?: string;
 }
-
-// Branch WhatsApp routing configuration
-const branchWhatsAppNumbers: Record<string, string> = {
-  'nasr-city': '201154021247',
-  'fifth-settlement': '201223371075',
-  'maadi': '201154021249',
-  'new-giza': '201154021248',
-};
 
 export function BookingModal({ open, onClose, initialService = '', initialBranch = '' }: BookingModalProps) {
   const [submitted, setSubmitted] = useState(false);
@@ -27,42 +20,88 @@ export function BookingModal({ open, onClose, initialService = '', initialBranch
   const [preferredDateTime, setPreferredDateTime] = useState('');
   const [notes, setNotes] = useState('');
   const [branch, setBranch] = useState(initialBranch || branches[0]?.id || 'nasr-city');
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   // Synchronize when initialService or initialBranch changes
   useEffect(() => {
     if (open) {
       if (initialService) setService(initialService);
       if (initialBranch) setBranch(initialBranch);
+      setValidationError(null);
     }
   }, [open, initialService, initialBranch]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const selectedBranchObj = branches.find((b) => b.id === branch) || branches[0];
-    const targetWhatsAppNumber = branchWhatsAppNumbers[branch] || '201154021247';
-
-    // Construct clean Arabic WhatsApp message
-    const messageLines = [
-      'مرحبًا عيادات Androderma، أرغب في حجز موعد استشارة:',
-      `📍 الفرع المطلوب: ${selectedBranchObj.nameAr} (${selectedBranchObj.cityAr})`,
-      `👤 الاسم: ${name.trim()}`,
-      `📞 الهاتف: ${phone.trim()}`,
-      `✨ نوع الخدمة: ${service.trim() || 'استشارة عامة'}`,
-      `🗓️ الموعد المفضل: ${preferredDateTime.trim() || 'أقرب موعد متاح'}`,
-    ];
-
-    if (notes.trim()) {
-      messageLines.push(`📝 ملاحظات إضافية: ${notes.trim()}`);
+  // Real-time validation when preferredDateTime changes
+  useEffect(() => {
+    if (!preferredDateTime.trim()) {
+      setValidationError(null);
+      return;
     }
 
-    const fullMessage = messageLines.join('\n');
-    const waUrl = `https://wa.me/${targetWhatsAppNumber}?text=${encodeURIComponent(fullMessage)}`;
+    let isSubscribed = true;
+    const timer = setTimeout(async () => {
+      try {
+        const validation = await validateBookingDate(preferredDateTime, branch);
+        if (isSubscribed) {
+          if (validation.isHoliday || !validation.isValid) {
+            setValidationError(validation.errorMessageAr || 'عذراً، العيادة مغلقة في هذا اليوم');
+          } else {
+            setValidationError(null);
+            // If branch swap detected, update branch selection automatically
+            if (validation.isBranchSwapped && validation.targetBranch) {
+              setBranch(validation.targetBranch.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Validation check error:', err);
+      }
+    }, 400);
 
-    // Open WhatsApp in new tab
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    return () => {
+      isSubscribed = false;
+      clearTimeout(timer);
+    };
+  }, [preferredDateTime, branch]);
 
-    setSubmitted(true);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setValidationError(null);
+    setIsValidating(true);
+
+    try {
+      // Validate schedule exception and generate WhatsApp URL
+      const result = await generateWhatsAppBookingUrl({
+        name,
+        phone,
+        service,
+        preferredDateTime,
+        branchId: branch,
+        notes,
+      });
+
+      // If date is marked as active holiday, strictly disable form submission and WhatsApp generation
+      if (!result.success || result.isHoliday || !result.url) {
+        setValidationError(result.errorMessageAr || 'عذراً، العيادة مغلقة في هذا اليوم');
+        setIsValidating(false);
+        return;
+      }
+
+      // If override_branch_id (branch swap) active, automatically route to replacement branch
+      if (result.isBranchSwapped && result.targetBranch) {
+        setBranch(result.targetBranch.id);
+      }
+
+      // Open WhatsApp in new tab
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Booking submission error:', err);
+      setValidationError('عذراً، العيادة مغلقة في هذا اليوم');
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleClose = () => {
@@ -74,6 +113,7 @@ export function BookingModal({ open, onClose, initialService = '', initialBranch
       setService('');
       setPreferredDateTime('');
       setNotes('');
+      setValidationError(null);
     }, 300);
   };
 
@@ -186,11 +226,32 @@ export function BookingModal({ open, onClose, initialService = '', initialBranch
                 placeholder="هل لديك أي ملاحظات أو استفسار؟"
               />
             </div>
+
+            {/* Schedule Exception Holiday Alert */}
+            {validationError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-500/50 bg-red-950/40 p-3.5 text-xs font-bold text-red-200 flex items-center gap-2.5 shadow-sm"
+              >
+                <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                <span>{validationError}</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="btn-primary mt-2 w-full py-3.5 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-teal-600 hover:bg-[#00B8A9]"
+              disabled={isValidating || Boolean(validationError)}
+              className={`btn-primary mt-2 w-full py-3.5 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-teal-600 hover:bg-[#00B8A9] ${
+                isValidating || Boolean(validationError) ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
             >
-              إرسال طلب الحجز <ChevronLeft className="h-4 w-4" />
+              {isValidating ? (
+                'جاري التحقق من المواعيد...'
+              ) : (
+                <>
+                  إرسال طلب الحجز <ChevronLeft className="h-4 w-4" />
+                </>
+              )}
             </button>
             <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-slate-400">
               <Clock3 className="h-3.5 w-3.5 text-[#00B8A9]" /> الطلب يحولك مباشرة للفرع المختار عبر واتساب
