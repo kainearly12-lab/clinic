@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Mail, Phone, X, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
-import { LogoMark } from './LogoMark';
 import { useTheme } from '@/context/ThemeContext';
 
 interface MobileMenuProps {
@@ -55,7 +54,11 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
       >
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 px-6 py-5">
           <div className="flex items-center gap-3">
-            <LogoMark size="md" />
+            <img
+              src="https://i.postimg.cc/5N8zRfpb/327194266-596823435614064-703957778024686372-n-removebg-preview.png"
+              alt={clinic.name}
+              className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(0,184,169,0.3)]"
+            />
             <div className="flex flex-col">
               <span className="font-display text-xl font-extrabold leading-tight text-slate-900 dark:text-white">عيادات Androderma</span>
               <span className="text-[10px] font-bold tracking-wider text-teal-700 dark:text-teal-400">عناية متقدمة بالجلدية والليزر</span>

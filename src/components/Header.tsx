@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Sun, Moon, Stethoscope } from 'lucide-react';
 import { navLinks, clinic } from '@/data/clinicData';
-import { LogoMark } from './LogoMark';
 import { MobileMenu } from './MobileMenu';
 import { BookingModal } from './BookingModal';
 import { TopScrollProgressBar } from './TopScrollProgressBar';
@@ -97,7 +96,12 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                 className="group flex items-center gap-3 text-right focus:outline-hidden"
                 aria-label={clinic.name}
               >
-                <LogoMark size="sm" />
+                <img
+                  src="https://i.postimg.cc/5N8zRfpb/327194266-596823435614064-703957778024686372-n-removebg-preview.png"
+                  alt={clinic.name}
+                  className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.35)]"
+                  loading="eager"
+                />
                 <div className="flex flex-col">
                   <span className="font-display font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-[#00B8A9] transition-colors">
                     عيادات Androderma
