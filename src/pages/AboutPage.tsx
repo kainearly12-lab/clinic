@@ -264,27 +264,45 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
 }
 
 /**
- * Spatial Spotlight Card with Cursor-Follow Lighting and Outlined Stroke Numbers
+ * Spatial Spotlight Card with Clinical Intelligence Animation Interactions
+ * - Staggered scroll entrance for card, icon, and number badge
+ * - Interactive hover state: vertical elevation (-6px), teal border & glow, top badge shift, icon micro-pulse, cyan number glow
+ * - Animated bottom progress line expanding across full card width
+ * - Medical light scan pass sweeping from top to bottom
+ * - Mobile touch play-once animation on viewport entry
  */
+interface SpatialSpotlightCardProps {
+  num: string;
+  title: string;
+  desc: string;
+  tag: string;
+  icon: React.ComponentType<{ className?: string }>;
+  index: number;
+}
+
 function SpatialSpotlightCard({
   num,
   title,
   desc,
   tag,
   icon: Icon,
-}: {
-  num: string;
-  title: string;
-  desc: string;
-  tag: string;
-  icon: React.ComponentType<{ className?: string }>;
-}) {
+  index,
+}: SpatialSpotlightCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: -200, y: -200 });
   const [isHovered, setIsHovered] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [mobileScanned, setMobileScanned] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsTouchDevice(hasTouch);
+    }
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (isTouchDevice || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     setMousePos({
       x: e.clientX - rect.left,
@@ -292,48 +310,155 @@ function SpatialSpotlightCard({
     });
   };
 
+  const handleMouseEnter = () => {
+    if (!isTouchDevice) {
+      setIsHovered(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isTouchDevice) {
+      setIsHovered(false);
+    }
+  };
+
+  // Trigger mobile play-once animation when entering viewport
+  const handleViewportEnter = () => {
+    if (isTouchDevice && !mobileScanned) {
+      const timer = setTimeout(() => {
+        setMobileScanned(true);
+      }, index * 120 + 250);
+      return () => clearTimeout(timer);
+    }
+  };
+
   return (
-    <div
+    <motion.div
       ref={cardRef}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      onViewportEnter={handleViewportEnter}
+      transition={{
+        duration: 0.65,
+        delay: index * 0.12,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      whileHover={!isTouchDevice ? { y: -6 } : undefined}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group relative rounded-3xl p-px overflow-hidden transition-all duration-500 bg-gradient-to-b from-white/10 via-white/5 to-transparent hover:shadow-[0_20px_50px_rgba(0,245,212,0.15)]"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`group relative rounded-3xl p-px overflow-hidden transition-all duration-400 bg-gradient-to-b from-white/10 via-white/5 to-transparent ${
+        isHovered
+          ? 'shadow-[0_20px_50px_rgba(0,245,212,0.2)] border-cyan-400/40'
+          : 'shadow-lg border-transparent'
+      }`}
+      style={{
+        transitionProperty: 'transform, box-shadow, border-color',
+        transitionDuration: '0.4s',
+        transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
     >
       {/* Dynamic Cursor Spotlight Radial Glow */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
         style={{
-          opacity: isHovered ? 1 : 0,
+          opacity: isHovered && !isTouchDevice ? 1 : 0,
           background: `radial-gradient(380px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 245, 212, 0.22), rgba(14, 165, 233, 0.08), transparent 70%)`,
         }}
       />
 
       {/* Card Content Container */}
-      <div className="relative z-10 h-full rounded-[23px] bg-[#0c1424]/90 backdrop-blur-xl p-8 flex flex-col justify-between border border-cyan-500/20 group-hover:border-[#00F5D4]/40 transition-colors">
+      <div
+        className={`relative z-10 h-full rounded-[23px] backdrop-blur-xl p-8 flex flex-col justify-between border transition-all duration-400 overflow-hidden ${
+          isHovered
+            ? 'bg-slate-900/90 border-cyan-400/40 shadow-[inset_0_0_20px_rgba(0,245,212,0.08)]'
+            : 'bg-[#0c1424]/90 border-cyan-500/20'
+        }`}
+      >
+        {/* Medical Light Scan Beam Pass */}
+        <motion.div
+          key={isHovered ? 'hover-scan' : isTouchDevice && mobileScanned ? 'mobile-scan' : 'idle'}
+          initial={{ top: '0%', opacity: 0 }}
+          animate={
+            isHovered
+              ? {
+                  top: ['0%', '100%'],
+                  opacity: [0, 0.9, 0.9, 0],
+                }
+              : isTouchDevice && mobileScanned
+              ? {
+                  top: ['0%', '100%'],
+                  opacity: [0, 0.9, 0.9, 0],
+                }
+              : { top: '0%', opacity: 0 }
+          }
+          transition={{
+            duration: 0.5,
+            ease: 'easeInOut',
+          }}
+          className="pointer-events-none absolute left-0 right-0 h-[1.5px] w-full bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent z-20 filter drop-shadow-[0_0_6px_#00F5D4]"
+        />
+
         <div>
           {/* Top Row: Icon + Massive Outlined Stroke Number */}
           <div className="flex items-start justify-between gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:scale-110 group-hover:shadow-[0_0_35px_rgba(0,245,212,0.45)] transition-all duration-300">
+            {/* Top Icon with Micro-Pulse on Hover */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{
+                delay: 0.15 + index * 0.12,
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              animate={
+                isHovered
+                  ? { scale: [1, 1.12, 1] }
+                  : isTouchDevice && mobileScanned
+                  ? { scale: [1, 1.1, 1] }
+                  : { scale: 1 }
+              }
+              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:shadow-[0_0_35px_rgba(0,245,212,0.5)] transition-shadow duration-300"
+            >
               <Icon className="h-7 w-7" />
-            </div>
+            </motion.div>
 
-            {/* Massive Outlined Stroke Number */}
-            <span
-              className="text-5xl font-black font-mono tracking-tighter text-transparent select-none transition-all duration-300 group-hover:scale-105"
+            {/* Massive Outlined Stroke Number with Cyan Glow */}
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{
+                delay: 0.18 + index * 0.12,
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="text-5xl font-black font-mono tracking-tighter text-transparent select-none transition-all duration-300"
               style={{
-                WebkitTextStroke: '1.5px #00F5D4',
-                textShadow: isHovered ? '0 0 25px rgba(0,245,212,0.5)' : 'none',
+                WebkitTextStroke: isHovered ? '1.8px #00F5D4' : '1.5px #00F5D4',
+                textShadow: isHovered
+                  ? '0 0 25px rgba(0,245,212,0.7), 0 0 45px rgba(0,245,212,0.35)'
+                  : '0 0 10px rgba(0,245,212,0.2)',
               }}
             >
               {num}
-            </span>
+            </motion.span>
           </div>
 
-          {/* Tag Capsule */}
-          <div className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
-            <Sparkles className="h-3 w-3" />
-            <span>{tag}</span>
+          {/* Tag Capsule with 2px Upward Shift on Hover */}
+          <div className="mt-6">
+            <div
+              className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1 rounded-full border transition-all duration-300 ${
+                isHovered
+                  ? 'text-[#00F5D4] bg-[#00F5D4]/15 border-[#00F5D4]/40 -translate-y-0.5 shadow-[0_0_15px_rgba(0,245,212,0.25)]'
+                  : 'text-[#00F5D4] bg-[#00F5D4]/10 border-[#00F5D4]/20 translate-y-0'
+              }`}
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>{tag}</span>
+            </div>
           </div>
 
           {/* Title */}
@@ -347,13 +472,32 @@ function SpatialSpotlightCard({
           </p>
         </div>
 
-        {/* Bottom Interactive Glow Accent */}
-        <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-white transition-colors">
-          <span>معايير إكلينيكية معتمدة</span>
-          <div className="h-2 w-2 rounded-full bg-[#00F5D4] group-hover:shadow-[0_0_12px_#00F5D4] transition-shadow" />
+        {/* Bottom Section with Animated Progress Line */}
+        <div className="mt-6 pt-5 border-t border-white/10">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-white transition-colors mb-3">
+            <span>معايير إكلينيكية معتمدة</span>
+            <div
+              className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                isHovered
+                  ? 'bg-[#00F5D4] shadow-[0_0_14px_#00F5D4] scale-125'
+                  : 'bg-[#00F5D4]/80'
+              }`}
+            />
+          </div>
+
+          {/* Animated Bottom Progress Line (Expands across full width on hover) */}
+          <div className="w-full h-[2px] rounded-full bg-white/5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#00F5D4] via-teal-300 to-cyan-400 transition-all duration-500 ease-out"
+              style={{
+                width: isHovered || (isTouchDevice && mobileScanned) ? '100%' : '24px',
+                boxShadow: isHovered ? '0 0 10px rgba(0,245,212,0.6)' : 'none',
+              }}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1101,6 +1245,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               title="الدقة في الفحص"
               desc="تقييم سريري تفصيلي لطبقات الجلد وتحديد المسببات الجذرية قبل الشروع في أي جلسة أو إجراء تجميلي."
               icon={Microscope}
+              index={0}
             />
 
             <SpatialSpotlightCard
@@ -1109,6 +1254,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               title="الأمان الطبي أولاً"
               desc="أحدث أجهزة الليزر العالمية المعتمدة والمزودة بأنظمة تبريد ذكية لحماية البشرة من التصبغات والآثار الجانبية."
               icon={ShieldCheck}
+              index={1}
             />
 
             <SpatialSpotlightCard
@@ -1117,6 +1263,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               title="بروتوكول مخصص"
               desc="خطة علاجية تُفصل خصيصاً وفقاً لدرجة تحسس بشرتك ونمط حياتك وتطلعاتك الواقعية دون باقات تجارية عامة."
               icon={HeartHandshake}
+              index={2}
             />
 
             <SpatialSpotlightCard
@@ -1125,6 +1272,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               title="متابعة دورية مستمرة"
               desc="رعاية إكلينيكية لا تنتهي بانتهاء الجلسة، بل تشمل بروتوكولات المتابعة المنزلية لضمان استقرار وتطور النتائج."
               icon={Activity}
+              index={3}
             />
           </div>
         </div>
