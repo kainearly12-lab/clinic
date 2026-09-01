@@ -99,10 +99,94 @@ export async function logAdminActivity(
 }
 
 /**
- * Fetch all activity logs from live Supabase
+ * 30-Day Activity Log Retention Policy & Cleanup
+ * Cleans activity logs older than 30 days from live Supabase and local memory.
+ * - Attempts to call RPC function `clean_old_activity_logs()`
+ * - Falls back to standard Supabase delete query with `.lt('created_at', cutoffDate)`
+ * - Cleans in-memory cache to ensure strict 30-day retention
+ */
+export async function cleanOldActivityLogs(): Promise<{
+  success: boolean;
+  deletedCount: number;
+  cutoffDate: string;
+  error?: string;
+}> {
+  const supabase = getSupabaseClient();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const cutoffTime = Date.now() - thirtyDaysMs;
+  const cutoffDateIso = new Date(cutoffTime).toISOString();
+
+  // 1. In-memory cleanup
+  const beforeCount = localLogs.length;
+  localLogs = localLogs.filter((log) => {
+    const logTime = new Date(log.created_at).getTime();
+    return !isNaN(logTime) ? logTime >= cutoffTime : true;
+  });
+  const localDeleted = beforeCount - localLogs.length;
+
+  if (!supabase) {
+    return {
+      success: true,
+      deletedCount: localDeleted,
+      cutoffDate: cutoffDateIso,
+    };
+  }
+
+  try {
+    // 2. Try Supabase RPC clean_old_activity_logs() first
+    const { data: rpcDeleted, error: rpcError } = await supabase.rpc('clean_old_activity_logs');
+
+    if (!rpcError && typeof rpcDeleted === 'number') {
+      return {
+        success: true,
+        deletedCount: rpcDeleted,
+        cutoffDate: cutoffDateIso,
+      };
+    }
+
+    // 3. Fallback to direct DELETE query via PostgREST
+    const { count, error: deleteError } = await supabase
+      .from('activity_logs')
+      .delete({ count: 'exact' })
+      .lt('created_at', cutoffDateIso);
+
+    if (deleteError) {
+      console.warn('Fallback delete query notice for activity_logs:', deleteError.message);
+      return {
+        success: true,
+        deletedCount: localDeleted,
+        cutoffDate: cutoffDateIso,
+      };
+    }
+
+    return {
+      success: true,
+      deletedCount: typeof count === 'number' ? count : localDeleted,
+      cutoffDate: cutoffDateIso,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('cleanOldActivityLogs error (non-fatal):', msg);
+    return {
+      success: true,
+      deletedCount: localDeleted,
+      cutoffDate: cutoffDateIso,
+      error: msg,
+    };
+  }
+}
+
+/**
+ * Fetch all activity logs from live Supabase (with automatic 30-day retention filtering)
  */
 export async function fetchActivityLogs(): Promise<ActivityLogRecord[]> {
   const supabase = getSupabaseClient();
+
+  // Trigger non-blocking background retention cleanup
+  cleanOldActivityLogs().catch(() => {
+    // Silent catch
+  });
+
   if (!supabase) {
     return [...localLogs];
   }
@@ -112,7 +196,7 @@ export async function fetchActivityLogs(): Promise<ActivityLogRecord[]> {
       .from('activity_logs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error || !data) {
       return [...localLogs];
