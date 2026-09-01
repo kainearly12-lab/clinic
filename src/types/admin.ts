@@ -25,7 +25,7 @@ export interface SiteSettingsRecord {
 }
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
-export type PaymentStatus = 'paid' | 'unpaid' | 'partial';
+export type PaymentStatus = 'paid' | 'unpaid' | 'partial' | 'pending' | 'معلق';
 export type VisitType =
   | 'كشف جديد'
   | 'استشارة ومتابعة'
@@ -46,6 +46,8 @@ export interface AppointmentRecord {
   status: AppointmentStatus;
   payment_status: PaymentStatus;
   amount: number; // in EGP
+  payment_screenshot_url?: string | null;
+  payment_method?: 'vodafone_cash' | 'instapay' | 'cash' | string;
   notes?: string | null;
   medical_notes?: string | null; // Doctor's preliminary diagnosis, prescription, or clinical plan
   created_at: string;

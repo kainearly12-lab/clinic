@@ -84,10 +84,12 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
     }
 
     const formatted: AppointmentRecord[] = data.map((item) => {
-      // Parse service, visit_type and medical_notes from notes or columns
+      // Parse service, visit_type, medical_notes, payment_screenshot_url and payment_method from notes or columns
       let parsedService = 'كشف جلدية وليزر';
       let parsedVisitType = item.visit_type || 'كشف جديد';
       let parsedMedicalNotes = item.medical_notes || null;
+      let parsedScreenshotUrl = item.payment_screenshot_url || item.screenshot_url || null;
+      let parsedPaymentMethod = item.payment_method || null;
       const rawNotes = item.notes || '';
 
       if (rawNotes.includes('[خدمة:')) {
@@ -99,13 +101,27 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
       if (rawNotes.includes('[تشخيص:')) {
         parsedMedicalNotes = rawNotes.split('[تشخيص:')[1]?.split(']')[0]?.trim() || parsedMedicalNotes;
       }
+      if (rawNotes.includes('[إيصال:')) {
+        parsedScreenshotUrl = rawNotes.split('[إيصال:')[1]?.split(']')[0]?.trim() || parsedScreenshotUrl;
+      }
+      if (rawNotes.includes('[وسيلة:')) {
+        parsedPaymentMethod = rawNotes.split('[وسيلة:')[1]?.split(']')[0]?.trim() || parsedPaymentMethod;
+      }
 
       // Clean raw notes from tags for display
       const displayNotes = rawNotes
         .replace(/\[خدمة:[^\]]*\]/g, '')
         .replace(/\[نوع:[^\]]*\]/g, '')
         .replace(/\[تشخيص:[^\]]*\]/g, '')
+        .replace(/\[إيصال:[^\]]*\]/g, '')
+        .replace(/\[وسيلة:[^\]]*\]/g, '')
         .trim();
+
+      // Normalize payment status
+      let rawPaymentStatus = item.payment_status;
+      if (rawPaymentStatus === 'pending' || rawPaymentStatus === 'معلق' || rawPaymentStatus === 'unconfirmed') {
+        rawPaymentStatus = 'معلق';
+      }
 
       return {
         id: item.id,
@@ -117,9 +133,11 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         branch_name_ar: getBranchArabicName(item.branch_id || 'nasr-city'),
         appointment_date: item.appointment_date || new Date().toISOString().split('T')[0],
         appointment_time: formatSqlTimeToArabic(item.appointment_time),
-        status: (item.status as AppointmentStatus) || 'confirmed',
-        payment_status: (item.payment_status as PaymentStatus) || 'unpaid',
-        amount: item.amount_paid || 0,
+        status: (item.status as AppointmentStatus) || 'pending',
+        payment_status: (rawPaymentStatus as PaymentStatus) || 'معلق',
+        amount: item.amount_paid || item.amount || 0,
+        payment_screenshot_url: parsedScreenshotUrl,
+        payment_method: parsedPaymentMethod,
         notes: displayNotes || null,
         medical_notes: parsedMedicalNotes,
         created_at: item.created_at || new Date().toISOString(),
@@ -153,9 +171,11 @@ export async function createAppointment(
     branch_name_ar: branchName,
     appointment_date: payload.appointment_date,
     appointment_time: payload.appointment_time || '05:00 مساءً',
-    status: payload.status || 'confirmed',
-    payment_status: payload.payment_status || 'unpaid',
+    status: payload.status || 'pending',
+    payment_status: payload.payment_status || 'معلق',
     amount: Number(payload.amount) || 0,
+    payment_screenshot_url: payload.payment_screenshot_url || null,
+    payment_method: payload.payment_method || 'vodafone_cash',
     notes: payload.notes || null,
     medical_notes: payload.medical_notes || null,
     created_at: new Date().toISOString(),
@@ -165,7 +185,7 @@ export async function createAppointment(
 
   await logAdminActivity(
     'booking_created',
-    `تم تسجيل حجز جديد (${newAppointment.visit_type || 'كشف'}) للمريض ${newAppointment.patient_name} (${newAppointment.service_name}) في ${branchName}`,
+    `تم تسجيل حجز جديد (${newAppointment.visit_type || 'كشف'}) للمريض ${newAppointment.patient_name} (${newAppointment.service_name}) في ${branchName} - حالة الدفع: ${newAppointment.payment_status}`,
     'appointment',
     newAppointment.id
   );
@@ -193,6 +213,8 @@ export async function createAppointment(
     if (payload.service_name) tags.push(`[خدمة: ${payload.service_name}]`);
     if (payload.visit_type) tags.push(`[نوع: ${payload.visit_type}]`);
     if (payload.medical_notes) tags.push(`[تشخيص: ${payload.medical_notes}]`);
+    if (payload.payment_screenshot_url) tags.push(`[إيصال: ${payload.payment_screenshot_url}]`);
+    if (payload.payment_method) tags.push(`[وسيلة: ${payload.payment_method}]`);
     const plainNotes = payload.notes ? payload.notes.trim() : '';
     const notePayload = [...tags, plainNotes].filter(Boolean).join(' ').trim() || null;
 
@@ -202,11 +224,15 @@ export async function createAppointment(
       branch_id: targetBranchUUID,
       appointment_date: payload.appointment_date,
       appointment_time: normalizeTimeToSql(payload.appointment_time),
-      status: payload.status || 'confirmed',
-      payment_status: payload.payment_status || 'unpaid',
+      status: payload.status || 'pending',
+      payment_status: payload.payment_status || 'معلق',
       amount_paid: Number(payload.amount) || 0,
       notes: notePayload,
     };
+
+    if (payload.payment_screenshot_url) {
+      dbInsert.payment_screenshot_url = payload.payment_screenshot_url;
+    }
 
     const { data, error } = await supabase
       .from('appointments')
@@ -215,6 +241,23 @@ export async function createAppointment(
       .single();
 
     if (error) {
+      // If payment_screenshot_url column is not present, retry without the column since it's already in notes tag
+      delete dbInsert.payment_screenshot_url;
+      const retryResult = await supabase
+        .from('appointments')
+        .insert([dbInsert])
+        .select()
+        .single();
+
+      if (retryResult.data) {
+        return {
+          success: true,
+          data: {
+            ...newAppointment,
+            id: retryResult.data.id,
+          },
+        };
+      }
       console.warn('Supabase insert appointment error:', error);
       return { success: true, data: newAppointment };
     }
@@ -278,16 +321,20 @@ export async function updateAppointment(
     if (updates.appointment_date) dbUpdate.appointment_date = updates.appointment_date;
     if (updates.appointment_time) dbUpdate.appointment_time = normalizeTimeToSql(updates.appointment_time);
 
-    // Rebuild structured notes with service, visit_type, and medical_notes
+    // Rebuild structured notes with service, visit_type, medical_notes, screenshot and payment method
     const activeService = updates.service_name ?? currentApt?.service_name;
     const activeVisitType = updates.visit_type ?? currentApt?.visit_type;
     const activeMedicalNotes = updates.medical_notes !== undefined ? updates.medical_notes : currentApt?.medical_notes;
+    const activeScreenshot = updates.payment_screenshot_url !== undefined ? updates.payment_screenshot_url : currentApt?.payment_screenshot_url;
+    const activePaymentMethod = updates.payment_method !== undefined ? updates.payment_method : currentApt?.payment_method;
     const activePlainNotes = updates.notes !== undefined ? updates.notes : currentApt?.notes;
 
     const tags: string[] = [];
     if (activeService) tags.push(`[خدمة: ${activeService}]`);
     if (activeVisitType) tags.push(`[نوع: ${activeVisitType}]`);
     if (activeMedicalNotes) tags.push(`[تشخيص: ${activeMedicalNotes}]`);
+    if (activeScreenshot) tags.push(`[إيصال: ${activeScreenshot}]`);
+    if (activePaymentMethod) tags.push(`[وسيلة: ${activePaymentMethod}]`);
     const notePayload = [...tags, activePlainNotes || ''].filter(Boolean).join(' ').trim() || null;
     
     dbUpdate.notes = notePayload;

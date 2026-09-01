@@ -16,6 +16,9 @@ import {
   Megaphone,
   MessageCircle,
   Tag,
+  Image as ImageIcon,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
 import gsap from 'gsap';
 import { AppointmentRecord, AppointmentStatus, PaymentStatus, VisitType } from '@/types/admin';
@@ -61,6 +64,7 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
   const [quickNotesAppointment, setQuickNotesAppointment] = useState<AppointmentRecord | null>(null);
   const [whatsAppModalAppointment, setWhatsAppModalAppointment] = useState<AppointmentRecord | null>(null);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
+  const [screenshotModalApt, setScreenshotModalApt] = useState<AppointmentRecord | null>(null);
 
   // Form State for Add / Edit
   const [formState, setFormState] = useState({
@@ -131,8 +135,16 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
       const matchStatus = selectedStatusFilter === 'all' || apt.status === selectedStatusFilter;
 
       // Payment filter
-      const matchPayment =
-        selectedPaymentFilter === 'all' || apt.payment_status === selectedPaymentFilter;
+      let matchPayment = true;
+      if (selectedPaymentFilter !== 'all') {
+        if (selectedPaymentFilter === 'paid') {
+          matchPayment = apt.payment_status === 'paid';
+        } else if (selectedPaymentFilter === 'unpaid') {
+          matchPayment = apt.payment_status === 'unpaid';
+        } else if (selectedPaymentFilter === 'معلق' || selectedPaymentFilter === 'pending') {
+          matchPayment = apt.payment_status === 'معلق' || apt.payment_status === 'pending';
+        }
+      }
 
       // Visit Type filter
       const matchVisitType =
@@ -588,6 +600,7 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
               >
                 <option value="all" className="bg-slate-900 text-white">حالة الدفع (الكل)</option>
                 <option value="paid" className="bg-slate-900 text-white">مدفوع فقط (Paid)</option>
+                <option value="معلق" className="bg-slate-900 text-white">معلق (إيصالات للمراجعة)</option>
                 <option value="unpaid" className="bg-slate-900 text-white">غير مدفوع (Unpaid)</option>
               </select>
             </div>
@@ -747,18 +760,51 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
 
                     {/* Payment Status */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleTogglePayment(apt)}
-                        title="اضغط لتغيير حالة الدفع وتعديل المبلغ"
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-transform active:scale-95 ${
-                          apt.payment_status === 'paid'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                        }`}
-                      >
-                        <DollarSign className="h-3.5 w-3.5" />
-                        {apt.payment_status === 'paid' ? 'مدفوع (Paid)' : 'غير مدفوع (Unpaid)'}
-                      </button>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <button
+                          onClick={() => handleTogglePayment(apt)}
+                          title="اضغط لتغيير حالة الدفع وتعديل المبلغ"
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95 ${
+                            apt.payment_status === 'paid'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                              : apt.payment_status === 'معلق' || apt.payment_status === 'pending'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                              : 'bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30'
+                          }`}
+                        >
+                          <DollarSign className="h-3.5 w-3.5" />
+                          {apt.payment_status === 'paid'
+                            ? 'مدفوع (Paid)'
+                            : apt.payment_status === 'معلق' || apt.payment_status === 'pending'
+                            ? 'معلق (مراجعة الإيصال)'
+                            : 'غير مدفوع (Unpaid)'}
+                        </button>
+
+                        {/* Payment Method and Receipt Button */}
+                        <div className="flex items-center gap-1.5 text-[10px]">
+                          {apt.payment_method && (
+                            <span className="text-slate-400 font-medium">
+                              {apt.payment_method === 'vodafone_cash'
+                                ? '🔴 فودافون كاش'
+                                : apt.payment_method === 'instapay'
+                                ? '🟣 إنستاباي'
+                                : apt.payment_method}
+                            </span>
+                          )}
+
+                          {apt.payment_screenshot_url && (
+                            <button
+                              type="button"
+                              onClick={() => setScreenshotModalApt(apt)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition font-bold"
+                              title="معاينة إيصال التحويل المرفق"
+                            >
+                              <ImageIcon className="w-3 h-3" />
+                              <span>الإيصال</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     {/* Amount */}
@@ -1081,6 +1127,7 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
                   className="w-full rounded-xl border border-white/10 bg-slate-950 p-2.5 text-white focus:border-[#00B8A9] focus:outline-none"
                 >
                   <option value="paid">مدفوع بالكامل (Paid)</option>
+                  <option value="معلق">معلق (تحت مراجعة الإيصال)</option>
                   <option value="unpaid">غير مدفوع (Unpaid)</option>
                 </select>
               </div>
@@ -1147,6 +1194,91 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
         appointments={appointments}
         onNotify={onNotify}
       />
+
+      {/* Payment Screenshot Lightbox Modal */}
+      {screenshotModalApt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-[#00B8A9]" />
+                  <span>إيصال تحويل الحجز #{screenshotModalApt.id.slice(0, 8)}</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  المريض: <strong className="text-white">{screenshotModalApt.patient_name}</strong> | المبلغ: {screenshotModalApt.amount} ج.م
+                </p>
+              </div>
+              <button
+                onClick={() => setScreenshotModalApt(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Image Preview Container */}
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-slate-950 flex items-center justify-center min-h-[250px] max-h-[400px]">
+              {screenshotModalApt.payment_screenshot_url ? (
+                <img
+                  src={screenshotModalApt.payment_screenshot_url}
+                  alt="إيصال تحويل الدفع"
+                  className="w-full h-full object-contain max-h-[380px]"
+                />
+              ) : (
+                <p className="text-xs text-slate-400">لا توجد صورة إيصال مرفقة</p>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-3 pt-2">
+              {screenshotModalApt.payment_screenshot_url && (
+                <a
+                  href={screenshotModalApt.payment_screenshot_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-teal-300 hover:underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>فتح الصورة بالحجم الكامل</span>
+                </a>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setScreenshotModalApt(null)}
+                  className="px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-800"
+                >
+                  إغلاق
+                </button>
+
+                {screenshotModalApt.payment_status !== 'paid' && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await togglePaymentStatus(screenshotModalApt.id, 'paid', screenshotModalApt.amount || 1200);
+                        if (res.success) {
+                          onNotify('success', `تم تأكيد استلام الدفع بنجاح للمريض ${screenshotModalApt.patient_name}`);
+                          setScreenshotModalApt(null);
+                          await loadData();
+                        }
+                      } catch {
+                        onNotify('error', 'فشل تحديث حالة الدفع');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg transition"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>تأكيد استلام المبلغ (Mark as Paid)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
