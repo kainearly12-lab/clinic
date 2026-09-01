@@ -11,8 +11,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface HeaderProps {
-  activeTab?: 'home' | 'diagnostic' | 'admin';
-  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => void;
+  activeTab?: 'home' | 'diagnostic' | 'admin' | 'about';
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
 }
 
@@ -29,8 +29,12 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
       setActiveSection('diagnostic-quiz');
       return;
     }
+    if (activeTab === 'about') {
+      setActiveSection('about');
+      return;
+    }
 
-    const ids = navLinks.filter((l) => l.id !== 'diagnostic-quiz').map((l) => l.id);
+    const ids = navLinks.filter((l) => l.id !== 'diagnostic-quiz' && l.id !== 'about').map((l) => l.id);
     const sections = ids
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
@@ -59,7 +63,16 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
       return;
     }
 
-    if (activeTab === 'diagnostic') {
+    if (linkId === 'about') {
+      if (onSelectTab) {
+        onSelectTab('about');
+      } else {
+        window.location.pathname = '/about';
+      }
+      return;
+    }
+
+    if (activeTab === 'diagnostic' || activeTab === 'about') {
       if (onSelectTab) {
         onSelectTab('home', linkId);
       }

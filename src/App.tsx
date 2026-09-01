@@ -26,6 +26,7 @@ import { GoogleReviewsMarquee } from '@/components/GoogleReviewsMarquee';
 import { BentoFAQAccordion } from '@/components/BentoFAQAccordion';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
+import { AboutPage } from '@/pages/AboutPage';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -204,9 +205,13 @@ function App() {
     window.location.pathname.startsWith('/admin') ||
     window.location.hash === '#admin'
   );
+  const isInitialAboutPath = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/about') ||
+    window.location.hash === '#about'
+  );
 
-  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin'>(
-    isInitialAdminPath ? 'admin' : 'home'
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin' | 'about'>(
+    isInitialAdminPath ? 'admin' : isInitialAboutPath ? 'about' : 'home'
   );
   const [bookingOpen, setBookingOpen] = useState(false);
   const [initialService, setInitialService] = useState('');
@@ -276,6 +281,10 @@ function App() {
         if (!isAdminAuthenticated) {
           setIsAdminAuthModalOpen(true);
         }
+      } else if (path.startsWith('/about') || hash === '#about') {
+        setActiveTab('about');
+        setIsAdminAuthModalOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (hash === '#diagnostic-quiz') {
         setActiveTab('diagnostic');
         setIsAdminAuthModalOpen(false);
@@ -332,18 +341,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => {
+  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => {
     if (tab === 'admin') {
       handleTriggerAdminAccess();
       return;
     }
 
-    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-      window.history.pushState(null, '', '/');
+    const targetPath = tab === 'about' ? '/about' : '/';
+    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
     }
 
     setActiveTab(tab);
-    if (tab === 'diagnostic') {
+    if (tab === 'diagnostic' || tab === 'about') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (targetAnchor) {
       setTimeout(() => {
@@ -398,6 +408,19 @@ function App() {
               <SkinDiagnosticQuiz
                 onBook={(svc) => handleOpenBooking(svc)}
                 onBackToHome={() => handleSelectTab('home')}
+              />
+            </motion.div>
+          ) : activeTab === 'about' ? (
+            <motion.div
+              key="about-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.35 }}
+            >
+              <AboutPage
+                onOpenBooking={(svc, branch) => handleOpenBooking(svc, branch)}
+                onNavigateHome={(anchor) => handleSelectTab('home', anchor)}
               />
             </motion.div>
           ) : (

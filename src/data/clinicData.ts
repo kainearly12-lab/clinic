@@ -135,6 +135,7 @@ export const clinic: Clinic = {
 
 export const navLinks: NavLink[] = [
   { id: 'home', labelAr: 'الرئيسية', href: '#home' },
+  { id: 'about', labelAr: 'من نحن', href: '/about' },
   { id: 'services', labelAr: 'الخدمات المتقدمة', href: '#services' },
   { id: 'treatment-journey', labelAr: 'رحلة العلاج', href: '#treatment-journey' },
   { id: 'diagnostic-quiz', labelAr: 'تقييم البشرة', href: '#diagnostic-quiz' },

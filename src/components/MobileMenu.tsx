@@ -9,7 +9,7 @@ interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
   active: string;
-  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin', targetAnchor?: string) => void;
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => void;
 }
 
 export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuProps) {
@@ -26,6 +26,12 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
       } else {
         const el = document.getElementById('diagnostic-quiz');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (linkId === 'about') {
+      if (onSelectTab) {
+        onSelectTab('about');
+      } else {
+        window.location.pathname = '/about';
       }
     } else {
       if (onSelectTab) {
