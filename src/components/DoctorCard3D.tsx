@@ -126,7 +126,7 @@ export function DoctorCard3D() {
               </div>
               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-700/40 px-2.5 py-1 rounded-xl text-amber-900 dark:text-amber-300 text-xs font-bold shrink-0">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                <span>3.9</span>
+                <span>4.7</span>
               </div>
             </div>
           </div>

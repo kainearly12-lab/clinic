@@ -32,6 +32,8 @@ import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { getSupabaseClient } from '@/lib/supabase';
 import { getValidAdminSession, clearAdminSession } from '@/utils/adminAuth';
 
+import { useLanguage } from '@/context/LanguageContext';
+
 const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
 interface HeroProps {
@@ -40,6 +42,8 @@ interface HeroProps {
 }
 
 function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
+  const { language, t } = useLanguage();
+
   const scrollToServices = () => {
     const el = document.getElementById('services');
     if (el) {
@@ -60,7 +64,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
       <div className="pointer-events-none absolute right-0 top-10 h-[500px] w-[500px] rounded-full bg-emerald-200/20 dark:bg-emerald-600/10 blur-[120px]" />
 
       <div className="container-px relative grid items-center gap-12 pb-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24">
-        {/* Left Column: Headlines & CTAs */}
+        {/* Text Column: Headlines & CTAs */}
         <div className="relative z-10 max-w-xl lg:order-2">
           {/* Eyebrow badge */}
           <motion.div
@@ -71,7 +75,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
           >
             <span className="h-2 w-2 rounded-full bg-teal-600 animate-pulse" />
             <span className="text-xs font-black tracking-wider text-teal-800 dark:text-teal-300 uppercase">
-              ANDRODERMA DERMATOLOGY & LASER
+              {t('hero.eyebrow')}
             </span>
           </motion.div>
 
@@ -82,9 +86,9 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
             transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="text-[2.25rem] font-extrabold leading-[1.38] text-slate-900 dark:text-white sm:text-5xl sm:leading-[1.3] lg:text-[3.6rem] lg:leading-[1.25]"
           >
-            بشرتك تستحق خطة علاج تُبنى على{' '}
+            {t('hero.title.part1')}{' '}
             <span className="relative inline-block text-teal-700 dark:text-teal-400">
-              تشخيص حقيقي.
+              {t('hero.title.part2')}
               <span className="absolute bottom-1.5 inset-x-0 h-3 bg-teal-300/30 dark:bg-teal-500/20 -z-10 rounded-sm" />
             </span>
           </motion.h1>
@@ -96,7 +100,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
             transition={{ delay: 0.45, duration: 0.7 }}
             className="mt-6 text-base leading-relaxed text-slate-700 dark:text-gray-300 sm:text-lg font-medium"
           >
-            جلدية، ليزر وتجميل طبي — بخطة مخصصة لكل حالة، في فروعنا بالقاهرة والجيزة.
+            {t('hero.subtitle')}
           </motion.p>
 
           {/* Live Availability Micro-Badge Floating Directly Above CTA */}
@@ -121,17 +125,17 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
               onClick={onBook}
               className="py-3.5 px-7 text-sm font-black shadow-md hover:shadow-xl hover:bg-teal-800 cursor-pointer"
             >
-              احجز كشفك الآن
+              {t('hero.cta.book')}
             </BookingButton>
 
             {/* Secondary Discovery CTA */}
             <button
               type="button"
               onClick={onOpenDiagnostic}
-              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600 cursor-pointer"
+              className="btn-secondary py-3.5 px-6 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600 cursor-pointer flex items-center gap-2"
             >
               <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              <span>🧴 فحص البشرة 3D التفاعلي</span>
+              <span>{t('hero.cta.quiz')}</span>
             </button>
           </motion.div>
 
@@ -143,11 +147,11 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
             className="mt-9 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-gray-400 sm:gap-5"
           >
             <span className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-gray-200">
-              <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" /> مدينة نصر • التجمع • المعادي • نيو جيزة
+              <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" /> {t('hero.trust.branches')}
             </span>
             <span className="hidden h-3.5 w-px bg-slate-300 dark:bg-gray-700 sm:inline-block" />
             <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-gray-300">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.7 • 54 تقييم على Google
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {t('hero.trust.rating')}
             </span>
           </motion.div>
         </div>
@@ -172,7 +176,7 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
           onClick={scrollToServices}
           className="flex items-center gap-1 text-slate-600 dark:text-gray-300 hover:text-teal-700 transition-colors cursor-pointer"
         >
-          <span>اكتشف المزيد</span>
+          <span>{language === 'en' ? 'Discover More' : 'اكتشف المزيد'}</span>
           <ChevronDown className="h-3.5 w-3.5 animate-bounce" />
         </button>
       </div>
@@ -181,17 +185,18 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
 }
 
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
+  const { language } = useLanguage();
   return (
     <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-slate-200/90 dark:border-emerald-500/30 p-2 shadow-lift sm:hidden">
-      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold cursor-pointer">
-        <CalendarDays className="h-3.5 w-3.5" /> احجز كشفك الآن
+      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
+        <CalendarDays className="h-3.5 w-3.5" /> {language === 'en' ? 'Book Your Consultation' : 'احجز كشفك الآن'}
       </button>
       <a
         href={waLink}
         target="_blank"
         rel="noreferrer"
         className="grid w-14 place-items-center rounded-xl bg-teal-700 text-white transition hover:bg-teal-800 shadow-sm"
-        aria-label="واتساب"
+        aria-label="WhatsApp"
       >
         <MessageCircle className="h-5 w-5" />
       </a>

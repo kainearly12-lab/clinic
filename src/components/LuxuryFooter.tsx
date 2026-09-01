@@ -1,7 +1,8 @@
-import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft, Lock } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft, ArrowUpRight, Lock } from 'lucide-react';
 import { clinic, branches, navLinks } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LuxuryFooterProps {
   onOpenAdmin?: () => void;
@@ -9,6 +10,8 @@ interface LuxuryFooterProps {
 
 export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
   const { logoUrl, clinicName } = useSiteSettings();
+  const { language, t, isRTL } = useLanguage();
+  const ArrowIcon = isRTL ? ArrowUpLeft : ArrowUpRight;
 
   return (
     <footer className="relative bg-[#121417] text-white overflow-hidden pt-16 sm:pt-20 pb-28 sm:pb-12 border-t border-charcoal-800">
@@ -34,17 +37,16 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                 />
                 <div className="flex flex-col">
                   <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                    {clinicName || 'عيادات Androderma'}
+                    {clinicName || (language === 'en' ? 'Androderma Clinics' : 'عيادات Androderma')}
                   </span>
                   <span className="text-xs font-bold tracking-wider text-sage-300">
-                    عناية متقدمة بالجلدية والليزر
+                    {t('nav.tagline')}
                   </span>
                 </div>
               </div>
 
-
               <p className="mt-5 text-sm leading-relaxed text-gray-300/80 max-w-md">
-                {clinic.taglineAr} — صرح طبي متكامل يجمع بين أحدث تقنيات الليزر والعناية بالبشرة تحت إشراف نخبة من كبار أطباء الجلدية والتجميل في مصر.
+                {t('footer.tagline')}
               </p>
             </div>
 
@@ -93,7 +95,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
             {/* Official Booking Channels: Vezeeta Integration */}
             <div className="pt-3 border-t border-white/10">
               <span className="block text-[11px] font-bold text-gray-400 mb-2">
-                قنوات الحجز المعتمدة عبر المنصات الطبية:
+                {language === 'en' ? 'Official Booking Channels & Medical Directories:' : 'قنوات الحجز المعتمدة عبر المنصات الطبية:'}
               </span>
               <a
                 href="https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology"
@@ -105,16 +107,16 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                   <div className="h-7 w-7 rounded-xl bg-[#0070CD] flex items-center justify-center text-white font-bold text-xs shadow-xs">
                     V
                   </div>
-                  <div className="text-right">
+                  <div className="text-start">
                     <span className="block text-xs font-black text-white group-hover:text-[#60a5fa] transition-colors">
-                      احجز كشفك عبر منصة فيزيتا (Vezeeta)
+                      {t('footer.vezeeta')}
                     </span>
                     <span className="block text-[10px] text-gray-400">
-                      تقييمات معتمدة ومواعيد مؤكدة فورياً
+                      {t('footer.vezeetaSub')}
                     </span>
                   </div>
                 </div>
-                <ArrowUpLeft className="h-4 w-4 text-[#60a5fa] transition-transform duration-300 group-hover:-translate-x-1 group-hover:-translate-y-0.5" />
+                <ArrowIcon className={`h-4 w-4 text-[#60a5fa] transition-transform duration-300 ${isRTL ? 'group-hover:-translate-x-1 group-hover:-translate-y-0.5' : 'group-hover:translate-x-1 group-hover:-translate-y-0.5'}`} />
               </a>
             </div>
           </div>
@@ -122,17 +124,17 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
           {/* Column 2: Quick Links & Services (3 cols) */}
           <div className="lg:col-span-3 flex flex-col space-y-4">
             <h3 className="text-sm font-bold tracking-wider text-sage-300 uppercase">
-              روابط سريعة
+              {t('footer.quickLinks')}
             </h3>
             <ul className="space-y-2.5 text-sm text-gray-300/85 font-medium">
               {navLinks.map((link) => (
                 <li key={link.id}>
                   <a
                     href={link.href}
-                    className="inline-flex items-center gap-1.5 hover:text-white hover:translate-x-[-4px] transition-all duration-200"
+                    className={`inline-flex items-center gap-1.5 hover:text-white transition-all duration-200 ${isRTL ? 'hover:translate-x-[-4px]' : 'hover:translate-x-[4px]'}`}
                   >
-                    <ArrowUpLeft className="h-3.5 w-3.5 text-sage-400 opacity-70" />
-                    {link.labelAr}
+                    <ArrowIcon className="h-3.5 w-3.5 text-sage-400 opacity-70" />
+                    {language === 'en' ? link.labelEn : link.labelAr}
                   </a>
                 </li>
               ))}
@@ -142,7 +144,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
           {/* Column 3: Clinic Branches Directory (4 cols) */}
           <div className="lg:col-span-4 flex flex-col space-y-4">
             <h3 className="text-sm font-bold tracking-wider text-sage-300 uppercase">
-              فروعنا في القاهرة والجيزة
+              {t('footer.branchesTitle')}
             </h3>
             <div className="grid grid-cols-1 gap-3 text-xs">
               {branches.map((b) => (
@@ -153,7 +155,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                   <div className="flex items-center justify-between font-bold text-white mb-1">
                     <span className="flex items-center gap-1.5 text-sage-300">
                       <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      {b.nameAr}
+                      {language === 'en' ? (b.id === 'nasr-city' ? 'Nasr City' : b.id === 'fifth-settlement' ? 'Fifth Settlement' : b.id === 'maadi' ? 'Maadi' : 'New Giza') : b.nameAr}
                     </span>
                     <span className="text-[11px] font-mono text-gray-300" dir="ltr">
                       {b.phones[0]?.display}
@@ -172,16 +174,16 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
         {/* Bottom Bar: Copyright & Developer Credit */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-            <span>© {new Date().getFullYear()} عيادات Androderma. جميع الحقوق محفوظة.</span>
+            <span>© {new Date().getFullYear()} {language === 'en' ? 'Androderma Clinics. All rights reserved.' : 'عيادات Androderma. جميع الحقوق محفوظة.'}</span>
             <span className="hidden sm:inline text-white/20">|</span>
-            <span className="text-gray-400">العناية التي تبدأ من الفهم والتطور الطبي</span>
+            <span className="text-gray-400">{t('footer.motto')}</span>
             {onOpenAdmin && (
               <button
                 type="button"
                 onClick={onOpenAdmin}
-                title="بوابة الفريق الطبي والإدارة"
-                aria-label="بوابة الإدارة"
-                className="opacity-40 hover:opacity-100 text-slate-400 hover:text-teal-400 p-1 transition-all"
+                title={language === 'en' ? 'Admin Portal' : 'بوابة الفريق الطبي والإدارة'}
+                aria-label="Admin Portal"
+                className="opacity-40 hover:opacity-100 text-slate-400 hover:text-teal-400 p-1 transition-all cursor-pointer"
               >
                 <Lock className="h-3 w-3" />
               </button>
@@ -190,7 +192,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
 
           {/* Developer Credit explicitly preserved */}
           <div className="text-center text-xs text-gray-400">
-            Developed by{' '}
+            {t('footer.devCredit')}{' '}
             <a
               href="https://www.instagram.com/mostavaahmed_/?utm_source=ig_web_button_share_sheet"
               target="_blank"
@@ -205,3 +207,4 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
     </footer>
   );
 }
+

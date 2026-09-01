@@ -65,6 +65,7 @@ export interface FAQItem {
 export interface NavLink {
   id: string;
   labelAr: string;
+  labelEn: string;
   href: string;
 }
 
@@ -134,13 +135,13 @@ export const clinic: Clinic = {
 };
 
 export const navLinks: NavLink[] = [
-  { id: 'home', labelAr: 'الرئيسية', href: '#home' },
-  { id: 'about', labelAr: 'من نحن', href: '/about' },
-  { id: 'services', labelAr: 'الخدمات المتقدمة', href: '#services' },
-  { id: 'treatment-journey', labelAr: 'رحلة العلاج', href: '#treatment-journey' },
-  { id: 'diagnostic-quiz', labelAr: 'تقييم البشرة', href: '#diagnostic-quiz' },
-  { id: 'reviews', labelAr: 'التقييمات', href: '#reviews' },
-  { id: 'contact', labelAr: 'الفروع والمواعيد', href: '#contact' },
+  { id: 'home', labelAr: 'الرئيسية', labelEn: 'Home', href: '#home' },
+  { id: 'services', labelAr: 'الخدمات المتقدمة', labelEn: 'Advanced Services', href: '#services' },
+  { id: 'treatment-journey', labelAr: 'رحلة العلاج', labelEn: 'Treatment Journey', href: '#treatment-journey' },
+  { id: 'contact', labelAr: 'الفروع والمواعيد', labelEn: 'Branches & Schedule', href: '#contact' },
+  { id: 'reviews', labelAr: 'التقييمات', labelEn: 'Reviews', href: '#reviews' },
+  { id: 'diagnostic-quiz', labelAr: 'تقييم البشرة', labelEn: 'Skin Assessment', href: '#diagnostic-quiz' },
+  { id: 'about', labelAr: 'من نحن', labelEn: 'About Us', href: '/about' },
 ];
 
 export const services: Service[] = [

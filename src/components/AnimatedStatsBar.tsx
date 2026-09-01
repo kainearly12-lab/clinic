@@ -56,7 +56,7 @@ export function AnimatedStatsBar() {
           <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-teal-400/10 dark:bg-teal-500/5 blur-2xl" />
           <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-emerald-400/10 dark:bg-emerald-500/5 blur-2xl" />
 
-          <div className="grid grid-cols-2 gap-4 divide-y divide-slate-100 dark:divide-gray-800/80 sm:grid-cols-4 sm:divide-y-0 sm:divide-x sm:divide-x-reverse sm:gap-2">
+          <div className="grid grid-cols-2 gap-4 divide-y divide-slate-100 dark:divide-gray-800/80 sm:grid-cols-4 sm:divide-y-0 sm:gap-2 sm:divide-x sm:divide-x-reverse">
             
             {/* Stat 1: Google Reviews Count (+54) */}
             <div className="flex flex-col items-center justify-center p-3 text-center sm:px-4">
@@ -68,14 +68,14 @@ export function AnimatedStatsBar() {
                 <span className="text-3xl sm:text-4xl font-sans">
                   <AnimatedCounter from={0} to={clinic.reviewsCount} inView={inView} duration={1.8} />
                 </span>
-                <span className="text-xl sm:text-2xl text-teal-700 dark:text-teal-400 mr-0.5 font-bold">+</span>
+                <span className="text-xl sm:text-2xl text-teal-700 dark:text-teal-400 mr-0.5 ml-0.5 font-bold">+</span>
               </div>
               <span className="mt-1 text-xs font-semibold text-slate-600 dark:text-gray-300">
                 على منصة Google
               </span>
             </div>
 
-            {/* Stat 2: Rating (3.9 / 5 with Glowing Golden Stars) */}
+            {/* Stat 2: Rating (4.7 / 5 with Glowing Golden Stars) */}
             <div className="flex flex-col items-center justify-center p-3 text-center sm:px-4">
               <div className="mb-2 flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-700/40 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
@@ -85,7 +85,7 @@ export function AnimatedStatsBar() {
                 <span className="text-3xl sm:text-4xl font-sans">
                   <AnimatedCounter from={0} to={clinic.rating} decimals={1} inView={inView} duration={1.5} />
                 </span>
-                <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-gray-400 mr-1">/ 5.0</span>
+                <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-gray-400 mr-1 ml-1">/ 5.0</span>
               </div>
               {/* Interactive glowing stars */}
               <div className="mt-1.5 flex items-center gap-1">
@@ -121,7 +121,9 @@ export function AnimatedStatsBar() {
                 <span className="text-3xl sm:text-4xl font-sans">
                   <AnimatedCounter from={0} to={4} inView={inView} duration={1.2} />
                 </span>
-                <span className="text-sm font-extrabold text-teal-700 dark:text-teal-400 mr-1.5">فروع</span>
+                <span className="text-sm font-extrabold text-teal-700 dark:text-teal-400 mr-1.5 ml-1.5">
+                  فروع
+                </span>
               </div>
               <span className="mt-1 text-xs font-semibold text-slate-600 dark:text-gray-300">
                 القاهرة والجيزة
@@ -139,7 +141,9 @@ export function AnimatedStatsBar() {
               </div>
               <div className="flex items-baseline justify-center font-black tracking-tight text-slate-900 dark:text-white">
                 <span className="text-2xl sm:text-3xl font-sans">11:00</span>
-                <span className="text-xs sm:text-sm font-extrabold text-teal-700 dark:text-teal-400 mr-1">مساءً</span>
+                <span className="text-xs sm:text-sm font-extrabold text-teal-700 dark:text-teal-400 mr-1 ml-1">
+                  مساءً
+                </span>
               </div>
               <span className="mt-1 text-xs font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
                 <Clock3 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />

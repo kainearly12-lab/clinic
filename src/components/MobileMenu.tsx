@@ -4,6 +4,7 @@ import { navLinks, clinic } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useTheme } from '@/context/ThemeContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface MobileMenuProps {
   open: boolean;
@@ -16,6 +17,7 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
   const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
   const { theme, toggleTheme } = useTheme();
   const { logoUrl, clinicName } = useSiteSettings();
+  const { t, isRTL } = useLanguage();
 
   const handleLinkClick = (e: React.MouseEvent, linkId: string, href: string) => {
     e.preventDefault();
@@ -56,9 +58,11 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
     >
       <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={onClose} />
       <motion.aside
-        className="absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col bg-white dark:bg-[#15181e] text-slate-900 dark:text-white shadow-2xl overflow-y-auto"
-        initial={{ x: '100%' }}
-        animate={{ x: open ? 0 : '100%' }}
+        className={`absolute top-0 flex h-full w-[86%] max-w-sm flex-col bg-white dark:bg-[#15181e] text-slate-900 dark:text-white shadow-2xl overflow-y-auto ${
+          isRTL ? 'right-0' : 'left-0'
+        }`}
+        initial={{ x: isRTL ? '100%' : '-100%' }}
+        animate={{ x: open ? 0 : isRTL ? '100%' : '-100%' }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 px-6 py-5">
@@ -75,56 +79,62 @@ export function MobileMenu({ open, onClose, active, onSelectTab }: MobileMenuPro
               <span className="font-display text-xl font-extrabold leading-tight text-slate-900 dark:text-white">
                 {clinicName || 'عيادات Androderma'}
               </span>
-              <span className="text-[10px] font-bold tracking-wider text-teal-700 dark:text-teal-400">عناية متقدمة بالجلدية والليزر</span>
+              <span className="text-[10px] font-bold tracking-wider text-teal-700 dark:text-teal-400">
+                {t('nav.tagline')}
+              </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="إغلاق"
-            className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-gray-800 text-slate-800 dark:text-gray-200 transition hover:bg-slate-200 dark:hover:bg-gray-700"
+            aria-label={t('nav.close')}
+            className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-gray-800 text-slate-800 dark:text-gray-200 transition hover:bg-slate-200 dark:hover:bg-gray-700 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-
-        {/* Theme Switcher within Mobile Menu */}
+        {/* Action Controls: Theme Switcher */}
         <div className="px-6 pt-4 pb-2">
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-slate-100/90 dark:bg-gray-800/80 border border-slate-200 dark:border-gray-700/60 text-xs font-bold transition-all hover:bg-slate-200 dark:hover:bg-gray-700"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-slate-100/90 dark:bg-gray-800/80 border border-slate-200 dark:border-gray-700/60 text-xs font-bold transition-all hover:bg-slate-200 dark:hover:bg-gray-700 cursor-pointer"
           >
             <span className="flex items-center gap-2">
               {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-300" /> : <Moon className="h-4 w-4 text-teal-600" />}
-              {theme === 'dark' ? 'الوضع النهاري (Light Mode)' : 'الوضع الليلي (Dark Mode)'}
+              {theme === 'dark' ? t('nav.themeLight') : t('nav.themeDark')}
             </span>
             <span className="text-[10px] uppercase font-bold text-teal-700 dark:text-teal-300">
-              تبديل
+              {t('nav.switch')}
             </span>
           </button>
         </div>
 
         <nav className="flex flex-col gap-1 px-4 py-3">
-          {navLinks.map((link, i) => (
-            <motion.button
-              key={link.id}
-              type="button"
-              onClick={(e) => handleLinkClick(e, link.id, link.href)}
-              initial={{ opacity: 0, x: 20 }}
-              animate={open ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-              transition={{ delay: 0.05 + i * 0.05, duration: 0.4 }}
-              className={`flex items-center justify-between rounded-2xl px-4 py-3.5 text-base font-bold text-right transition-colors ${
-                active === link.id
-                  ? 'bg-teal-50 dark:bg-teal-900/40 font-bold text-teal-800 dark:text-teal-300'
-                  : 'text-slate-800 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <span>{link.labelAr}</span>
-              {link.id === 'diagnostic-quiz' && (
-                <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              )}
-            </motion.button>
-          ))}
+          {navLinks.map((link, i) => {
+            const label = link.labelAr;
+            const isCurrent = active === link.id;
+
+            return (
+              <motion.button
+                key={link.id}
+                type="button"
+                onClick={(e) => handleLinkClick(e, link.id, link.href)}
+                initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                animate={open ? { opacity: 1, x: 0 } : { opacity: 0, x: isRTL ? 20 : -20 }}
+                transition={{ delay: 0.05 + i * 0.05, duration: 0.4 }}
+                className={`flex items-center justify-between rounded-2xl px-4 py-3.5 text-base font-bold text-start transition-colors cursor-pointer ${
+                  isCurrent
+                    ? 'bg-teal-500 text-white font-bold shadow-[0_0_15px_rgba(0,184,169,0.35)]'
+                    : 'text-slate-800 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <span>{label}</span>
+                {link.id === 'diagnostic-quiz' && (
+                  <Stethoscope className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-teal-600 dark:text-teal-400'}`} />
+                )}
+              </motion.button>
+            );
+          })}
         </nav>
 
         <div className="mt-auto space-y-4 border-t border-slate-200 dark:border-gray-800 px-6 py-6 text-xs text-slate-700 dark:text-gray-400">
