@@ -8,14 +8,22 @@ import {
   TodayScheduleResult,
   WeeklyScheduleItem,
 } from '@/types/schedule';
+import {
+  formatTime12h,
+  formatTimeRange12h,
+  formatSingleTime12h,
+  formatArabicDate,
+} from '@/utils/timeFormat';
+
+export { formatTime12h, formatTimeRange12h, formatSingleTime12h, formatArabicDate };
 
 // In-memory fallback cache for fast daily overrides
 let localDailyOverrides: DailyBranchOverrideRecord[] = [];
 
 /**
- * Static fallback schedule matching clinic defaults in Cairo
+ * Static initial schedule matching Cairo clinic operations in 12-hour Egyptian Arabic format
  */
-const DEFAULT_WEEKLY_ROTATION: {
+export const DEFAULT_WEEKLY_ROTATION: {
   dayIndex: number;
   dayNameAr: string;
   dayNameEn: string;
@@ -24,6 +32,9 @@ const DEFAULT_WEEKLY_ROTATION: {
   closeTime: string;
   hoursAr: string;
   isSpecialDay?: boolean;
+  isClosed?: boolean;
+  reasonAr?: string | null;
+  reason?: string | null;
 }[] = [
   {
     dayIndex: 6, // Saturday
@@ -32,7 +43,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'fifth-settlement',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 0, // Sunday
@@ -41,7 +53,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'nasr-city',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 1, // Monday
@@ -50,7 +63,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'maadi',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 2, // Tuesday
@@ -59,7 +73,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'new-giza',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 3, // Wednesday
@@ -68,7 +83,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'fifth-settlement',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 4, // Thursday
@@ -77,7 +93,8 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'nasr-city',
     openTime: '13:00',
     closeTime: '21:00',
-    hoursAr: '1:00 ظهراً — 9:00 مساءً',
+    hoursAr: '1:00 م — 9:00 م',
+    isClosed: false,
   },
   {
     dayIndex: 5, // Friday
@@ -86,24 +103,44 @@ const DEFAULT_WEEKLY_ROTATION: {
     branchId: 'maadi',
     openTime: '14:00',
     closeTime: '20:00',
-    hoursAr: '2:00 ظهراً — 8:00 مساءً',
+    hoursAr: '2:00 م — 8:00 م',
     isSpecialDay: true,
+    isClosed: false,
   },
 ];
 
-const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-const ENGLISH_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+// Active mutable weekly schedule rotation in memory
+const localWeeklyRotation = DEFAULT_WEEKLY_ROTATION.map((item) => ({ ...item }));
+
+export const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+export const ENGLISH_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Event emitter for immediate state reactivity across public and admin components
+ */
+export function notifyScheduleChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('androderma_schedule_updated'));
+  }
+}
+
+export function subscribeScheduleChanges(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('androderma_schedule_updated', callback);
+  return () => {
+    window.removeEventListener('androderma_schedule_updated', callback);
+  };
+}
 
 /**
  * Normalizes branch data from Supabase or static dataset
  */
 export function normalizeBranch(raw: BranchRecord | null | undefined): NormalizedBranch | null {
   if (!raw) return null;
-  const fallback = defaultBranches.find((def) => def.id === raw.id || def.nameAr === raw.name_ar || def.nameAr === raw.nameAr);
-  const phone =
-    raw.phone ||
-    fallback?.phones[0]?.number ||
-    '01154021247';
+  const fallback = defaultBranches.find(
+    (def) => def.id === raw.id || def.nameAr === raw.name_ar || def.nameAr === raw.nameAr
+  );
+  const phone = raw.phone || fallback?.phones[0]?.number || '01154021247';
 
   return {
     id: raw.id,
@@ -171,12 +208,12 @@ export function calculateOpenStatus(
     };
   }
 
+  const displayCloseHour = formatSingleTime12h(closeTimeStr);
+  const displayOpenHour = formatSingleTime12h(openTimeStr);
+
   if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
     const minutesUntilClose = closeMinutes - currentMinutes;
     const isClosingSoon = minutesUntilClose <= 60 && minutesUntilClose > 0;
-
-    const closeHour = Math.floor(closeMinutes / 60);
-    const displayCloseHour = closeHour > 12 ? `${closeHour - 12}:00 م` : `${closeHour}:00 ص`;
 
     return {
       isOpen: true,
@@ -186,8 +223,6 @@ export function calculateOpenStatus(
         : `مفتوح الآن — حتى ${displayCloseHour}`,
     };
   } else if (currentMinutes < openMinutes) {
-    const openHour = Math.floor(openMinutes / 60);
-    const displayOpenHour = openHour > 12 ? `${openHour - 12}:00 ظهراً` : `${openHour}:00 ص`;
     return {
       isOpen: false,
       isClosingSoon: false,
@@ -215,7 +250,7 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
   const fallbackBranches = defaultBranches.map((b) => normalizeBranch(b)!);
 
   if (!client) {
-    const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
+    const scheduleItems: WeeklyScheduleItem[] = localWeeklyRotation.map((item) => {
       const branch =
         fallbackBranches.find((b) => b.id === item.branchId) || fallbackBranches[0];
       return {
@@ -223,11 +258,13 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
         dayNameAr: item.dayNameAr,
         dayNameEn: item.dayNameEn,
         branch,
-        hoursAr: item.hoursAr,
+        hoursAr: item.hoursAr ? formatTime12h(item.hoursAr) : formatTimeRange12h(item.openTime, item.closeTime),
         openTime: item.openTime,
         closeTime: item.closeTime,
         isSpecialDay: Boolean(item.isSpecialDay),
-        isClosed: false,
+        isClosed: Boolean(item.isClosed),
+        reasonAr: item.reasonAr || (item.isClosed ? 'إجازة أسبوعية — غير متاح لكشوفات اليوم' : null),
+        reason: item.reason || null,
       };
     });
 
@@ -264,7 +301,7 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
     const rawSchedules = scheduleRes.data || [];
 
     if (rawSchedules.length === 0) {
-      const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
+      const scheduleItems: WeeklyScheduleItem[] = localWeeklyRotation.map((item) => {
         const branch =
           normalizedBranches.find((b) => b.id === item.branchId) ||
           normalizedBranches[0] ||
@@ -274,11 +311,13 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
           dayNameAr: item.dayNameAr,
           dayNameEn: item.dayNameEn,
           branch,
-          hoursAr: item.hoursAr,
+          hoursAr: item.hoursAr ? formatTime12h(item.hoursAr) : formatTimeRange12h(item.openTime, item.closeTime),
           openTime: item.openTime,
           closeTime: item.closeTime,
           isSpecialDay: Boolean(item.isSpecialDay),
-          isClosed: false,
+          isClosed: Boolean(item.isClosed),
+          reasonAr: item.reasonAr || null,
+          reason: item.reason || null,
         };
       });
 
@@ -297,20 +336,60 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
         normalizedBranches[0] ||
         fallbackBranches[0];
 
-      const start = row.start_time ? row.start_time.slice(0, 5) : '13:00';
-      const end = row.end_time ? row.end_time.slice(0, 5) : '21:00';
+      const start = row.start_time
+        ? row.start_time.slice(0, 5)
+        : row.open_time
+        ? row.open_time.slice(0, 5)
+        : '13:00';
+      const end = row.end_time
+        ? row.end_time.slice(0, 5)
+        : row.close_time
+        ? row.close_time.slice(0, 5)
+        : '21:00';
+
+      const hoursAr = row.hours_ar
+        ? formatTime12h(row.hours_ar)
+        : formatTimeRange12h(start, end);
+
+      const isClosed = row.is_working_day === false || row.is_closed === true;
+      const reasonAr =
+        row.reason_ar ||
+        row.reason ||
+        (isClosed ? 'إجازة أسبوعية — غير متاح لكشوفات اليوم' : null);
 
       return {
         dayIndex: dayIdx,
-        dayNameAr: ARABIC_DAYS[dayIdx] || 'اليوم',
-        dayNameEn: ENGLISH_DAYS[dayIdx] || 'Today',
+        dayNameAr: ARABIC_DAYS[dayIdx] || row.day_name_ar || 'اليوم',
+        dayNameEn: ENGLISH_DAYS[dayIdx] || row.day_name_en || 'Today',
         branch,
-        hoursAr: `${start} — ${end}`,
+        hoursAr,
         openTime: start,
         closeTime: end,
         isSpecialDay: dayIdx === 5,
-        isClosed: row.is_working_day === false,
+        isClosed,
+        reasonAr,
+        reason: row.reason || null,
       };
+    });
+
+    // Update local cache so in-memory calculations stay in sync
+    scheduleItems.forEach((item) => {
+      const idx = localWeeklyRotation.findIndex((r) => r.dayIndex === item.dayIndex);
+      if (idx >= 0) {
+        localWeeklyRotation[idx] = {
+          dayIndex: item.dayIndex,
+          dayNameAr: item.dayNameAr,
+          dayNameEn: item.dayNameEn,
+          branchId: item.branch.id,
+          openTime: item.openTime,
+          closeTime: item.closeTime,
+          hoursAr: item.hoursAr,
+          isSpecialDay: item.isSpecialDay,
+          isClosed: item.isClosed,
+          reasonAr: item.reasonAr,
+          reason: item.reason,
+        };
+      }
     });
 
     return {
@@ -321,7 +400,7 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
     };
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
-    const scheduleItems: WeeklyScheduleItem[] = DEFAULT_WEEKLY_ROTATION.map((item) => {
+    const scheduleItems: WeeklyScheduleItem[] = localWeeklyRotation.map((item) => {
       const branch =
         fallbackBranches.find((b) => b.id === item.branchId) || fallbackBranches[0];
       return {
@@ -329,11 +408,13 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
         dayNameAr: item.dayNameAr,
         dayNameEn: item.dayNameEn,
         branch,
-        hoursAr: item.hoursAr,
+        hoursAr: item.hoursAr ? formatTime12h(item.hoursAr) : formatTimeRange12h(item.openTime, item.closeTime),
         openTime: item.openTime,
         closeTime: item.closeTime,
         isSpecialDay: Boolean(item.isSpecialDay),
-        isClosed: false,
+        isClosed: Boolean(item.isClosed),
+        reasonAr: item.reasonAr || null,
+        reason: item.reason || null,
       };
     });
 
@@ -344,6 +425,108 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
       error,
     };
   }
+}
+
+/**
+ * 1.1 Update a Specific Day in the Recurring Weekly Schedule
+ */
+export async function updateWeeklyScheduleDay(
+  dayIndex: number,
+  updates: {
+    branchId?: string;
+    openTime?: string;
+    closeTime?: string;
+    hoursAr?: string;
+    isClosed?: boolean;
+    reason?: string | null;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+
+  // 1. Update in-memory rotation
+  const matchIdx = localWeeklyRotation.findIndex((r) => r.dayIndex === dayIndex);
+  if (matchIdx >= 0) {
+    const current = localWeeklyRotation[matchIdx];
+    const openTime = updates.openTime || current.openTime;
+    const closeTime = updates.closeTime || current.closeTime;
+    const hoursAr = updates.hoursAr
+      ? formatTime12h(updates.hoursAr)
+      : formatTimeRange12h(openTime, closeTime);
+
+    localWeeklyRotation[matchIdx] = {
+      ...current,
+      branchId: updates.branchId || current.branchId,
+      openTime,
+      closeTime,
+      hoursAr,
+      isClosed: typeof updates.isClosed === 'boolean' ? updates.isClosed : current.isClosed,
+      reasonAr: updates.reason !== undefined ? updates.reason : current.reasonAr,
+      reason: updates.reason !== undefined ? updates.reason : current.reason,
+    };
+  }
+
+  // 2. Broadcast immediate reactive update across components
+  notifyScheduleChanged();
+
+  if (!client) {
+    return { success: true };
+  }
+
+  try {
+    const targetItem = localWeeklyRotation.find((r) => r.dayIndex === dayIndex);
+    if (!targetItem) return { success: true };
+
+    const payload = {
+      day_of_week: dayIndex,
+      day_name_ar: targetItem.dayNameAr,
+      day_name_en: targetItem.dayNameEn,
+      branch_id: targetItem.branchId,
+      start_time: targetItem.openTime,
+      end_time: targetItem.closeTime,
+      hours_ar: targetItem.hoursAr,
+      is_working_day: !targetItem.isClosed,
+      reason: targetItem.reasonAr || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await client
+      .from('weekly_schedule')
+      .upsert([payload], { onConflict: 'day_of_week' });
+
+    if (error) {
+      console.warn('Supabase upsert weekly_schedule warning:', error.message);
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 1.2 Save Full Weekly Schedule (all 7 days)
+ */
+export async function saveFullWeeklySchedule(
+  items: {
+    dayIndex: number;
+    branchId: string;
+    openTime: string;
+    closeTime: string;
+    isClosed: boolean;
+    reason?: string | null;
+  }[]
+): Promise<{ success: boolean; error?: string }> {
+  for (const item of items) {
+    await updateWeeklyScheduleDay(item.dayIndex, {
+      branchId: item.branchId,
+      openTime: item.openTime,
+      closeTime: item.closeTime,
+      isClosed: item.isClosed,
+      reason: item.reason,
+    });
+  }
+  notifyScheduleChanged();
+  return { success: true };
 }
 
 /**
@@ -541,6 +724,8 @@ export async function saveDailyBranchOverride(payload: {
     localDailyOverrides.push(overrideRecord);
   }
 
+  notifyScheduleChanged();
+
   if (!client) {
     return { success: true, data: overrideRecord };
   }
@@ -584,6 +769,8 @@ export async function saveDailyBranchOverride(payload: {
       console.warn('Upsert to daily_branch_overrides warning:', dbError.message);
     }
 
+    notifyScheduleChanged();
+
     return {
       success: true,
       data: dbData ? { ...overrideRecord, id: dbData.id } : overrideRecord,
@@ -607,6 +794,8 @@ export async function deleteDailyBranchOverride(
     (o) => o.id !== dateOrId && o.override_date !== dateOrId
   );
 
+  notifyScheduleChanged();
+
   if (!client) {
     return { success: true };
   }
@@ -623,6 +812,7 @@ export async function deleteDailyBranchOverride(
       await client.from('daily_branch_overrides').delete().eq('id', dateOrId);
       await client.from('schedule_exceptions').delete().eq('id', dateOrId);
     }
+    notifyScheduleChanged();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -634,7 +824,11 @@ export async function deleteDailyBranchOverride(
  * Helper to get Arabic operating days for a given branch
  */
 export function getOperatingDaysForBranch(branchId: string): string[] {
-  const matching = DEFAULT_WEEKLY_ROTATION.filter((r) => r.branchId === branchId);
+  const matching = localWeeklyRotation.filter((r) => r.branchId === branchId && !r.isClosed);
+  if (matching.length === 0) {
+    const fallbackMatching = DEFAULT_WEEKLY_ROTATION.filter((r) => r.branchId === branchId);
+    return fallbackMatching.map((r) => r.dayNameAr);
+  }
   return matching.map((r) => r.dayNameAr);
 }
 
@@ -665,9 +859,10 @@ export async function getScheduledBranchForDate(dateString: string): Promise<{
     fetchDailyBranchOverrideForDate(dateString),
   ]);
 
-  const allBranches = weeklyRes.branches.length > 0
-    ? weeklyRes.branches
-    : defaultBranches.map((b) => normalizeBranch(b)!);
+  const allBranches =
+    weeklyRes.branches.length > 0
+      ? weeklyRes.branches
+      : defaultBranches.map((b) => normalizeBranch(b)!);
 
   const exception = exceptionRes.data;
 
@@ -713,17 +908,21 @@ export async function getScheduledBranchForDate(dateString: string): Promise<{
   const scheduledRotation = weeklyRes.data.find((item) => item.dayIndex === dayIndex);
   const regularBranch =
     scheduledRotation?.branch ||
-    allBranches.find((b) => b.id === DEFAULT_WEEKLY_ROTATION.find((r) => r.dayIndex === dayIndex)?.branchId) ||
+    allBranches.find((b) => b.id === localWeeklyRotation.find((r) => r.dayIndex === dayIndex)?.branchId) ||
     allBranches[0] ||
     normalizeBranch(defaultBranches[0])!;
+
+  const isWeeklyClosed = Boolean(scheduledRotation?.isClosed);
+  const weeklyReason = scheduledRotation?.reasonAr || (isWeeklyClosed ? 'إجازة أسبوعية — العيادة مغلقة' : null);
 
   return {
     branch: regularBranch,
     dayIndex,
     dayNameAr,
     isHoliday: false,
-    isClosed: false,
+    isClosed: isWeeklyClosed,
     isOverride: false,
+    reason: weeklyReason,
     operatingDaysAr: getOperatingDaysForBranch(regularBranch.id),
   };
 }
@@ -797,7 +996,9 @@ export async function getTodayDynamicSchedule(
     allBranches[0] ||
     null;
 
-  let formattedHoursAr = regularTodayItem?.hoursAr || '1:00 ظهراً — 9:00 مساءً';
+  let formattedHoursAr = regularTodayItem?.hoursAr
+    ? formatTime12h(regularTodayItem.hoursAr)
+    : '1:00 م — 9:00 م';
   let openTime = regularTodayItem?.openTime || '13:00';
   let closeTime = regularTodayItem?.closeTime || '21:00';
   const isSpecialHours = Boolean(regularTodayItem?.isSpecialDay);

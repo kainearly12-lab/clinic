@@ -29,9 +29,12 @@ export interface WeeklyScheduleRecord {
   branch_id: string;
   open_time: string; // e.g. '13:00:00' or '13:00'
   close_time: string; // e.g. '21:00:00' or '21:00'
-  hours_ar: string; // e.g. '1:00 ظهراً — 9:00 مساءً'
+  hours_ar: string; // e.g. '1:00 م — 9:00 م'
   is_closed?: boolean;
+  is_working_day?: boolean;
   is_special?: boolean;
+  reason?: string | null;
+  reason_ar?: string | null;
   created_at?: string;
   // Supabase relation join
   branches?: BranchRecord | null;
@@ -171,4 +174,7 @@ export interface WeeklyScheduleItem {
   closeTime: string;
   isSpecialDay: boolean;
   isClosed: boolean;
+  isHoliday?: boolean;
+  reasonAr?: string | null;
+  reason?: string | null;
 }

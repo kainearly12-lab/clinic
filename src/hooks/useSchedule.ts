@@ -3,6 +3,7 @@ import {
   getTodayDynamicSchedule,
   fetchWeeklyScheduleWithBranches,
   calculateOpenStatus,
+  subscribeScheduleChanges,
 } from '@/services/scheduleService';
 import {
   TodayScheduleResult,
@@ -50,13 +51,18 @@ export function useTodaySchedule(options: UseTodayScheduleOptions = {}) {
     }
   }, [targetDate, dateString]);
 
-  // Initial fetch
+  // Initial fetch and real-time schedule subscription
   useEffect(() => {
     isMountedRef.current = true;
     loadSchedule();
 
+    const unsubscribe = subscribeScheduleChanges(() => {
+      loadSchedule();
+    });
+
     return () => {
       isMountedRef.current = false;
+      unsubscribe();
     };
   }, [loadSchedule]);
 
@@ -147,6 +153,14 @@ export function useWeeklySchedule() {
 
   useEffect(() => {
     loadWeekly();
+
+    const unsubscribe = subscribeScheduleChanges(() => {
+      loadWeekly();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [loadWeekly]);
 
   return {

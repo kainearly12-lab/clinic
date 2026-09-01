@@ -38,9 +38,13 @@ import { EmergencyBroadcastModal } from '@/components/admin/EmergencyBroadcastMo
 
 interface BookingsManagerProps {
   onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
+  filterPreset?: 'today' | 'review' | 'all' | null;
 }
 
-export const BookingsManager = React.memo(function BookingsManager({ onNotify }: BookingsManagerProps) {
+export const BookingsManager = React.memo(function BookingsManager({
+  onNotify,
+  filterPreset = null,
+}: BookingsManagerProps) {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -49,6 +53,26 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
   const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all'); // all, today, upcoming, past
   const [selectedVisitTypeFilter, setSelectedVisitTypeFilter] = useState<string>('all');
+
+  // Reactively respond to external filter presets (e.g. from Executive Daily Overview)
+  useEffect(() => {
+    if (filterPreset === 'today') {
+      setSelectedDateFilter('today');
+      setSelectedStatusFilter('all');
+      setSelectedPaymentFilter('all');
+      setSelectedBranchFilter('all');
+    } else if (filterPreset === 'review') {
+      setSelectedDateFilter('all');
+      setSelectedStatusFilter('pending');
+      setSelectedPaymentFilter('all');
+      setSelectedBranchFilter('all');
+    } else if (filterPreset === 'all') {
+      setSelectedDateFilter('all');
+      setSelectedStatusFilter('all');
+      setSelectedPaymentFilter('all');
+      setSelectedBranchFilter('all');
+    }
+  }, [filterPreset]);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);

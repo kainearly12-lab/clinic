@@ -6,6 +6,36 @@ import {
 import { SiteSettingsRecord, ActivityLogRecord } from '@/types/admin';
 import { branches as defaultBranches } from '@/data/clinicData';
 import { getDeviceType } from '@/utils/deviceDetector';
+import {
+  notifyScheduleChanged,
+  updateWeeklyScheduleDay,
+  saveFullWeeklySchedule,
+} from '@/services/scheduleService';
+import {
+  ADMIN_WHITELIST,
+  AUTHORIZED_ADMIN_CREDENTIALS,
+  isAdminEmailWhitelisted,
+  verifyAdminCredentials,
+  createAdminSession,
+  injectSuperAdminSession,
+  getValidAdminSession,
+  clearAdminSession,
+  isPreviewEnvironment,
+} from '@/utils/adminAuth';
+
+export {
+  updateWeeklyScheduleDay,
+  saveFullWeeklySchedule,
+  ADMIN_WHITELIST,
+  AUTHORIZED_ADMIN_CREDENTIALS,
+  isAdminEmailWhitelisted,
+  verifyAdminCredentials,
+  createAdminSession,
+  injectSuperAdminSession,
+  getValidAdminSession,
+  clearAdminSession,
+  isPreviewEnvironment,
+};
 
 // Fallback in-memory cache to ensure zero latency
 let localExceptions: ScheduleExceptionRecord[] = [];
@@ -291,6 +321,8 @@ export async function saveScheduleException(
     localExceptions.push(exceptionData);
   }
 
+  notifyScheduleChanged();
+
   // Audit activity log
   await logAdminActivity(
     exceptionData.is_holiday ? 'holiday_created' : 'branch_swapped',
@@ -363,6 +395,8 @@ export async function deleteScheduleException(
   localExceptions = localExceptions.filter(
     (e) => e.id !== dateOrId && e.exception_date !== dateOrId
   );
+
+  notifyScheduleChanged();
 
   if (deletedItem) {
     await logAdminActivity(
@@ -451,6 +485,8 @@ export async function updateBranchDetails(
       ...updates,
     };
   }
+
+  notifyScheduleChanged();
 
   await logAdminActivity(
     'branch_updated',

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight, Zap } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logAdminActivity } from '@/services/adminService';
-import { verifyAdminCredentials, createAdminSession } from '@/utils/adminAuth';
+import {
+  verifyAdminCredentials,
+  injectSuperAdminSession,
+  isPreviewEnvironment,
+} from '@/utils/adminAuth';
 
 interface AdminAuthModalProps {
   isOpen: boolean;
@@ -13,28 +17,46 @@ interface AdminAuthModalProps {
 }
 
 export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: AdminAuthModalProps) {
-  const [email, setEmail] = useState('admin@androderma.com');
+  const isPreview = isPreviewEnvironment();
+  const [email, setEmail] = useState(() => (isPreview ? 'kainearly12@gmail.com' : 'admin@androderma.com'));
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const performLoginSuccess = async (authenticatedEmail: string, customLabel?: string) => {
-    // Create cryptographic session token and persist in sessionStorage & localStorage
-    const session = createAdminSession(authenticatedEmail, customLabel || 'مدير النظام');
-
-    try {
-      await logAdminActivity('login', `تسجيل دخول ناجح للمسؤول (${session.displayName})`);
-    } catch {
-      // Activity log fallback
+  // Sync default email if preview state changes
+  useEffect(() => {
+    if (isPreview && !email) {
+      setEmail('kainearly12@gmail.com');
     }
+  }, [isPreview, email]);
+
+  const performLoginSuccess = async (authenticatedEmail: string, customLabel?: string) => {
+    // 1. Instant session injection into sessionStorage and localStorage
+    const session = injectSuperAdminSession(
+      authenticatedEmail,
+      customLabel ||
+        (authenticatedEmail === 'kainearly12@gmail.com'
+          ? 'كاين إيرلي (Super Admin)'
+          : 'مدير النظام')
+    );
+
+    // 2. Asynchronous activity logging (non-blocking)
+    logAdminActivity('login', `تسجيل دخول مسؤول (${session.displayName})`).catch(() => {});
 
     setShowSuccess(true);
     setTimeout(() => {
       setIsLoading(false);
       setShowSuccess(false);
       onSuccess(session.displayName || authenticatedEmail);
-    }, 400);
+    }, 150);
+  };
+
+  // Instant Quick Bypass trigger for preview mode
+  const handleQuickPreviewBypass = () => {
+    setErrorMsg(null);
+    setIsLoading(true);
+    performLoginSuccess('kainearly12@gmail.com', 'كاين إيرلي (Super Admin)');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,14 +71,33 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
       return;
     }
 
-    if (!cleanPassword) {
+    // 1. SEAMLESS PREVIEW BYPASS:
+    // If running in preview environment and email is kainearly12@gmail.com,
+    // bypass all external network checks and password validation immediately.
+    if (isPreview && cleanEmail === 'kainearly12@gmail.com') {
+      setIsLoading(true);
+      await performLoginSuccess('kainearly12@gmail.com', 'كاين إيرلي (Super Admin)');
+      return;
+    }
+
+    // If production, require password
+    if (!cleanPassword && !isPreview) {
       setErrorMsg('يرجى إدخال كلمة المرور المعتمدة');
       return;
     }
 
     setIsLoading(true);
 
-    // 1. Try Supabase Auth sign-in first if configured
+    // 2. If in preview environment with any whitelisted admin, authenticate without network delay
+    if (isPreview) {
+      const verification = verifyAdminCredentials(cleanEmail, cleanPassword || 'androderma2025');
+      if (verification.isValid) {
+        await performLoginSuccess(cleanEmail, cleanEmail === 'kainearly12@gmail.com' ? 'كاين إيرلي (Super Admin)' : 'مدير النظام');
+        return;
+      }
+    }
+
+    // 3. In Production (Vercel): Try Supabase Auth first if available
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -74,7 +115,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
       }
     }
 
-    // 2. Strict Credential Verification against authorized admin matrix
+    // 4. Strict Credential Verification against authorized admin matrix
     const verification = verifyAdminCredentials(cleanEmail, cleanPassword);
 
     if (verification.isValid) {
@@ -133,6 +174,23 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
               <p className="mt-1 text-xs text-slate-400 max-w-xs">
                 تسجيل دخول آمن مشفر لإدارة الحجوزات والمصفوفة التشغيلية لعيادات Androderma
               </p>
+
+              {/* Preview Environment Banner & Direct Bypass Button */}
+              {isPreview && (
+                <div className="mt-3 w-full p-2.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 flex flex-col items-center gap-1.5 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Zap className="w-3.5 h-3.5 text-[#00B8A9]" />
+                    <span>بيئة المعاينة (Preview Bypass Active)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleQuickPreviewBypass}
+                    className="w-full py-1.5 px-3 rounded-xl bg-[#00B8A9]/20 hover:bg-[#00B8A9]/30 border border-[#00B8A9]/50 text-[#00B8A9] hover:text-white text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>⚡ تسجيل دخول فوري مباشر (kainearly12@gmail.com)</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Error Banner */}
@@ -171,7 +229,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@androderma.com"
+                    placeholder="kainearly12@gmail.com"
                     dir="ltr"
                     className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
                   />
@@ -184,15 +242,16 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                   <label className="block text-xs font-bold text-slate-300">
                     كلمة المرور (Password)
                   </label>
-                  <span className="text-[10px] text-teal-400 font-semibold">تحقق أمني صارم</span>
+                  <span className="text-[10px] text-teal-400 font-semibold">
+                    {isPreview ? 'مقبولة أي كلمة في المعاينة' : 'تحقق أمني صارم'}
+                  </span>
                 </div>
                 <div className="relative">
                   <input
                     type="password"
-                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={isPreview ? 'أي كلمة مرور للمعاينة' : '••••••••'}
                     dir="ltr"
                     className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
                   />
@@ -209,7 +268,7 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                      جاري التحقق من الهوية...
+                      جاري الدخول الفوري...
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
@@ -234,8 +293,10 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
 
             {/* Modal Footer Note */}
             <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-              <span>جلسة آمنة مشفرة (Persistent Session)</span>
-              <span className="text-teal-400 font-mono">v2.5 Strict Gate</span>
+              <span>جلسة مشفرة (Persistent Session)</span>
+              <span className="text-teal-400 font-mono">
+                {isPreview ? 'Preview Active (Instant Access)' : 'v2.5 Strict Gate'}
+              </span>
             </div>
           </motion.div>
         </div>
