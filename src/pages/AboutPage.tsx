@@ -17,15 +17,13 @@ import {
   Layers,
   Zap,
   Activity,
-  UserCheck,
   Compass,
   PhoneCall,
   MessageCircle,
-  MapPin,
   Check,
-  Sliders,
   Shield,
   Clock,
+  Quote,
 } from 'lucide-react';
 import { clinic, branches as fallbackBranches } from '@/data/clinicData';
 import { useWeeklySchedule } from '@/hooks/useSchedule';
@@ -43,9 +41,9 @@ interface AboutPageProps {
 }
 
 /**
- * 3D Medical Laser Core / Skin Cell Mesh Canvas
- * Built with Three.js WebGL: organic dodecahedron wireframe mesh + floating cyan particle field + volumetric glow
- * Responds to mouse move and scroll depth, auto-pauses when off-screen, falls back to lightweight SVG/CSS on mobile
+ * 3D Medical Laser Core & Cellular Mesh Canvas
+ * Built with Three.js WebGL: dual icosahedron core, organic wireframes, cyan/teal particle field.
+ * Smooth mouse-tracking parallax, scroll-depth rotation, auto-pauses offscreen.
  */
 function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +55,7 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    // Check WebGL availability using a detached test canvas (avoids tainting the real canvas context)
+    // Check WebGL availability using a detached test canvas
     try {
       const testCanvas = document.createElement('canvas');
       const gl =
@@ -104,7 +102,7 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       color: 0x00f5d4,
       wireframe: true,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.2,
     });
     const outerMesh = new THREE.Mesh(outerGeo, outerMat);
     scene.add(outerMesh);
@@ -115,19 +113,19 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       color: 0x0ea5e9,
       wireframe: true,
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.35,
     });
     const innerMesh = new THREE.Mesh(innerGeo, innerMat);
     scene.add(innerMesh);
 
     // Cellular Floating Particle Cloud (Cyan + Teal)
-    const particleCount = 120;
+    const particleCount = 140;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
 
     for (let i = 0; i < particleCount; i++) {
-      const radius = 2.4 + Math.random() * 2.8;
+      const radius = 2.2 + Math.random() * 3.0;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
 
@@ -135,7 +133,6 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
 
-      // Gradient from #00F5D4 (0, 0.96, 0.83) to #38BDF8 (0.22, 0.74, 0.97)
       const ratio = Math.random();
       colors[i * 3] = ratio * 0.0 + (1 - ratio) * 0.22;
       colors[i * 3 + 1] = ratio * 0.96 + (1 - ratio) * 0.74;
@@ -149,7 +146,7 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       size: 0.055,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.8,
       blending: THREE.AdditiveBlending,
     });
     const particles = new THREE.Points(particleGeo, particleMat);
@@ -163,20 +160,18 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
 
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
-      targetRotY = (e.clientX / innerWidth - 0.5) * 0.8;
-      targetRotX = (e.clientY / innerHeight - 0.5) * 0.8;
+      targetRotY = (e.clientX / innerWidth - 0.5) * 0.7;
+      targetRotX = (e.clientY / innerHeight - 0.5) * 0.7;
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // Scroll depth interaction
     let scrollOffset = 0;
     const handleScroll = () => {
-      scrollOffset = window.scrollY * 0.001;
+      scrollOffset = window.scrollY * 0.0012;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Resize Handler
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -187,7 +182,6 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
     };
     window.addEventListener('resize', handleResize);
 
-    // Animation Loop with visibility optimization
     let animationFrameId: number;
     let isVisible = true;
 
@@ -208,7 +202,6 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
 
       const elapsed = clock.getElapsedTime();
 
-      // Smooth rotation interpolation
       currentRotX += (targetRotX - currentRotX) * 0.05;
       currentRotY += (targetRotY - currentRotY) * 0.05;
 
@@ -216,14 +209,13 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
         outerMesh.rotation.y = elapsed * 0.18 + currentRotY + scrollOffset;
         outerMesh.rotation.x = elapsed * 0.12 + currentRotX;
 
-        innerMesh.rotation.y = -elapsed * 0.25 - currentRotY;
+        innerMesh.rotation.y = -elapsed * 0.24 - currentRotY;
         innerMesh.rotation.z = elapsed * 0.15 + scrollOffset;
 
-        particles.rotation.y = elapsed * 0.06 + currentRotY * 0.5;
-        particles.rotation.x = -elapsed * 0.04 + currentRotX * 0.5;
+        particles.rotation.y = elapsed * 0.05 + currentRotY * 0.5;
+        particles.rotation.x = -elapsed * 0.03 + currentRotX * 0.5;
 
-        // Subtle breathing scale
-        const scale = 1 + Math.sin(elapsed * 1.5) * 0.035;
+        const scale = 1 + Math.sin(elapsed * 1.6) * 0.035;
         outerMesh.scale.set(scale, scale, scale);
       }
 
@@ -266,15 +258,109 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
       aria-hidden="true"
     >
-      <canvas ref={canvasRef} className="w-full h-full block opacity-75" />
+      <canvas ref={canvasRef} className="w-full h-full block opacity-80" />
     </div>
   );
 }
 
 /**
- * Interactive 3D Tilt Card with Glowing Border Beam for Trust Principles
+ * Spatial Spotlight Card with Cursor-Follow Lighting and Outlined Stroke Numbers
  */
-function TrustPrincipleCard({
+function SpatialSpotlightCard({
+  num,
+  title,
+  desc,
+  tag,
+  icon: Icon,
+}: {
+  num: string;
+  title: string;
+  desc: string;
+  tag: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [mousePos, setMousePos] = useState({ x: -200, y: -200 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative rounded-3xl p-px overflow-hidden transition-all duration-500 bg-gradient-to-b from-white/10 via-white/5 to-transparent hover:shadow-[0_20px_50px_rgba(0,245,212,0.15)]"
+    >
+      {/* Dynamic Cursor Spotlight Radial Glow */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
+        style={{
+          opacity: isHovered ? 1 : 0,
+          background: `radial-gradient(380px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 245, 212, 0.22), rgba(14, 165, 233, 0.08), transparent 70%)`,
+        }}
+      />
+
+      {/* Card Content Container */}
+      <div className="relative z-10 h-full rounded-[23px] bg-[#0c1424]/90 backdrop-blur-xl p-8 flex flex-col justify-between border border-cyan-500/20 group-hover:border-[#00F5D4]/40 transition-colors">
+        <div>
+          {/* Top Row: Icon + Massive Outlined Stroke Number */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:scale-110 group-hover:shadow-[0_0_35px_rgba(0,245,212,0.45)] transition-all duration-300">
+              <Icon className="h-7 w-7" />
+            </div>
+
+            {/* Massive Outlined Stroke Number */}
+            <span
+              className="text-5xl font-black font-mono tracking-tighter text-transparent select-none transition-all duration-300 group-hover:scale-105"
+              style={{
+                WebkitTextStroke: '1.5px #00F5D4',
+                textShadow: isHovered ? '0 0 25px rgba(0,245,212,0.5)' : 'none',
+              }}
+            >
+              {num}
+            </span>
+          </div>
+
+          {/* Tag Capsule */}
+          <div className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
+            <Sparkles className="h-3 w-3" />
+            <span>{tag}</span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-xl sm:text-2xl font-black text-white mt-4 group-hover:text-[#00F5D4] transition-colors leading-snug">
+            {title}
+          </h3>
+
+          {/* Description */}
+          <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+            {desc}
+          </p>
+        </div>
+
+        {/* Bottom Interactive Glow Accent */}
+        <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-white transition-colors">
+          <span>معايير إكلينيكية معتمدة</span>
+          <div className="h-2 w-2 rounded-full bg-[#00F5D4] group-hover:shadow-[0_0_12px_#00F5D4] transition-shadow" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Animated Continuous Border-Beam Card with 3D Tilt Micro-Interactions
+ */
+function BorderBeamCard({
   num,
   title,
   desc,
@@ -288,30 +374,23 @@ function TrustPrincipleCard({
   tags: string[];
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 20 });
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
+  const mouseXSpring = useSpring(x, { stiffness: 320, damping: 22 });
+  const mouseYSpring = useSpring(y, { stiffness: 320, damping: 22 });
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['6deg', '-6deg']);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-6deg', '6deg']);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['7deg', '-7deg']);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-7deg', '7deg']);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-
+    const xPct = (e.clientX - rect.left) / rect.width - 0.5;
+    const yPct = (e.clientY - rect.top) / rect.height - 0.5;
     x.set(xPct);
     y.set(yPct);
-    setMousePos({ x: mouseX, y: mouseY });
   };
 
   const handleMouseLeave = () => {
@@ -329,34 +408,26 @@ function TrustPrincipleCard({
         rotateY,
         transformStyle: 'preserve-3d',
       }}
-      className="relative rounded-3xl p-px overflow-hidden group transition-shadow duration-500 shadow-[0_10px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_20px_50px_rgba(0,245,212,0.18)]"
+      className="relative rounded-3xl p-[1.5px] overflow-hidden group transition-shadow duration-500 shadow-[0_12px_35px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_55px_rgba(0,245,212,0.22)]"
     >
-      {/* Moving Border Beam Background Effect */}
-      <div
-        className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 245, 212, 0.45), rgba(14, 165, 233, 0.15), transparent 70%)`,
-        }}
-      />
+      {/* Continuous Border Beam Animation Container */}
+      <div className="absolute inset-[-100%] animate-[spin_8s_linear_infinite] opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,transparent_280deg,#00F5D4_340deg,#38BDF8_360deg)]" />
 
-      {/* Default Border Line */}
-      <div className="absolute inset-0 rounded-3xl border border-white/10 group-hover:border-[#00F5D4]/40 transition-colors pointer-events-none" />
-
-      {/* Card Body */}
-      <div className="relative z-10 h-full rounded-[23px] bg-[#0c1322]/90 backdrop-blur-xl p-7 sm:p-9 flex flex-col justify-between">
+      {/* Card Content Body */}
+      <div className="relative z-10 h-full rounded-[22.5px] bg-[#0c1424]/95 backdrop-blur-2xl p-7 sm:p-9 flex flex-col justify-between">
         <div>
           {/* Header Row */}
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 to-teal-500/5 border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.2)] group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(0,245,212,0.4)] transition-all duration-300">
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#00F5D4]/25 to-teal-500/5 border border-[#00F5D4]/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)] group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(0,245,212,0.5)] transition-all duration-300">
                 <Icon className="h-6 w-6" />
               </div>
-              <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
+              <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
                 مبدأ {num}
               </span>
             </div>
 
-            <div className="text-3xl font-black font-mono text-slate-700 group-hover:text-[#00F5D4] transition-colors">
+            <div className="text-3xl font-black font-mono text-slate-600 group-hover:text-[#00F5D4] transition-colors">
               {num}
             </div>
           </div>
@@ -389,17 +460,17 @@ function TrustPrincipleCard({
 }
 
 /**
- * Main Standalone AboutPage Component
+ * Main Standalone Masterpiece AboutPage Component
  */
 export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
   const prefersReducedMotion = Boolean(useReducedMotion());
   const [activePillar, setActivePillar] = useState<'skin' | 'laser' | 'hair'>('skin');
   const mainRef = useRef<HTMLDivElement>(null);
+  const laserPathRef = useRef<SVGPathElement>(null);
 
-  // Dynamic Branches from Supabase schedule service (live-updates if branches change)
+  // Dynamic Branches from Supabase schedule service
   const { branches: activeBranchesList } = useWeeklySchedule();
 
-  // Compute clean display list of active branches
   const dynamicBranchNames = useMemo(() => {
     if (activeBranchesList && activeBranchesList.length > 0) {
       return activeBranchesList.map((b) => b.nameAr);
@@ -411,7 +482,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
     return dynamicBranchNames.join(' • ');
   }, [dynamicBranchNames]);
 
-  // Set Page Title and Meta Tags for SEO
+  // Set Page Title and Meta Tags
   useEffect(() => {
     const originalTitle = document.title;
     document.title = 'من نحن | عيادات Androderma للجلدية والليزر — د. أحمد زغلول';
@@ -433,12 +504,22 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
     };
   }, []);
 
-  // GSAP Entrance Animations
+  // GSAP Entrance Animations & ScrollTrigger
   useEffect(() => {
     if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
-      // Reveal titles with class `.gsap-reveal`
+      // Headline word reveal animation
+      gsap.from('.gsap-hero-word', {
+        y: 60,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 1,
+        ease: 'power4.out',
+        clearProps: 'transform,opacity',
+      });
+
+      // Reveal elements
       gsap.utils.toArray<HTMLElement>('.gsap-reveal').forEach((el) => {
         gsap.from(el, {
           scrollTrigger: {
@@ -446,7 +527,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
             start: 'top 85%',
             toggleActions: 'play none none none',
           },
-          y: 35,
+          y: 40,
           opacity: 0,
           duration: 0.9,
           ease: 'power3.out',
@@ -460,10 +541,10 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
           trigger: '.gsap-bento-container',
           start: 'top 85%',
         },
-        y: 40,
+        y: 45,
         opacity: 0,
-        stagger: 0.15,
-        duration: 0.8,
+        stagger: 0.16,
+        duration: 0.9,
         ease: 'power2.out',
         clearProps: 'transform,opacity',
       });
@@ -474,33 +555,53 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
           trigger: '.gsap-journey-container',
           start: 'top 85%',
         },
-        y: 35,
+        y: 40,
         opacity: 0,
-        stagger: 0.18,
-        duration: 0.85,
+        stagger: 0.2,
+        duration: 0.9,
         ease: 'power3.out',
         clearProps: 'transform,opacity',
       });
 
-      // Editorial Quote Animation
-      gsap.from('.gsap-quote-content', {
+      // Laser Path Scroll Progress Animation
+      if (laserPathRef.current) {
+        const pathLength = laserPathRef.current.getTotalLength();
+        gsap.set(laserPathRef.current, {
+          strokeDasharray: pathLength,
+          strokeDashoffset: pathLength,
+        });
+
+        gsap.to(laserPathRef.current, {
+          scrollTrigger: {
+            trigger: '.gsap-journey-container',
+            start: 'top 75%',
+            end: 'bottom 60%',
+            scrub: 1,
+          },
+          strokeDashoffset: 0,
+          ease: 'none',
+        });
+      }
+
+      // Cinematic Quote Scaling Entrance on Scroll
+      gsap.from('.gsap-cinematic-quote', {
         scrollTrigger: {
-          trigger: '.gsap-quote-container',
+          trigger: '.gsap-quote-section',
           start: 'top 80%',
+          end: 'center 50%',
+          scrub: 1,
         },
-        scale: 0.95,
-        opacity: 0,
-        y: 30,
-        duration: 1,
-        ease: 'power3.out',
-        clearProps: 'transform,opacity',
+        scale: 0.92,
+        opacity: 0.5,
+        y: 40,
+        ease: 'power2.out',
       });
     }, mainRef);
 
     return () => ctx.revert();
   }, [prefersReducedMotion]);
 
-  // Pillar Content Definition
+  // Pillar Treatment Data
   const pillarData = useMemo(
     () => ({
       skin: {
@@ -560,19 +661,19 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
     >
       {/* 1. Subtle SVG Noise Grain Overlay */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.035] z-50 mix-blend-overlay"
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-50 mix-blend-overlay"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      {/* Atmospheric Ambient Glows */}
-      <div className="pointer-events-none fixed -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-[#00F5D4]/10 blur-[150px] z-0" />
-      <div className="pointer-events-none fixed top-1/3 -left-40 h-[600px] w-[600px] rounded-full bg-teal-600/10 blur-[170px] z-0" />
-      <div className="pointer-events-none fixed bottom-20 right-10 h-[500px] w-[500px] rounded-full bg-emerald-600/10 blur-[150px] z-0" />
+      {/* Atmospheric Ambient Glow Orbs */}
+      <div className="pointer-events-none fixed -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-[#00F5D4]/10 blur-[160px] z-0" />
+      <div className="pointer-events-none fixed top-1/3 -left-40 h-[600px] w-[600px] rounded-full bg-teal-600/10 blur-[180px] z-0" />
+      <div className="pointer-events-none fixed bottom-20 right-10 h-[500px] w-[500px] rounded-full bg-emerald-600/10 blur-[160px] z-0" />
 
       {/* ========================================================================= */}
-      {/* SECTION 1: RADICAL ASYMMETRICAL MAGAZINE HERO                            */}
+      {/* SECTION 1: HERO — EDITORIAL LUXURY & ASYMMETRICAL GLASS ARCH              */}
       {/* ========================================================================= */}
       <section className="relative min-h-screen flex items-center pt-32 pb-20 lg:pt-36 lg:pb-28 overflow-hidden">
         {/* 3D Medical Core Canvas Background */}
@@ -580,28 +681,33 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
-            {/* Left Column: Editorial Manifesto & Storytelling Hierarchy */}
+            {/* Left Column: Editorial Manifesto with Staggered Word Masking */}
             <div className="lg:col-span-7 flex flex-col items-start text-right">
-              {/* Editorial Meta Eyebrow */}
+              {/* Floating Glass Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-3 rounded-full px-4 py-1.5 bg-[#00F5D4]/10 border border-[#00F5D4]/30 backdrop-blur-md shadow-[0_0_20px_rgba(0,245,212,0.15)] mb-6"
+                className="inline-flex items-center gap-3 rounded-full px-4 py-2 bg-[#00F5D4]/10 border border-[#00F5D4]/30 backdrop-blur-xl shadow-[0_0_25px_rgba(0,245,212,0.2)] mb-6"
               >
                 <span className="h-2.5 w-2.5 rounded-full bg-[#00F5D4] animate-pulse" />
                 <span className="text-xs font-black tracking-widest text-[#00F5D4] uppercase font-mono">
-                  رؤية وفلسفة العيادة • CLINICAL MANIFESTO
+                  رؤية د. أحمد زغلول — التجميل القائم على الدليل
                 </span>
               </motion.div>
 
-              {/* Main Headline: Editorial Emphasis on Clinical Precision */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.3] sm:leading-[1.2] text-white tracking-tight">
-                <span className="block text-slate-200">بشرتك تستحق</span>
-                <span className="block mt-2 bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
-                  تجربة طبية مبنية على الدقة
-                </span>
-                <span className="block mt-1 text-slate-100">والتجميل الآمن.</span>
+              {/* Giant Editorial Headline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.3] sm:leading-[1.18] text-white tracking-tight">
+                <span className="inline-block gsap-hero-word text-slate-200">بشرتك</span>{' '}
+                <span className="inline-block gsap-hero-word text-slate-200">تستحق</span>{' '}
+                <span className="inline-block gsap-hero-word bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                  تجربة طبية
+                </span>{' '}
+                <span className="inline-block gsap-hero-word bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                  مبنية على الدقة
+                </span>{' '}
+                <span className="inline-block gsap-hero-word text-slate-100">والتجميل</span>{' '}
+                <span className="inline-block gsap-hero-word text-[#00F5D4]">الآمن.</span>
               </h1>
 
               {/* Narrative Story Copy */}
@@ -625,7 +731,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               >
                 <MagneticButton
                   onClick={() => onOpenBooking()}
-                  className="rounded-full bg-[#00F5D4] px-8 py-4 text-sm font-black text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.35)] hover:shadow-[0_0_35px_rgba(0,245,212,0.55)] hover:bg-[#20ffd9] transition-all"
+                  className="rounded-full bg-[#00F5D4] px-8 py-4 text-sm font-black text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)] hover:shadow-[0_0_40px_rgba(0,245,212,0.65)] hover:bg-[#20ffd9] transition-all"
                 >
                   <span className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
@@ -636,7 +742,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 {onNavigateHome && (
                   <button
                     onClick={() => onNavigateHome('services')}
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-md transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all cursor-pointer"
                   >
                     <span>استكشف المنظومة العلاجية</span>
                     <ArrowLeft className="h-4 w-4 text-[#00F5D4]" />
@@ -647,7 +753,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               {/* Clinical Trust Badges Row */}
               <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-6 w-full text-right">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/20 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
@@ -657,7 +763,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/20 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
                     <Stethoscope className="h-5 w-5" />
                   </div>
                   <div>
@@ -667,7 +773,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 </div>
 
                 <div className="hidden sm:flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/20 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
                     <Award className="h-5 w-5" />
                   </div>
                   <div>
@@ -678,34 +784,34 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               </div>
             </div>
 
-            {/* Right Column: Editorial Asymmetrical Arch Frame for Dr. Ahmed Zaghloul */}
+            {/* Right Column: Editorial Glassmorphic Arch Frame with Glowing Aura */}
             <div className="lg:col-span-5 relative flex justify-center items-center">
               <motion.div
-                initial={{ opacity: 0, scale: 0.94 }}
+                initial={{ opacity: 0, scale: 0.93 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="relative w-full max-w-md"
               >
-                {/* Layered Architectural Glow Halo */}
-                <div className="absolute inset-0 -m-8 rounded-full bg-gradient-to-tr from-[#00F5D4]/25 via-teal-500/10 to-transparent blur-3xl pointer-events-none" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-[#00F5D4]/25 pointer-events-none animate-pulse" />
+                {/* Volumetric Glowing Cyan Aura behind Portrait */}
+                <div className="absolute inset-0 -m-8 rounded-full bg-gradient-to-tr from-[#00F5D4]/30 via-teal-500/15 to-transparent blur-3xl pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-[#00F5D4]/30 pointer-events-none animate-pulse" />
 
                 {/* Floating Top Vision Badge */}
-                <div className="absolute -top-4 right-4 z-30 inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-[#090D16]/95 border border-[#00F5D4]/40 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-md">
+                <div className="absolute -top-4 right-4 z-30 inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-[#090D16]/95 border border-[#00F5D4]/45 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
                   <Sparkles className="h-3.5 w-3.5 text-[#00F5D4]" />
                   <span className="text-xs font-black text-white">رؤية د. أحمد زغلول</span>
                 </div>
 
-                {/* Custom Architectural Arch Container */}
-                <div className="relative z-10 overflow-hidden rounded-t-[140px] rounded-b-3xl p-1 bg-gradient-to-b from-[#00F5D4]/40 via-teal-500/20 to-white/5 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
-                  <div className="relative rounded-t-[136px] rounded-b-[22px] overflow-hidden bg-gradient-to-b from-[#0e1628] via-[#0a0f1d] to-[#070b14] pt-8 px-4 pb-0">
+                {/* Custom Architectural Arch Container with Dynamic Backdrop Blur */}
+                <div className="relative z-10 overflow-hidden rounded-t-[140px] rounded-b-3xl p-1 bg-gradient-to-b from-[#00F5D4]/45 via-teal-500/20 to-white/5 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
+                  <div className="relative rounded-t-[136px] rounded-b-[22px] overflow-hidden bg-gradient-to-b from-[#0e1628]/95 via-[#0a0f1d]/95 to-[#070b14] backdrop-blur-xl pt-8 px-4 pb-0">
                     {/* Background Radial Light Accent */}
-                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-[#00F5D4]/15 blur-2xl pointer-events-none" />
+                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-[#00F5D4]/20 blur-2xl pointer-events-none" />
 
                     <img
                       src={DOCTOR_PORTRAIT_URL}
                       alt="د. أحمد زغلول — استشاري الجلدية والليزر وتجميل البشرة"
-                      className="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.9)] filter brightness-105 contrast-105"
+                      className="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105"
                       loading="eager"
                     />
 
@@ -719,7 +825,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6, duration: 0.8 }}
-                  className="absolute -bottom-5 inset-x-4 sm:inset-x-6 z-30 rounded-2xl bg-[#090D16]/95 border border-[#00F5D4]/30 p-4 shadow-[0_15px_35px_rgba(0,0,0,0.7)] backdrop-blur-xl text-center"
+                  className="absolute -bottom-5 inset-x-4 sm:inset-x-6 z-30 rounded-2xl bg-[#090D16]/95 border border-[#00F5D4]/35 p-4 shadow-[0_15px_35px_rgba(0,0,0,0.75)] backdrop-blur-xl text-center"
                 >
                   <div className="text-base font-black text-white">د. أحمد زغلول</div>
                   <div className="text-xs font-bold text-[#00F5D4] mt-0.5">
@@ -744,7 +850,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 2: "WHO WE ARE" — HUMAN IDENTITY SECTION                         */}
+      {/* SECTION 2: "WHO WE ARE" — ASYMMETRIC SPATIAL SHOWCASE                     */}
       {/* ========================================================================= */}
       <section className="relative py-24 sm:py-32 border-t border-white/5 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -756,102 +862,50 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
               "لسنا فقط عيادة… نحن تجربة طبية متكاملة."
             </h2>
+            <p className="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed">
+              تأسست عيادات Androderma لتقدم مفهوماً علاجياً وتجميلياً متفرداً يركز على سلامتك واستدامة نتائجك أولاً.
+            </p>
           </div>
 
-          <div className="mt-12 grid gap-12 lg:grid-cols-12 items-center">
-            <div className="lg:col-span-7 space-y-6 text-slate-300 leading-relaxed text-base sm:text-lg">
-              <p className="gsap-reveal">
-                تأسست عيادات <span className="text-white font-bold">Androderma</span> برؤية طبية واضحة: إرساء معايير جديدة
-                في طب الجلدية والتجميل والليزر تجمع بين الدقة العلمية الصارمة وأرقى مستويات الرعاية الإنسانية. نرفض الحلول
-                التجارية السريعة والوعود غير الواقعية، ونلتزم بتقديم تقييم صادق لكل مراجع.
-              </p>
-              <p className="gsap-reveal">
-                في كل فرع من فروعنا عبر القاهرة والجيزة، يجد المراجع بيئة علاجية راقية تحترم خصوصيته وتمنحه الوقت الكافي
-                لفهم حالته وخياراته العلاجية بكل شفافية، مع تطبيق أعلى بروتوكولات التعقيم والسلامة بإشراف طبي مباشر.
-              </p>
-            </div>
+          {/* Spatial Interactive Grid with Cursor Spotlight Effect */}
+          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <SpatialSpotlightCard
+              num="01"
+              tag="CLINICAL DIAGNOSIS"
+              title="الدقة في الفحص"
+              desc="تقييم سريري تفصيلي لطبقات الجلد وتحديد المسببات الجذرية قبل الشروع في أي جلسة أو إجراء تجميلي."
+              icon={Microscope}
+            />
 
-            <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#00F5D4]/40 transition-colors">
-                <div className="text-3xl font-black text-[#00F5D4] font-mono">01</div>
-                <div className="mt-2 text-sm font-bold text-white">الدقة في الفحص</div>
-                <div className="mt-1 text-xs text-slate-400">تقييم سريري دقيق قبل بدء أي إجراء</div>
-              </div>
+            <SpatialSpotlightCard
+              num="02"
+              tag="SAFETY PROTOCOLS"
+              title="الأمان الطبي أولاً"
+              desc="أحدث أجهزة الليزر العالمية المعتمدة والمزودة بأنظمة تبريد ذكية لحماية البشرة من التصبغات والآثار الجانبية."
+              icon={ShieldCheck}
+            />
 
-              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#00F5D4]/40 transition-colors">
-                <div className="text-3xl font-black text-[#00F5D4] font-mono">02</div>
-                <div className="mt-2 text-sm font-bold text-white">الأمان أولاً</div>
-                <div className="mt-1 text-xs text-slate-400">أحدث أجهزة الليزر المعتمدة والمزودة بالتبريد</div>
-              </div>
+            <SpatialSpotlightCard
+              num="03"
+              tag="TAILORED PLANS"
+              title="بروتوكول مخصص"
+              desc="خطة علاجية تُفصل خصيصاً وفقاً لدرجة تحسس بشرتك ونمط حياتك وتطلعاتك الواقعية دون باقات تجارية عامة."
+              icon={HeartHandshake}
+            />
 
-              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#00F5D4]/40 transition-colors">
-                <div className="text-3xl font-black text-[#00F5D4] font-mono">03</div>
-                <div className="mt-2 text-sm font-bold text-white">علاج مخصص</div>
-                <div className="mt-1 text-xs text-slate-400">بروتوكول تفصيلي يراعي طبيعة ونمط حياتك</div>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#00F5D4]/40 transition-colors">
-                <div className="text-3xl font-black text-[#00F5D4] font-mono">04</div>
-                <div className="mt-2 text-sm font-bold text-white">متابعة مستمرة</div>
-                <div className="mt-1 text-xs text-slate-400">رعاية دورية لضمان استقرار وتطور النتائج</div>
-              </div>
-            </div>
+            <SpatialSpotlightCard
+              num="04"
+              tag="CONTINUOUS CARE"
+              title="متابعة دورية مستمرة"
+              desc="رعاية إكلينيكية لا تنتهي بانتهاء الجلسة، بل تشمل بروتوكولات المتابعة المنزلية لضمان استقرار وتطور النتائج."
+              icon={Activity}
+            />
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: EDITORIAL QUOTE & DR. AHMED ZAGHLOUL STORY                    */}
-      {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#0c1220] to-[#070b14] overflow-hidden">
-        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-br from-white/[0.07] via-white/[0.02] to-transparent border border-white/15 p-8 sm:p-12 lg:p-16 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)]">
-            {/* Ambient Lighting Blobs */}
-            <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#00F5D4]/15 blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-teal-500/10 blur-[100px] pointer-events-none" />
-
-            <div className="grid gap-10 lg:grid-cols-12 items-center">
-              <div className="lg:col-span-8 space-y-6">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase">
-                  <Sparkles className="h-4 w-4" />
-                  <span>فلسفة الطبيب المؤسس</span>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
-                  د. أحمد زغلول
-                </h3>
-                <p className="text-sm font-bold text-[#00F5D4]">
-                  استشاري الأمراض الجلدية والليزر وتجميل البشرة
-                </p>
-
-                {/* Glowing Attributed Quote */}
-                <blockquote className="relative p-6 sm:p-8 rounded-2xl bg-black/50 border-r-4 border-[#00F5D4] text-slate-100 text-base sm:text-xl font-medium leading-relaxed italic shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                  "التجميل الحقيقي ليس قالباً مكرراً يُفرض على الجميع، بل هو فن إبراز الملامح الطبيعية وإعادة الحيوية
-                  للبشرة بأسس طبية دقيقة تحافظ على سلامة الإنسان قبل كل شيء."
-                </blockquote>
-
-                <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
-                  يحرص د. أحمد زغلول على إشرافه المباشر على البروتوكولات العلاجية المتبعة في العيادة، مع التركيز المستمر
-                  على تدريب وتطوير الكادر الطبي والتمريضي، ومواكبة أحدث المستجدات العلمية في طب التجميل والجلدية عالمياً.
-                </p>
-              </div>
-
-              <div className="lg:col-span-4 flex flex-col items-center justify-center p-8 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
-                <div className="h-20 w-20 rounded-full bg-[#00F5D4]/15 border border-[#00F5D4]/40 grid place-items-center text-[#00F5D4] mb-4 shadow-[0_0_30px_rgba(0,245,212,0.25)]">
-                  <UserCheck className="h-10 w-10" />
-                </div>
-                <div className="text-base font-black text-white">الاهتمام بالإنسان أولاً</div>
-                <div className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  نستمع لتطلعاتك ومخاوفك، ونقدم لك التقييم الطبي الصحيح بكل أمانة وشفافية
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: SPATIAL BENTO STORYTELLING GRID (100% COMPLETE & VISIBLE)      */}
+      {/* SECTION 3: BENTO SPOTLIGHT ("منظومة علاجية متكاملة")                      */}
       {/* ========================================================================= */}
       <section className="relative py-24 sm:py-32 border-t border-white/5">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -869,129 +923,163 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
           </div>
 
           <div className="gsap-bento-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-            {/* Card 1: الفلسفة الطبية المبنية على الدليل (Large - 7 cols) */}
-            <div className="gsap-bento-card lg:col-span-7 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent border border-white/15 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl">
-              <div>
+            {/* Card 1: الفلسفة الطبية المبنية على الدليل (Large - 7 cols) with Animated Glowing Gradient */}
+            <div className="gsap-bento-card lg:col-span-7 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
+              {/* Dynamic Animated Ambient Backlight */}
+              <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#00F5D4]/10 blur-[100px] pointer-events-none group-hover:bg-[#00F5D4]/20 transition-all" />
+
+              <div className="relative z-10">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.2)]">
+                  <div className="h-12 w-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)]">
                     <Stethoscope className="h-6 w-6" />
                   </div>
-                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
-                    PILLAR 01
+                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                    PILLAR 01 • EVIDENCE BASED
                   </span>
                 </div>
-                <h3 className="text-2xl font-black text-white mt-6">الفلسفة الطبية المبنية على الدليل</h3>
-                <p className="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed">
+
+                <h3 className="text-2xl sm:text-3xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                  الفلسفة الطبية المبنية على الدليل
+                </h3>
+
+                <p className="text-slate-300 text-sm sm:text-base mt-4 leading-relaxed">
                   نعتمد على الطب القائم على الدليل (Evidence-Based Dermatology). كل تقنية نستخدمها وكل خطة علاجية
                   نصيغها تستند إلى دراسات علمية معتمدة ونتائج إكلينيكية موثقة، لضمان أعلى نسب الأمان وتفادي أي إجراءات
                   زائدة لا تحتاجها حالتك.
                 </p>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-200">
-                <div className="flex items-center gap-2">
+              <div className="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-200">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
                   <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
                   <span>دقة التشخيص السريري</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
                   <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
                   <span>أمان الإجراءات المعتمدة</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
                   <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
                   <span>نتائج واقعية مستدامة</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: التطور التكنولوجي وأنظمة الليزر الذكية (5 cols) */}
-            <div className="gsap-bento-card lg:col-span-5 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent border border-white/15 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl">
-              <div>
+            {/* Card 2: التطور التكنولوجي وأنظمة الليزر الذكية (5 cols) with Micro-Badge Triggers */}
+            <div className="gsap-bento-card lg:col-span-5 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
+              <div className="relative z-10">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 grid place-items-center text-cyan-400 shadow-[0_0_20px_rgba(14,165,233,0.2)]">
+                  <div className="h-12 w-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 grid place-items-center text-cyan-400 shadow-[0_0_20px_rgba(14,165,233,0.25)]">
                     <Zap className="h-6 w-6" />
                   </div>
-                  <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">
-                    PILLAR 02
+                  <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/25">
+                    PILLAR 02 • SMART LASER
                   </span>
                 </div>
-                <h3 className="text-2xl font-black text-white mt-6">التطور التكنولوجي وأنظمة الليزر</h3>
+
+                <h3 className="text-2xl font-black text-white mt-6 group-hover:text-cyan-300 transition-colors">
+                  التطور التكنولوجي وأنظمة الليزر
+                </h3>
+
                 <p className="text-slate-300 text-sm mt-3 leading-relaxed">
                   نستثمر باستمرار في أحدث أجهزة الليزر الطبية المعتمدة من الهيئات الرقابية الدولية، والمزودة بأنظمة
                   تبريد متطورة تحمي سطح الجلد وتمنحك أقصى درجات الراحة أثناء الجلسات.
                 </p>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-teal-300">
-                  تبريد فائق للجلد
+              {/* Glowing Interactive Micro-Tags */}
+              <div className="relative z-10 mt-6 flex flex-wrap gap-2">
+                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
+                  ⚡ تبريد فائق للجلد
                 </span>
-                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-teal-300">
-                  أطوال موجية مخصصة
+                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
+                  🔬 أطوال موجية مخصصة
                 </span>
-                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-teal-300">
-                  معايير أمان عالمية
+                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
+                  🛡️ معايير أمان عالمية
                 </span>
               </div>
             </div>
 
-            {/* Card 3: التجربة المخصصة (5 cols) */}
-            <div className="gsap-bento-card lg:col-span-5 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent border border-white/15 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl">
-              <div>
+            {/* Card 3: التجربة المخصصة لكل مراجع (5 cols) with Quote Container & Signature */}
+            <div className="gsap-bento-card lg:col-span-5 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
+              <div className="relative z-10">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 grid place-items-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 grid place-items-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
                     <HeartHandshake className="h-6 w-6" />
                   </div>
-                  <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                    PILLAR 03
+                  <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/25">
+                    PILLAR 03 • TAILORED CARE
                   </span>
                 </div>
-                <h3 className="text-2xl font-black text-white mt-6">التجربة المخصصة لكل مراجع</h3>
+
+                <h3 className="text-2xl font-black text-white mt-6 group-hover:text-emerald-300 transition-colors">
+                  التجربة المخصصة لكل مراجع
+                </h3>
+
                 <p className="text-slate-300 text-sm mt-3 leading-relaxed">
                   لكل شخص طبيعة بشرة فريدة ونمط حياة مختلف. لذلك، نصمم لك برنامج علاج متكامل يشمل الجلسات العيادية
                   والروتين المنزلي المتوافق تماماً مع أهدافك.
                 </p>
               </div>
 
-              <div className="mt-6 p-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 italic">
-                "خطة علاجية تُفصل خصيصاً لك، وليست باقات عامة ثابتة."
+              <div className="relative z-10 mt-6 p-4 rounded-2xl bg-black/40 border border-emerald-500/30 text-xs text-slate-200">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1">
+                  <Quote className="h-3.5 w-3.5" />
+                  <span>توقيع الميثاق الإكلينيكي</span>
+                </div>
+                <p className="italic text-slate-300">
+                  "خطة علاجية تُفصل خصيصاً لك، وليست باقات عامة ثابتة."
+                </p>
               </div>
             </div>
 
-            {/* Card 4: معايير الجودة والنتائج (Large - 7 cols) */}
-            <div className="gsap-bento-card lg:col-span-7 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent border border-white/15 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl">
-              <div>
+            {/* Card 4: الثقة وجودة الرعاية (Large - 7 cols) with Live Pulse Nodes */}
+            <div className="gsap-bento-card lg:col-span-7 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
+              <div className="relative z-10">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.2)]">
+                  <div className="h-12 w-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)]">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
-                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
-                    PILLAR 04
+                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                    PILLAR 04 • CLINICAL QUALITY
                   </span>
                 </div>
-                <h3 className="text-2xl font-black text-white mt-6">الثقة وجودة الرعاية الإكلينيكية</h3>
-                <p className="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed">
-                  نحرص على المتابعة الدورية بعد كل جلسة، وتقييم استجابة البشرة وتحديث الخطة العلاجية لضمان وصولك إلى
-                  أفضل نتيجة مستدامة ممكنة مع الحفاظ التام على خصوصيتك وأمانك.
+
+                <h3 className="text-2xl sm:text-3xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                  الثقة وجودة الرعاية الإكلينيكية
+                </h3>
+
+                <p className="text-slate-300 text-sm sm:text-base mt-4 leading-relaxed">
+                  نلتزم بأعلى معايير التعقيم الطبي ومكافحة العدوى، ونعتمد على مواد ومستهلكات طبية أصلية 100% معتمدة
+                  رسمياً، مع توثيق إلكتروني دقيق لسجلات المراجعين وتاريخ الجلسات لضمان متابعة مستمرة ونتائج قابلة للقياس.
                 </p>
               </div>
 
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-                  <div className="text-sm font-bold text-[#00F5D4]">دقة الفحص</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">تشخيص سريري</div>
+              {/* Animated Live Pulse Nodes */}
+              <div className="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold text-slate-200">
+                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F5D4] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F5D4]" />
+                  </span>
+                  <span>تعقيم فوري ومستمر</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-                  <div className="text-sm font-bold text-[#00F5D4]">تعقيم فائق</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">بروتوكول صارم</div>
+
+                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                  </span>
+                  <span>مواد أصلية معتمدة 100%</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-                  <div className="text-sm font-bold text-[#00F5D4]">متابعة لصيقة</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">بعد كل جلسة</div>
-                </div>
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-                  <div className="text-sm font-bold text-[#00F5D4]">أمان مطلق</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">أحدث التقنيات</div>
+
+                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+                  </span>
+                  <span>سجل طبي رقمي موثق</span>
                 </div>
               </div>
             </div>
@@ -1000,125 +1088,138 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 5: CLINIC JOURNEY WITH GLOWING CONNECTING LINE & STEP NODES       */}
+      {/* SECTION 4: GLOWING LASER TIMELINE PATH ("رحلة التميز الطبي")             */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#0b101c] to-[#070b14] overflow-hidden">
+      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#09101d] to-[#070b14] overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-20">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
               <Compass className="h-4 w-4" />
-              <span>مسار التطور والالتزام</span>
+              <span>مراحل تجربة المراجع</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
               رحلة التميز الطبي
             </h2>
             <p className="mt-4 text-slate-400 text-sm sm:text-base">
-              أربع محطات متسلسلة ترسم مسار الرعاية العلاجية والتجميلية في Androderma
+              كيف نضمن لك تجربة علاجية استثنائية من اللحظة الأولى وحتى استدامة النتائج
             </p>
           </div>
 
           <div className="gsap-journey-container relative">
-            {/* Desktop Connecting Glowing Line */}
-            <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-[#00F5D4]/20 via-[#00F5D4] to-[#00F5D4]/20 -translate-y-12 pointer-events-none z-0">
-              <div className="absolute inset-0 bg-[#00F5D4] blur-[3px] opacity-60 animate-pulse" />
+            {/* Desktop SVG Connecting Glowing Laser Path */}
+            <div className="hidden lg:block absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-0">
+              <svg className="w-full h-24 overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 100">
+                {/* Background Dim Guide Track */}
+                <path
+                  d="M 50 50 Q 275 10 500 50 T 950 50"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="3"
+                />
+                {/* Glowing Animated Laser Line */}
+                <path
+                  ref={laserPathRef}
+                  d="M 50 50 Q 275 10 500 50 T 950 50"
+                  fill="none"
+                  stroke="#00F5D4"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  className="filter drop-shadow-[0_0_12px_#00F5D4]"
+                />
+              </svg>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-              {/* Step 1: الرؤية */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white/[0.04] border border-white/10 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl group">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-14 w-14 rounded-2xl bg-[#00F5D4]/10 border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] font-mono font-black text-xl shadow-[0_0_20px_rgba(0,245,212,0.25)] group-hover:scale-110 transition-transform">
-                      01
-                    </div>
-                    <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/20">
-                      VISION
-                    </span>
+            {/* 4 Sequential Milestones Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+              {/* Step 1: الرؤية والتشخيص */}
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-[#00F5D4] bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                    STAGE 01
+                  </span>
+                  <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-500/35 grid place-items-center text-[#00F5D4] font-mono font-black text-sm">
+                    01
                   </div>
-
-                  <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                    الرؤية والهدف
-                  </h3>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-                    تأسيس نموذج طبي رائد يغير المفهوم التقليدي للتجميل التجاري نحو رعاية جلدية مبنية على الأمان الطبي
-                    والتشخيص الواقعي.
-                  </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs text-[#00F5D4] font-bold">
-                  تأسيس المعايير السريرية
+
+                <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                  الرؤية والتشخيص
+                </h3>
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  فحص سريري متكامل للبشرة وتحديد الاحتياجات الفعلية بكل دقة وشفافية دون افتراضات سريعة.
+                </p>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-[#00F5D4]">
+                  استشارة تخصصية معمقة
                 </div>
               </div>
 
-              {/* Step 2: الدقة */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white/[0.04] border border-white/10 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl group">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 grid place-items-center text-cyan-400 font-mono font-black text-xl shadow-[0_0_20px_rgba(14,165,233,0.25)] group-hover:scale-110 transition-transform">
-                      02
-                    </div>
-                    <span className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">
-                      PRECISION
-                    </span>
+              {/* Step 2: الدقة في التخطيط */}
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/25">
+                    STAGE 02
+                  </span>
+                  <div className="h-10 w-10 rounded-xl bg-cyan-500/20 border border-cyan-500/35 grid place-items-center text-cyan-400 font-mono font-black text-sm">
+                    02
                   </div>
-
-                  <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                    الدقة والتشخيص
-                  </h3>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-                    بناء بروتوكولات فحص تفصيلية تتيح الكشف الدقيق عن المشكلات الجلدية وتحديد مرحلة العلاج بدقة
-                    متناهية دون تخمين.
-                  </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs text-cyan-400 font-bold">
-                  خطط علاج موثقة
+
+                <h3 className="text-xl font-black text-white mt-6 group-hover:text-cyan-300 transition-colors">
+                  الدقة في التخطيط
+                </h3>
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  صياغة خطة علاجية مخصصة تجمع بين أحدث التقنيات وعدد الجلسات الفعلي لتحقيق الهدف المطلوب.
+                </p>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-cyan-400">
+                  خطة علاجية مخصصة
                 </div>
               </div>
 
-              {/* Step 3: التقنية */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white/[0.04] border border-white/10 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl group">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-14 w-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 grid place-items-center text-teal-300 font-mono font-black text-xl shadow-[0_0_20px_rgba(20,184,166,0.25)] group-hover:scale-110 transition-transform">
-                      03
-                    </div>
-                    <span className="text-xs font-mono font-bold text-teal-300 tracking-widest uppercase bg-teal-500/10 px-3 py-1 rounded-full border border-teal-500/20">
-                      TECHNOLOGY
-                    </span>
+              {/* Step 3: التكنولوجيا والأمان */}
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/25">
+                    STAGE 03
+                  </span>
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/35 grid place-items-center text-emerald-400 font-mono font-black text-sm">
+                    03
                   </div>
-
-                  <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                    أحدث التقنيات
-                  </h3>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-                    تجهيز فروع العيادة بأحدث منظومات الليزر المعتمدة دولياً وتوفير أفضل وسائل التبريد لحماية سطح البشرة.
-                  </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs text-teal-300 font-bold">
-                  أجهزة طبية معتمدة
+
+                <h3 className="text-xl font-black text-white mt-6 group-hover:text-emerald-300 transition-colors">
+                  التكنولوجيا والأمان
+                </h3>
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  تنفيذ الجلسات بأحدث أجهزة الليزر المزودة بالتبريد المتطور وتحت إشراف طبي صارم لراحتك.
+                </p>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-emerald-400">
+                  تنفيذ دقيق بأعلى تبريد
                 </div>
               </div>
 
-              {/* Step 4: التجربة */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white/[0.04] border border-white/10 hover:border-[#00F5D4]/50 transition-all flex flex-col justify-between backdrop-blur-xl shadow-xl group">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 grid place-items-center text-emerald-400 font-mono font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.25)] group-hover:scale-110 transition-transform">
-                      04
-                    </div>
-                    <span className="text-xs font-mono font-bold text-emerald-400 tracking-widest uppercase bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                      EXPERIENCE
-                    </span>
+              {/* Step 4: التجربة والنتائج */}
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-[#00F5D4] bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                    STAGE 04
+                  </span>
+                  <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-500/35 grid place-items-center text-[#00F5D4] font-mono font-black text-sm">
+                    04
                   </div>
-
-                  <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                    التجربة المتكاملة
-                  </h3>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-                    توفير تجربة مراجع استثنائية تشمل الاستقبال الراقي، الخصوصية التامة، والمتابعة الدورية المستمرة.
-                  </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs text-emerald-400 font-bold">
-                  رضا وثقة مستدامة
+
+                <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                  التجربة والنتائج
+                </h3>
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  متابعة مستمرة وإرشادات وقائية لضمان استقرار وتطور النتائج الجمالية والصحية على المدى الطويل.
+                </p>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-[#00F5D4]">
+                  استدامة وتألق طويل المدى
                 </div>
               </div>
             </div>
@@ -1127,174 +1228,205 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 6: DERMATOLOGY / LASER / HAIR EXPERIENCE (TREATMENT PILLARS)     */}
+      {/* SECTION 5: INTERACTIVE TREATMENT PILLARS SWITCHER                        */}
       {/* ========================================================================= */}
       <section className="relative py-24 sm:py-32 border-t border-white/5">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="gsap-reveal text-center max-w-3xl mx-auto mb-16">
+          <div className="gsap-reveal text-center max-w-3xl mx-auto mb-14">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
-              <Sparkles className="h-4 w-4" />
-              <span>المحاور العلاجية الرئيسية</span>
+              <Microscope className="h-4 w-4" />
+              <span>مجالات التخصص الإكلينيكي</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
-              مجالات تخصصنا الطبي
+              المنظومة العلاجية التخصصية
             </h2>
             <p className="mt-4 text-slate-400 text-sm sm:text-base">
-              فلسفة علاجية متخصصة لكل مجال من مجالات العناية بالجلد والشعر والليزر
+              تخصصات طبية دقيقة تلبي كافة احتياجات بشرتك وشعرك بأعلى معايير الأمان
             </p>
           </div>
 
-          {/* Pillar Selector Tabs */}
-          <div className="flex justify-center gap-3 mb-10 flex-wrap">
+          {/* Interactive Switcher Tabs */}
+          <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto mb-12">
             <button
               onClick={() => setActivePillar('skin')}
-              className={`px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'skin'
                   ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
               }`}
             >
-              البشرة والجلدية
+              <Microscope className="h-4 w-4" />
+              <span>صحة ونضارة البشرة</span>
             </button>
+
             <button
               onClick={() => setActivePillar('laser')}
-              className={`px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'laser'
                   ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
               }`}
             >
-              علاجات الليزر المتقدمة
+              <Zap className="h-4 w-4" />
+              <span>الليزر والتجميل الطبي</span>
             </button>
+
             <button
               onClick={() => setActivePillar('hair')}
-              className={`px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'hair'
                   ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
               }`}
             >
-              علاجات الشعر والفروة
+              <Activity className="h-4 w-4" />
+              <span>علاجات الشعر وفروة الرأس</span>
             </button>
           </div>
 
           {/* Active Pillar Card Display */}
           <div className="max-w-4xl mx-auto">
-            <motion.div
-              key={activePillar}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className={`p-8 sm:p-12 rounded-3xl bg-gradient-to-br ${pillarData[activePillar].accent} bg-[#0c1322] border border-white/15 backdrop-blur-2xl shadow-2xl`}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase">
-                    {pillarData[activePillar].badge}
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">
-                    {pillarData[activePillar].title}
-                  </h3>
-                </div>
-                <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 grid place-items-center text-[#00F5D4] shrink-0">
-                  {React.createElement(pillarData[activePillar].icon, { className: 'h-7 w-7' })}
-                </div>
-              </div>
+            {Object.values(pillarData).map((pillar) => {
+              if (pillar.id !== activePillar) return null;
+              const Icon = pillar.icon;
 
-              <p className="text-slate-200 text-base sm:text-lg leading-relaxed mb-8">
-                {pillarData[activePillar].desc}
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-4 pt-6 border-t border-white/10">
-                {pillarData[activePillar].points.map((pt, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm text-slate-200">
-                    <CheckCircle2 className="h-5 w-5 text-[#00F5D4] shrink-0 mt-0.5" />
-                    <span>{pt}</span>
+              return (
+                <motion.div
+                  key={pillar.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative rounded-3xl p-8 sm:p-12 bg-gradient-to-br from-[#0e1628]/95 via-[#0a101d]/95 to-transparent border border-cyan-500/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.3)]">
+                        <Icon className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                          {pillar.badge}
+                        </span>
+                        <h3 className="text-xl sm:text-2xl font-black text-white mt-2">
+                          {pillar.title}
+                        </h3>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </motion.div>
+
+                  <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+                    {pillar.desc}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-white/10">
+                    {pillar.points.map((pt, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5"
+                      >
+                        <CheckCircle2 className="h-5 w-5 text-[#00F5D4] shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-slate-200 leading-snug">
+                          {pt}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 flex justify-end">
+                    <button
+                      onClick={() => onOpenBooking(pillar.title)}
+                      className="inline-flex items-center gap-2 rounded-full px-6 py-3 bg-[#00F5D4] text-slate-950 text-xs font-black hover:bg-[#20ffd9] shadow-[0_0_20px_rgba(0,245,212,0.3)] transition-all cursor-pointer"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      <span>حجز استشارة لهذا التخصص</span>
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 7: TRUST ARCHITECTURE — "لماذا يختلف اختيار Androderma؟"         */}
+      {/* SECTION 6: WHY ANDRODERMA? — CONTINUOUS BORDER-BEAM CARDS                 */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 border-t border-white/5 bg-gradient-to-b from-[#070b14] via-[#090e1a] to-[#070b14]">
+      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#09101e] to-[#070b14] overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
               <ShieldCheck className="h-4 w-4" />
-              <span>معايير الثقة والالتزام</span>
+              <span>معايير الثقة والضمان الطبي</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
               لماذا يختلف اختيار Androderma؟
             </h2>
             <p className="mt-4 text-slate-400 text-sm sm:text-base">
-              خمسة مبادئ جوهرية تحكم كل استشارة وجلسة علاجية داخل فروعنا
+              خمسة مبادئ إكلينيكية تجعل تجربتك معنا الأكثر أماناً وموثوقية
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <TrustPrincipleCard
+            <BorderBeamCard
               num="01"
-              title="يبدأ العلاج بفهم الحالة وليس ببيع الجلسات"
-              desc="نمنحك استشارة وافية لفحص طبقات الجلد ومناقشة التاريخ الطبي والتطلعات العلاجية قبل اتخاذ أي قرار أو بدء أي إجراء."
+              title="إشراف طبي مباشر ومتخصص"
+              desc="كل فحص وخطة علاجية تتم بإشراف د. أحمد زغلول وفريق طبي مدرب على أحدث البروتوكولات الجلدية."
               icon={Stethoscope}
-              tags={['فحص سريري متأنٍ', 'لا عروض عشوائية', 'تشخيص موثق']}
+              tags={['استشاري متخصص', 'إشراف مباشر', 'فريق مدرب']}
             />
 
-            <TrustPrincipleCard
+            <BorderBeamCard
               num="02"
-              title="كل بشرة تحتاج خطة علاج مخصصة ومستقلة"
-              desc="لا توجد وصفة موحدة تناسب الجميع؛ لذلك نصمم برنامجاً دقيقاً يتناسب مع نوع بشرتك ولونها ودرجة تحسسها وأسلوب حياتك."
-              icon={Sliders}
-              tags={['تخصيص كامل', 'مراعاة نمط الحياة', 'تدرج علاجي آمن']}
-            />
-
-            <TrustPrincipleCard
-              num="03"
-              title="التكنولوجيا تخدم القرار الطبي ولا تقوده"
-              desc="الأجهزة المتقدمة أداة في يد الطبيب المتخصص وليست بديلاً عن الفحص السريري، ونختار الطول الموجي المناسب لكل حالة بعناية."
+              title="أجهزة ليزر معتمدة بأنظمة تبريد"
+              desc="نعتمد فقط على المنظومات الطبية المعتمدة دولياً، المزودة بأنظمة تبريد ذكية لحماية البشرة وضمان راحة تامة."
               icon={Zap}
-              tags={['أطوال موجية مخصصة', 'إشراف استشاري', 'تبريد ذكي']}
+              tags={['أجهزة أصلية', 'تبريد متطور', 'راحة تامة']}
             />
 
-            <TrustPrincipleCard
+            <BorderBeamCard
+              num="03"
+              title="خطط علاجية مخصصة لكل بشرة"
+              desc="لا نؤمن بالقوالب الجاهزة. خطتك تصمم بناءً على تحليل عميق لنوع بشرتك ونمط حياتك وتاريخك الطبي."
+              icon={HeartHandshake}
+              tags={['تشخيص فردي', 'بدون قوالب', 'واقعية النتائج']}
+            />
+
+            <BorderBeamCard
               num="04"
-              title="السلامة والأمان تأتي دائماً قبل النتيجة التجميلية"
-              desc="نلتزم بأعلى معايير الحماية والتبريد والتعقيم لضمان عدم حدوث أي مضاعفات أو حروق أو تصبغات عكسية لاحقة."
+              title="أعلى بروتوكولات التعقيم والسلامة"
+              desc="تطبيق صارم لمعايير مكافحة العدوى والتعقيم الطبي الفوري واستخدام مستهلكات أحادية الاستخدام معتمدة."
               icon={Shield}
-              tags={['تبريد هوائي فائق', 'تعقيم معتمد', 'صفر مجازفة']}
+              tags={['تعقيم دوري', 'أمان مكافحة العدوى', 'مستهلكات معتمدة']}
             />
 
-            <TrustPrincipleCard
+            <BorderBeamCard
               num="05"
-              title="المتابعة الدورية جزء لا يتجزأ من نجاح العلاج"
-              desc="نبقى على تواصل مستمر معك بعد كل جلسة لمتابعة استجابة الأنسجة وتطور النتيجة والإجابة عن كل استفساراتك بكل اهتمام."
+              title="متابعة مستمرة واستشارات دورية"
+              desc="علاقتنا بك مستمرة بعد الجلسات، مع تقييم دوري للنتائج وتحديث روتين العناية المنزلي وفق تطور البشرة."
               icon={Clock}
-              tags={['متابعة بعد الجلسة', 'تقييم مستمر', 'دعم طبي دائم']}
+              tags={['متابعة دورية', 'روتين منزلي', 'دعم مستمر']}
             />
 
-            {/* Extra Highlighting Card: Clinical Excellence */}
-            <div className="relative rounded-3xl p-8 bg-gradient-to-br from-[#00F5D4]/15 via-teal-900/20 to-transparent border border-[#00F5D4]/30 flex flex-col justify-between shadow-[0_10px_30px_rgba(0,245,212,0.15)]">
+            {/* Special 6th Card: Direct Quick Booking Trigger */}
+            <div className="relative rounded-3xl p-8 sm:p-9 bg-gradient-to-br from-[#00F5D4]/15 via-teal-900/20 to-[#0c1424] border border-[#00F5D4]/40 flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,245,212,0.15)] group hover:border-[#00F5D4] transition-all">
               <div>
-                <div className="h-12 w-12 rounded-2xl bg-[#00F5D4]/20 border border-[#00F5D4]/40 grid place-items-center text-[#00F5D4] mb-4">
-                  <Award className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-2xl bg-[#00F5D4] text-slate-950 grid place-items-center shadow-[0_0_25px_rgba(0,245,212,0.5)]">
+                  <CalendarDays className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-black text-white">التزامنا تجاه كل مراجع</h3>
-                <p className="mt-3 text-slate-200 text-sm leading-relaxed">
-                  أن تكون تجربتك في Androderma هي المعيار الأكثر راحة وأماناً وشفافية في العناية ببشرتك وصحتها.
+                <h3 className="text-2xl font-black text-white mt-6">
+                  جاهز لتجربة طبية متكاملة؟
+                </h3>
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  احجز موعد كشفك التخصصي الآن في أقرب فرع إليك، ودعنا نصمم لك خطة العلاج الأنسب لبشرتك.
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-[#00F5D4]/20">
+              <div className="mt-6">
                 <button
                   onClick={() => onOpenBooking()}
-                  className="w-full rounded-xl bg-[#00F5D4] py-3 text-xs font-black text-slate-950 shadow-[0_0_20px_rgba(0,245,212,0.35)] hover:bg-[#20ffd9] transition-all cursor-pointer"
+                  className="w-full rounded-2xl bg-[#00F5D4] py-3.5 text-center text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:bg-[#20ffd9] transition-all cursor-pointer"
                 >
-                  احجز استشارتك الآن
+                  احجز موعدك الآن
                 </button>
               </div>
             </div>
@@ -1303,107 +1435,113 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 8: FULL-BLEED EDITORIAL CINEMATIC QUOTE EXPERIENCE              */}
+      {/* SECTION 7: CINEMATIC FULL-BLEED QUOTE TRANSITION                         */}
       {/* ========================================================================= */}
-      <section className="gsap-quote-container relative py-32 sm:py-44 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] border-y border-[#00F5D4]/20 overflow-hidden text-center">
-        {/* Giant Glowing Ambient Quotation Marks */}
-        <div className="absolute top-1/2 left-10 -translate-y-1/2 font-serif text-[180px] sm:text-[280px] leading-none text-[#00F5D4]/5 pointer-events-none select-none">
+      <section className="gsap-quote-section relative py-28 sm:py-36 bg-[#060911] overflow-hidden border-t border-white/5">
+        {/* Giant Ambient Background Quotation Marks */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none opacity-5 text-[#00F5D4] font-serif text-[350px] leading-none">
           “
         </div>
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 font-serif text-[180px] sm:text-[280px] leading-none text-[#00F5D4]/5 pointer-events-none select-none">
-          ”
-        </div>
 
-        {/* Floating Background Particle Glows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[#00F5D4]/15 via-teal-500/10 to-transparent blur-[140px] pointer-events-none" />
+        {/* Ethereal Floating Cyan Smoke Particles */}
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-[#00F5D4]/10 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-[130px] pointer-events-none" />
 
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 gsap-quote-content">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-[#00F5D4]/10 border border-[#00F5D4]/30 backdrop-blur-md mb-8">
-            <Sparkles className="h-4 w-4 text-[#00F5D4]" />
-            <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase">
-              PHILOSOPHY OF REAL BEAUTY
-            </span>
-          </div>
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
+          <div className="gsap-cinematic-quote space-y-8">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-[#00F5D4]/25">
+              <Sparkles className="h-3.5 w-3.5 text-[#00F5D4]" />
+              <span>الميثاق الإكلينيكي</span>
+            </div>
 
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight">
-            "التجميل الحقيقي يبدأ من القرار الطبي الصحيح."
-          </h2>
+            <blockquote className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight sm:leading-snug max-w-4xl mx-auto">
+              "التجميل الحقيقي يبدأ من{' '}
+              <span className="bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                القرار الطبي الصحيح
+              </span>
+              ، وليس من كثرة الإجراءات."
+            </blockquote>
 
-          <p className="mt-8 text-slate-200 text-base sm:text-xl leading-relaxed max-w-2xl mx-auto font-light">
-            نحن هنا لنرافقك في رحلة عناية متكاملة تمنح بشرتك النضارة والصحة التي تستحقها، بأمان وثقة وإشراف استشاري مستمر.
-          </p>
-
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#00F5D4]" />
-            <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase">
-              عيادات ANDRODERMA التخصصية
-            </span>
-            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#00F5D4]" />
+            <div className="pt-4 flex flex-col items-center">
+              <div className="h-12 w-12 rounded-full p-0.5 bg-gradient-to-tr from-[#00F5D4] to-teal-400 mb-3 shadow-[0_0_20px_rgba(0,245,212,0.4)]">
+                <img
+                  src={DOCTOR_PORTRAIT_URL}
+                  alt="د. أحمد زغلول"
+                  className="w-full h-full object-cover object-top rounded-full bg-slate-900"
+                />
+              </div>
+              <div className="text-base font-black text-white">د. أحمد زغلول</div>
+              <div className="text-xs text-[#00F5D4] font-bold mt-0.5">
+                استشاري الأمراض الجلدية والليزر وتجميل البشرة
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 9: DYNAMIC FINAL CTA WITH LIVE BRANCH RESOLUTION                 */}
+      {/* SECTION 8: DYNAMIC CTA BANNER WITH LIVE SUPABASE BRANCH RESOLUTION       */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 overflow-hidden">
-        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-b from-white/[0.09] via-white/[0.04] to-transparent border border-white/15 p-8 sm:p-14 text-center backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)]">
+      <section className="relative py-20 sm:py-28 bg-[#070b14] overflow-hidden">
+        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl p-8 sm:p-14 lg:p-16 overflow-hidden bg-gradient-to-br from-[#0e1628]/95 via-[#0a101d]/95 to-[#070b14] border border-[#00F5D4]/40 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
             {/* Pulsating Cyan Aura */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-[#00F5D4]/15 blur-[130px] pointer-events-none animate-pulse" />
+            <div className="absolute top-0 right-1/2 translate-x-1/2 w-96 h-96 rounded-full bg-[#00F5D4]/20 blur-[120px] pointer-events-none animate-pulse" />
 
-            <div className="relative z-10 max-w-3xl mx-auto">
-              <span className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-[#00F5D4]/20 mb-4">
-                <CalendarDays className="h-3.5 w-3.5" />
-                <span>ابدأ رحلتك العلاجية اليوم</span>
-              </span>
+            <div className="relative z-10 max-w-3xl mx-auto space-y-6">
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-[#00F5D4]/25">
+                <CalendarDays className="h-3.5 w-3.5 text-[#00F5D4]" />
+                <span>حجز موعد فحص استشاري</span>
+              </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mt-3 leading-tight">
-                احجز استشارتك مع نخبة أطباء الجلدية والليزر
+              <h2 className="text-3xl sm:text-5xl font-black text-white leading-tight">
+                ابدأ رحلة العناية ببشرتك مع{' '}
+                <span className="bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                  د. أحمد زغلول
+                </span>
               </h2>
 
-              {/* Dynamic Branch Description */}
-              <p className="mt-5 text-slate-200 text-sm sm:text-base leading-relaxed">
-                اختر الفرع الأقرب إليك في <span className="text-[#00F5D4] font-bold">{dynamicBranchString}</span>،
-                واحصل على تقييم سريري شامل وخطة علاجية مخصصة بالكامل لحالة بشرتك.
+              <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+                نستقبلكم في فروعنا المجهزة بأحدث التقنيات الطبية:
+                <br />
+                <span className="font-bold text-[#00F5D4] mt-1 inline-block">
+                  📍 {dynamicBranchString}
+                </span>
               </p>
 
-              {/* Booking Actions */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              {/* Action Buttons */}
+              <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
                 <MagneticButton
                   onClick={() => onOpenBooking()}
-                  className="rounded-full bg-[#00F5D4] px-9 py-4 text-base font-black text-slate-950 shadow-[0_0_30px_rgba(0,245,212,0.4)] hover:shadow-[0_0_40px_rgba(0,245,212,0.6)] hover:bg-[#20ffd9] transition-all cursor-pointer"
+                  className="rounded-full bg-[#00F5D4] px-9 py-4 text-base font-black text-slate-950 shadow-[0_0_30px_rgba(0,245,212,0.45)] hover:shadow-[0_0_45px_rgba(0,245,212,0.7)] hover:bg-[#20ffd9] transition-all"
                 >
                   <span className="flex items-center gap-2">
                     <CalendarDays className="h-5 w-5" />
-                    <span>احجز موعدك الآن</span>
+                    <span>احجز استشارتك الآن</span>
                   </span>
                 </MagneticButton>
 
-                <a
-                  href={`https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md transition-all"
-                >
-                  <MessageCircle className="h-4 w-4 text-emerald-400" />
-                  <span>تواصل عبر واتساب</span>
-                </a>
+                {clinic.phone && (
+                  <a
+                    href={`tel:${clinic.phone}`}
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all"
+                  >
+                    <PhoneCall className="h-4 w-4 text-[#00F5D4]" />
+                    <span>اتصال مباشر: {clinic.phone}</span>
+                  </a>
+                )}
 
-                <a
-                  href={`tel:${clinic.phone}`}
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-                >
-                  <PhoneCall className="h-4 w-4 text-[#00F5D4]" />
-                  <span>{clinic.phoneDisplay}</span>
-                </a>
-              </div>
-
-              {/* Dynamic Live Branches Footer Line */}
-              <div className="mt-10 pt-6 border-t border-white/10 flex items-center justify-center gap-2 flex-wrap text-xs text-slate-300">
-                <MapPin className="h-3.5 w-3.5 text-[#00F5D4]" />
-                <span className="font-bold text-white">فروعنا المتاحة:</span>
-                <span className="text-slate-300">{dynamicBranchString}</span>
+                {clinic.whatsapp && (
+                  <a
+                    href={`https://wa.me/${clinic.whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-400 backdrop-blur-xl transition-all text-emerald-300"
+                  >
+                    <MessageCircle className="h-4 w-4 text-emerald-400" />
+                    <span>واتساب العيادة</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -1412,5 +1550,3 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
     </div>
   );
 }
-
-export default AboutPage;
