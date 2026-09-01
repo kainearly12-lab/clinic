@@ -358,6 +358,138 @@ function SpatialSpotlightCard({
 }
 
 /**
+ * Awwwards Luxury Stacking Pillar Card Component
+ * Wide horizontal landscape layout, dark glassmorphism, dynamic cursor radial glow, glowing numbers
+ */
+function StackedPillarCard({
+  num,
+  badge,
+  title,
+  desc,
+  icon: Icon,
+  tags,
+  quote,
+  index,
+  total,
+}: {
+  num: string;
+  badge: string;
+  title: string;
+  desc: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tags: string[];
+  quote?: string;
+  index: number;
+  total: number;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ zIndex: 10 + index }}
+      className="gsap-stack-card absolute inset-x-0 top-0 w-full max-w-5xl mx-auto rounded-3xl p-px overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-white/10 transition-shadow duration-500 hover:shadow-[0_25px_70px_rgba(0,245,212,0.25)] select-none"
+    >
+      {/* Dynamic Cursor Spotlight Radial Glow */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
+        style={{
+          opacity: isHovered ? 1 : 0,
+          background: `radial-gradient(450px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 245, 212, 0.22), rgba(14, 165, 233, 0.08), transparent 70%)`,
+        }}
+      />
+
+      {/* Luxury Dark Glassmorphism Container */}
+      <div className="relative z-10 w-full min-h-[260px] md:min-h-[220px] rounded-[23px] backdrop-blur-xl bg-slate-950/80 border border-cyan-500/20 p-6 sm:p-8 md:p-9 flex flex-col justify-between overflow-hidden">
+        {/* Subtle Ambient Glow Orb in Corner */}
+        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+
+        {/* Sleek Horizontal Flex Layout */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 w-full">
+          {/* Side Column: Icon + Step Badge + Massive Glowing Identifier */}
+          <div className="flex sm:flex-row md:flex-col items-center sm:items-center md:items-start justify-between md:justify-center gap-3 shrink-0 w-full md:w-auto md:min-w-[190px] border-b md:border-b-0 md:border-l border-white/10 pb-4 md:pb-0 md:pl-7">
+            <div className="flex items-center gap-3.5">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/35 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:scale-105 transition-transform duration-300 shrink-0">
+                <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
+              </div>
+
+              {/* Glowing Numerical Identifier */}
+              <span
+                className="text-4xl sm:text-5xl font-black font-mono tracking-tighter text-transparent select-none"
+                style={{
+                  WebkitTextStroke: '1.5px #00F5D4',
+                  textShadow: isHovered
+                    ? '0 0 25px rgba(0,245,212,0.7)'
+                    : '0 0 15px rgba(0,245,212,0.35)',
+                }}
+              >
+                {num}
+              </span>
+            </div>
+
+            <span className="text-[11px] font-mono font-bold text-[#00F5D4] uppercase tracking-wider bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25 whitespace-nowrap">
+              {badge}
+            </span>
+          </div>
+
+          {/* Main Content: Title, Description, Tags stretched widely */}
+          <div className="flex-1 flex flex-col justify-between w-full">
+            <div>
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-xl sm:text-2xl font-black text-white hover:text-[#00F5D4] transition-colors leading-snug">
+                  {title}
+                </h3>
+                <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 bg-white/[0.04] px-3 py-1 rounded-full border border-white/10 shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
+                  <span>0{index + 1} / 0{total}</span>
+                </span>
+              </div>
+
+              <p className="mt-2.5 text-slate-300 text-sm sm:text-base leading-relaxed">
+                {desc}
+              </p>
+            </div>
+
+            {/* Tags Row */}
+            <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2 sm:gap-3">
+              {tags.map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-200 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/10 hover:border-[#00F5D4]/40 hover:text-white transition-colors"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#00F5D4] shrink-0" />
+                  <span>{tag}</span>
+                </span>
+              ))}
+              {quote && (
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-xs italic text-emerald-400/90 font-medium mr-auto">
+                  <Quote className="h-3.5 w-3.5 inline text-emerald-400" />
+                  <span>{quote}</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Animated Continuous Border-Beam Card with 3D Tilt Micro-Interactions
  */
 function BorderBeamCard({
@@ -535,19 +667,73 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
         });
       });
 
-      // Bento cards staggered entrance
-      gsap.from('.gsap-bento-card', {
-        scrollTrigger: {
-          trigger: '.gsap-bento-container',
-          start: 'top 85%',
-        },
-        y: 45,
-        opacity: 0,
-        stagger: 0.16,
-        duration: 0.9,
-        ease: 'power2.out',
-        clearProps: 'transform,opacity',
-      });
+      // GSAP ScrollTrigger Awwwards Stacking Cards Animation for "منظومة علاجية متكاملة"
+      const stackCards = gsap.utils.toArray<HTMLElement>('.gsap-stack-card');
+      if (stackCards.length > 0) {
+        const total = stackCards.length;
+
+        // Set initial positions
+        stackCards.forEach((card, idx) => {
+          if (idx === 0) {
+            gsap.set(card, {
+              yPercent: 0,
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+            });
+          } else {
+            gsap.set(card, {
+              yPercent: 120,
+              scale: 0.95,
+              opacity: 0,
+              filter: 'blur(0px)',
+            });
+          }
+        });
+
+        const stackTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '.gsap-stack-section',
+            start: 'top top',
+            end: () => `+=${total * 100}%`,
+            pin: true,
+            scrub: true,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        for (let i = 0; i < total - 1; i++) {
+          const current = stackCards[i];
+          const next = stackCards[i + 1];
+
+          stackTl
+            .to(
+              current,
+              {
+                scale: 0.95 - i * 0.02,
+                yPercent: -4 * (i + 1),
+                opacity: 0.5,
+                filter: 'blur(4px)',
+                duration: 1,
+                ease: 'power1.inOut',
+              },
+              `stack-${i}`
+            )
+            .to(
+              next,
+              {
+                yPercent: 0,
+                scale: 1,
+                opacity: 1,
+                filter: 'blur(0px)',
+                duration: 1,
+                ease: 'power1.inOut',
+              },
+              `stack-${i}`
+            );
+        }
+      }
 
       // Journey Steps staggered reveal
       gsap.from('.gsap-journey-step', {
@@ -600,6 +786,46 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
 
     return () => ctx.revert();
   }, [prefersReducedMotion]);
+
+  // Stacking Pillars Dataset for "منظومة علاجية متكاملة"
+  const stackPillars = useMemo(
+    () => [
+      {
+        num: '01',
+        badge: 'PILLAR 01 • EVIDENCE BASED',
+        title: 'الفلسفة الطبية المبنية على الدليل',
+        desc: 'نعتمد على الطب القائم على الدليل (Evidence-Based Dermatology). كل تقنية نستخدمها وكل خطة علاجية نصيغها تستند إلى دراسات علمية معتمدة ونتائج إكلينيكية موثقة، لضمان أعلى نسب الأمان وتفادي أي إجراءات زائدة لا تحتاجها حالتك.',
+        icon: Stethoscope,
+        tags: ['دقة التشخيص السريري', 'أمان الإجراءات المعتمدة', 'نتائج واقعية مستدامة'],
+      },
+      {
+        num: '02',
+        badge: 'PILLAR 02 • SMART LASER',
+        title: 'التطور التكنولوجي وأنظمة الليزر الذكية',
+        desc: 'نستثمر باستمرار في أحدث أجهزة الليزر الطبية المعتمدة من الهيئات الرقابية الدولية، والمزودة بأنظمة تبريد متطورة تحمي سطح الجلد وتمنحك أقصى درجات الراحة أثناء الجلسات وبأطوال موجية مخصصة بدقة.',
+        icon: Zap,
+        tags: ['⚡ تبريد فائق للجلد', '🔬 أطوال موجية مخصصة', '🛡️ معايير أمان عالمية'],
+      },
+      {
+        num: '03',
+        badge: 'PILLAR 03 • TAILORED CARE',
+        title: 'التجربة المخصصة لكل مراجع',
+        desc: 'لكل شخص طبيعة بشرة فريدة ونمط حياة مختلف. لذلك، نصمم لك برنامج علاج متكامل يشمل الجلسات العيادية والروتين المنزلي المتوافق تماماً مع أهدافك دون باقات تجارية عامة.',
+        icon: HeartHandshake,
+        tags: ['خطة علاجية مخصصة', 'متابعة روتين منزلي', 'ميثاق إكلينيكي موثق'],
+        quote: 'خطة علاجية تُفصل خصيصاً لك، وليست باقات عامة ثابتة.',
+      },
+      {
+        num: '04',
+        badge: 'PILLAR 04 • CLINICAL QUALITY',
+        title: 'الثقة وجودة الرعاية الإكلينيكية',
+        desc: 'نلتزم بأعلى معايير التعقيم الطبي ومكافحة العدوى، ونعتمد على مواد ومستهلكات طبية أصلية 100% معتمدة رسمياً، مع توثيق إلكتروني دقيق لسجلات المراجعين وتاريخ الجلسات لضمان متابعة مستمرة ونتائج قابلة للقياس.',
+        icon: ShieldCheck,
+        tags: ['تعقيم فوري ومستمر', 'مواد أصلية معتمدة 100%', 'سجل طبي رقمي موثق'],
+      },
+    ],
+    []
+  );
 
   // Pillar Treatment Data
   const pillarData = useMemo(
@@ -905,184 +1131,43 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: BENTO SPOTLIGHT ("منظومة علاجية متكاملة")                      */}
+      {/* SECTION 3: AWWWARDS STACKING CARDS ("منظومة علاجية متكاملة")               */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 border-t border-white/5">
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="gsap-reveal text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
+      <section className="gsap-stack-section relative min-h-screen flex flex-col justify-center items-center py-20 lg:py-28 border-t border-white/5 overflow-hidden bg-gradient-to-b from-[#070b14] via-[#080d19] to-[#070b14]">
+        {/* Atmospheric Ambient Glow Orb */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] rounded-full bg-[#00F5D4]/5 blur-[160px] pointer-events-none" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
+          {/* Section Header */}
+          <div className="gsap-reveal text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3 bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-[#00F5D4]/20">
               <Layers className="h-4 w-4" />
               <span>ركائز التميز الطبي</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               منظومة علاجية متكاملة
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base">
-              أربعة أبعاد رئيسية تشكل تجربة المراجع داخل عيادات Androderma
+            <p className="mt-3 text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
+              أربعة أبعاد رئيسية تشكل تجربة المراجع داخل عيادات Androderma وتحدد جودة الرعاية وسلامة النتائج
             </p>
           </div>
 
-          <div className="gsap-bento-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-            {/* Card 1: الفلسفة الطبية المبنية على الدليل (Large - 7 cols) with Animated Glowing Gradient */}
-            <div className="gsap-bento-card lg:col-span-7 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
-              {/* Dynamic Animated Ambient Backlight */}
-              <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#00F5D4]/10 blur-[100px] pointer-events-none group-hover:bg-[#00F5D4]/20 transition-all" />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)]">
-                    <Stethoscope className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
-                    PILLAR 01 • EVIDENCE BASED
-                  </span>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                  الفلسفة الطبية المبنية على الدليل
-                </h3>
-
-                <p className="text-slate-300 text-sm sm:text-base mt-4 leading-relaxed">
-                  نعتمد على الطب القائم على الدليل (Evidence-Based Dermatology). كل تقنية نستخدمها وكل خطة علاجية
-                  نصيغها تستند إلى دراسات علمية معتمدة ونتائج إكلينيكية موثقة، لضمان أعلى نسب الأمان وتفادي أي إجراءات
-                  زائدة لا تحتاجها حالتك.
-                </p>
-              </div>
-
-              <div className="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-200">
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                  <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
-                  <span>دقة التشخيص السريري</span>
-                </div>
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                  <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
-                  <span>أمان الإجراءات المعتمدة</span>
-                </div>
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                  <CheckCircle2 className="h-4 w-4 text-[#00F5D4] shrink-0" />
-                  <span>نتائج واقعية مستدامة</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: التطور التكنولوجي وأنظمة الليزر الذكية (5 cols) with Micro-Badge Triggers */}
-            <div className="gsap-bento-card lg:col-span-5 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 grid place-items-center text-cyan-400 shadow-[0_0_20px_rgba(14,165,233,0.25)]">
-                    <Zap className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/25">
-                    PILLAR 02 • SMART LASER
-                  </span>
-                </div>
-
-                <h3 className="text-2xl font-black text-white mt-6 group-hover:text-cyan-300 transition-colors">
-                  التطور التكنولوجي وأنظمة الليزر
-                </h3>
-
-                <p className="text-slate-300 text-sm mt-3 leading-relaxed">
-                  نستثمر باستمرار في أحدث أجهزة الليزر الطبية المعتمدة من الهيئات الرقابية الدولية، والمزودة بأنظمة
-                  تبريد متطورة تحمي سطح الجلد وتمنحك أقصى درجات الراحة أثناء الجلسات.
-                </p>
-              </div>
-
-              {/* Glowing Interactive Micro-Tags */}
-              <div className="relative z-10 mt-6 flex flex-wrap gap-2">
-                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
-                  ⚡ تبريد فائق للجلد
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
-                  🔬 أطوال موجية مخصصة
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]">
-                  🛡️ معايير أمان عالمية
-                </span>
-              </div>
-            </div>
-
-            {/* Card 3: التجربة المخصصة لكل مراجع (5 cols) with Quote Container & Signature */}
-            <div className="gsap-bento-card lg:col-span-5 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 grid place-items-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
-                    <HeartHandshake className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/25">
-                    PILLAR 03 • TAILORED CARE
-                  </span>
-                </div>
-
-                <h3 className="text-2xl font-black text-white mt-6 group-hover:text-emerald-300 transition-colors">
-                  التجربة المخصصة لكل مراجع
-                </h3>
-
-                <p className="text-slate-300 text-sm mt-3 leading-relaxed">
-                  لكل شخص طبيعة بشرة فريدة ونمط حياة مختلف. لذلك، نصمم لك برنامج علاج متكامل يشمل الجلسات العيادية
-                  والروتين المنزلي المتوافق تماماً مع أهدافك.
-                </p>
-              </div>
-
-              <div className="relative z-10 mt-6 p-4 rounded-2xl bg-black/40 border border-emerald-500/30 text-xs text-slate-200">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1">
-                  <Quote className="h-3.5 w-3.5" />
-                  <span>توقيع الميثاق الإكلينيكي</span>
-                </div>
-                <p className="italic text-slate-300">
-                  "خطة علاجية تُفصل خصيصاً لك، وليست باقات عامة ثابتة."
-                </p>
-              </div>
-            </div>
-
-            {/* Card 4: الثقة وجودة الرعاية (Large - 7 cols) with Live Pulse Nodes */}
-            <div className="gsap-bento-card lg:col-span-7 relative p-8 sm:p-10 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0e1628]/90 via-[#0a101d]/90 to-transparent border border-cyan-500/25 hover:border-[#00F5D4]/60 transition-all flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] group">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)]">
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-mono text-[#00F5D4] uppercase tracking-widest bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
-                    PILLAR 04 • CLINICAL QUALITY
-                  </span>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
-                  الثقة وجودة الرعاية الإكلينيكية
-                </h3>
-
-                <p className="text-slate-300 text-sm sm:text-base mt-4 leading-relaxed">
-                  نلتزم بأعلى معايير التعقيم الطبي ومكافحة العدوى، ونعتمد على مواد ومستهلكات طبية أصلية 100% معتمدة
-                  رسمياً، مع توثيق إلكتروني دقيق لسجلات المراجعين وتاريخ الجلسات لضمان متابعة مستمرة ونتائج قابلة للقياس.
-                </p>
-              </div>
-
-              {/* Animated Live Pulse Nodes */}
-              <div className="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold text-slate-200">
-                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F5D4] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F5D4]" />
-                  </span>
-                  <span>تعقيم فوري ومستمر</span>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-                  </span>
-                  <span>مواد أصلية معتمدة 100%</span>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
-                  </span>
-                  <span>سجل طبي رقمي موثق</span>
-                </div>
-              </div>
-            </div>
+          {/* Stacking Cards Stage */}
+          <div className="relative w-full max-w-5xl mx-auto min-h-[380px] sm:min-h-[320px] md:min-h-[240px]">
+            {stackPillars.map((pillar, idx) => (
+              <StackedPillarCard
+                key={pillar.num}
+                num={pillar.num}
+                badge={pillar.badge}
+                title={pillar.title}
+                desc={pillar.desc}
+                icon={pillar.icon}
+                tags={pillar.tags}
+                quote={pillar.quote}
+                index={idx}
+                total={stackPillars.length}
+              />
+            ))}
           </div>
         </div>
       </section>
