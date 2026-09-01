@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { AppointmentRecord } from '@/types/admin';
+import html2canvas from 'html2canvas';
+import { AppointmentRecord, AppointmentStatus, PaymentStatus } from '@/types/admin';
 
-interface ExportReportOptions {
+export interface ExportReportOptions {
   branchId?: string;
   branchName?: string;
   appointments: AppointmentRecord[];
@@ -10,13 +10,92 @@ interface ExportReportOptions {
   generatedByEmail?: string;
 }
 
-export function exportAppointmentsPdfReport({
+// Arabic Branch Name Resolver
+function resolveBranchName(branchId?: string, fallbackName?: string): string {
+  if (!branchId || branchId === 'all') return 'جميع الفروع';
+  switch (branchId) {
+    case 'nasr-city':
+      return 'مدينة نصر - البرج الطبي';
+    case 'tagamoa':
+      return 'التجمع الخامس (مكتب د. هشام)';
+    case 'sheikh-zayed':
+      return 'الشيخ زايد - الكارما';
+    case 'heliopolis':
+      return 'مصر الجديدة - الكوربة';
+    default:
+      return fallbackName || branchId;
+  }
+}
+
+// Arabic Status Helpers
+function getArabicStatus(status: AppointmentStatus): { label: string; bg: string; color: string; border: string } {
+  switch (status) {
+    case 'confirmed':
+      return { label: 'مؤكد', bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' };
+    case 'completed':
+      return { label: 'مكتمل', bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' };
+    case 'cancelled':
+      return { label: 'ملغي', bg: '#fef2f2', color: '#991b1b', border: '#fecaca' };
+    case 'pending':
+    default:
+      return { label: 'قيد الانتظار', bg: '#fffbeb', color: '#92400e', border: '#fde68a' };
+  }
+}
+
+function getArabicPaymentStatus(paymentStatus: PaymentStatus): { label: string; bg: string; color: string; border: string } {
+  switch (paymentStatus) {
+    case 'paid':
+      return { label: 'تم التحصيل', bg: '#ecfdf5', color: '#047857', border: '#6ee7b7' };
+    case 'partial':
+      return { label: 'سداد جزئي', bg: '#fffbeb', color: '#b45309', border: '#fcd34d' };
+    case 'pending':
+    case 'معلق':
+      return { label: 'معلق', bg: '#f8fafc', color: '#475569', border: '#cbd5e1' };
+    case 'unpaid':
+    default:
+      return { label: 'غير مدفوع', bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5' };
+  }
+}
+
+function getArabicPaymentMethod(method?: string): string {
+  if (!method) return '-';
+  const m = method.toLowerCase();
+  if (m.includes('vodafone') || m.includes('cash_vodafone') || m.includes('فودافون')) return 'فودافون كاش';
+  if (m.includes('insta') || m.includes('انستا')) return 'انستاباي';
+  if (m.includes('cash') || m.includes('نقدا') || m.includes('كاش')) return 'نقداً بالعيادة';
+  if (m.includes('card') || m.includes('فيزا') || m.includes('بطاقة')) return 'بطاقة بنكية';
+  return method;
+}
+
+// Ensure Arabic Web Fonts are injected and ready
+async function ensureArabicFontReady(): Promise<void> {
+  if (!document.getElementById('androderma-arabic-font-link')) {
+    const link = document.createElement('link');
+    link.id = 'androderma-arabic-font-link';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap';
+    document.head.appendChild(link);
+  }
+  if (document.fonts) {
+    try {
+      await document.fonts.ready;
+    } catch {
+      // Continue even if font ready promise fails
+    }
+  }
+}
+
+/**
+ * Generates and downloads a fully localized, high-resolution Arabic PDF report
+ * with proper Right-to-Left (RTL) layout, styled summary KPIs, and tabular format.
+ */
+export async function exportAppointmentsPdfReport({
   branchId = 'all',
   branchName = 'جميع الفروع',
   appointments,
   dateRangeLabel = 'كافة المواعيد المسجلة',
   generatedByEmail = 'مدير النظام',
-}: ExportReportOptions): void {
+}: ExportReportOptions): Promise<void> {
   // Filter appointments if specific branch selected
   const reportAppointments =
     branchId === 'all'
@@ -25,209 +104,258 @@ export function exportAppointmentsPdfReport({
 
   // Compute metrics
   const totalCount = reportAppointments.length;
-  const paidAppointments = reportAppointments.filter((a) => a.payment_status === 'paid');
-  const paidCount = paidAppointments.length;
-  const unpaidCount = reportAppointments.filter((a) => a.payment_status === 'unpaid').length;
-  const totalRevenue = paidAppointments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
   const confirmedCount = reportAppointments.filter(
     (a) => a.status === 'confirmed' || a.status === 'completed'
   ).length;
+  const paidAppointments = reportAppointments.filter((a) => a.payment_status === 'paid');
+  const paidRevenue = paidAppointments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+  const unpaidAppointments = reportAppointments.filter(
+    (a) => a.payment_status === 'unpaid' || a.payment_status === 'pending' || a.payment_status === 'معلق'
+  );
+  const pendingRevenue = unpaidAppointments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
 
-  // Initialize PDF in landscape orientation for clean tabular readability
-  const doc = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: 'a4',
-  });
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  // Top luxury header banner
-  doc.setFillColor(15, 23, 42); // slate-900
-  doc.rect(0, 0, pageWidth, 28, 'F');
-
-  // Accent line
-  doc.setFillColor(0, 184, 169); // #00B8A9 teal
-  doc.rect(0, 27, pageWidth, 1.5, 'F');
-
-  // Header Titles
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('ANDRODERMA DERMATOLOGY & LASER CLINICS', 14, 12);
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 184, 169);
-  doc.text('Official Administrative Patient & Revenue Statement', 14, 19);
-
-  // Date & User meta on right side of header
-  doc.setFontSize(9);
-  doc.setTextColor(203, 213, 225); // slate-300
+  const displayBranchName = resolveBranchName(branchId, branchName);
   const now = new Date();
-  const generatedAtStr = `${now.toISOString().split('T')[0]} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  doc.text(`Generated: ${generatedAtStr}`, pageWidth - 14, 12, { align: 'right' });
-  doc.text(`Staff / Admin: ${generatedByEmail}`, pageWidth - 14, 19, { align: 'right' });
-
-  // Report Scope Card
-  doc.setFillColor(248, 250, 252); // slate-50
-  doc.setDrawColor(226, 232, 240); // slate-200
-  doc.roundedRect(14, 34, pageWidth - 28, 22, 3, 3, 'FD');
-
-  doc.setTextColor(15, 23, 42);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Branch Target: ${branchName} (${branchId.toUpperCase()})`, 18, 41);
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Scope / Time Range: ${dateRangeLabel}`, 18, 47);
-
-  // Metric pills inside header
-  const metricXStart = pageWidth - 160;
-  const metrics = [
-    { label: 'Total Bookings', value: `${totalCount}` },
-    { label: 'Confirmed', value: `${confirmedCount}` },
-    { label: `Paid (${paidCount})`, value: `${totalRevenue.toLocaleString()} EGP` },
-    { label: 'Unpaid / Pending', value: `${unpaidCount}` },
-  ];
-
-  metrics.forEach((m, idx) => {
-    const xPos = metricXStart + idx * 35;
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(xPos, 37, 32, 16, 2, 2, 'FD');
-
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text(m.label, xPos + 16, 42, { align: 'center' });
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(m.value, xPos + 16, 48.5, { align: 'center' });
+  const dateFormatted = now.toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
-
-  // Table Data Mapping
-  const tableRows = reportAppointments.map((apt, index) => {
-    const statusLabel =
-      apt.status === 'confirmed'
-        ? 'Confirmed'
-        : apt.status === 'completed'
-        ? 'Completed'
-        : apt.status === 'cancelled'
-        ? 'Cancelled'
-        : 'Pending';
-
-    const paymentLabel = apt.payment_status === 'paid' ? 'PAID' : 'UNPAID';
-    const amountStr = `${Number(apt.amount || 0).toLocaleString()} EGP`;
-
-    return [
-      String(index + 1),
-      apt.patient_name || 'N/A',
-      apt.patient_phone || 'N/A',
-      apt.service_name || 'Dermatology Consultation',
-      apt.branch_name_ar || apt.branch_id || 'N/A',
-      `${apt.appointment_date} (${apt.appointment_time || ''})`,
-      amountStr,
-      statusLabel,
-      paymentLabel,
-      apt.notes || '-',
-    ];
+  const timeFormatted = now.toLocaleTimeString('ar-EG', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
+  const generationTimestamp = `${dateFormatted} — ${timeFormatted}`;
 
-  // Generate Table using autoTable
-  autoTable(doc, {
-    startY: 61,
-    head: [
-      [
-        '#',
-        'Patient Name',
-        'Phone',
-        'Service / Treatment',
-        'Branch',
-        'Date & Time',
-        'Fee (EGP)',
-        'Status',
-        'Payment',
-        'Notes / Clinical',
-      ],
-    ],
-    body: tableRows.length > 0 ? tableRows : [['-', 'No appointment records found for this branch filter', '', '', '', '', '', '', '', '']],
-    theme: 'grid',
-    styles: {
-      fontSize: 8,
-      cellPadding: 2.2,
-      font: 'helvetica',
-      textColor: [15, 23, 42],
-      lineColor: [226, 232, 240],
-      lineWidth: 0.2,
-    },
-    headStyles: {
-      fillColor: [15, 23, 42],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 8.5,
-      halign: 'left',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    columnStyles: {
-      0: { cellWidth: 8, halign: 'center' }, // #
-      1: { cellWidth: 35, fontStyle: 'bold' }, // Patient
-      2: { cellWidth: 26 }, // Phone
-      3: { cellWidth: 48 }, // Service
-      4: { cellWidth: 28 }, // Branch
-      5: { cellWidth: 34 }, // Date Time
-      6: { cellWidth: 22, halign: 'right', fontStyle: 'bold' }, // Fee
-      7: { cellWidth: 22, halign: 'center' }, // Status
-      8: { cellWidth: 20, halign: 'center' }, // Payment
-      9: { cellWidth: 'auto' }, // Notes
-    },
-    didDrawCell: (data) => {
-      // Color highlight payment status cells
-      if (data.section === 'body' && data.column.index === 8) {
-        const text = String(data.cell.raw);
-        if (text === 'PAID') {
-          doc.setTextColor(16, 185, 129); // green
-        } else if (text === 'UNPAID') {
-          doc.setTextColor(239, 68, 68); // red
-        }
+  // Ensure Arabic Fonts are loaded
+  await ensureArabicFontReady();
+
+  // Create temporary container for HTML-to-Canvas rendering
+  const container = document.createElement('div');
+  container.id = 'androderma-pdf-report-render';
+  container.setAttribute('dir', 'rtl');
+  container.style.position = 'fixed';
+  container.style.left = '-99999px';
+  container.style.top = '0';
+  container.style.width = '1180px';
+  container.style.backgroundColor = '#ffffff';
+  container.style.color = '#0f172a';
+  container.style.fontFamily = "'Cairo', 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  container.style.padding = '28px 32px 36px 32px';
+  container.style.boxSizing = 'border-box';
+  container.style.direction = 'rtl';
+  container.style.textAlign = 'right';
+
+  // Build Table Rows HTML
+  const tableRowsHtml =
+    reportAppointments.length > 0
+      ? reportAppointments
+          .map((apt, index) => {
+            const statusInfo = getArabicStatus(apt.status);
+            const paymentInfo = getArabicPaymentStatus(apt.payment_status);
+            const branchLabel = resolveBranchName(apt.branch_id, apt.branch_name_ar);
+            const feeFormatted = Number(apt.amount || 0).toLocaleString('ar-EG');
+            const paymentMethodLabel = getArabicPaymentMethod(apt.payment_method);
+            const notesText = apt.notes || apt.medical_notes || '-';
+            const rowBg = index % 2 === 1 ? '#f8fafc' : '#ffffff';
+
+            return `
+              <tr style="background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+                <td style="padding: 10px 8px; text-align: center; font-weight: 700; color: #475569; width: 32px;">${index + 1}</td>
+                <td style="padding: 10px 8px; font-weight: 800; color: #0f172a; width: 140px;">${apt.patient_name || 'غير محدد'}</td>
+                <td style="padding: 10px 8px; font-family: sans-serif; direction: ltr; text-align: right; color: #334155; font-weight: 600; width: 110px;">${apt.patient_phone || '-'}</td>
+                <td style="padding: 10px 8px; color: #1e293b; font-weight: 600; width: 150px;">
+                  <div>${apt.service_name || 'كشف واستشارة جلدية'}</div>
+                  ${apt.visit_type ? `<div style="font-size: 9.5px; color: #008779; font-weight: 700; margin-top: 2px;">${apt.visit_type}</div>` : ''}
+                </td>
+                <td style="padding: 10px 8px; color: #475569; font-weight: 600; width: 120px;">${branchLabel}</td>
+                <td style="padding: 10px 8px; color: #334155; width: 130px;">
+                  <div style="font-weight: 700;">${apt.appointment_date}</div>
+                  <div style="font-size: 10px; color: #64748b; margin-top: 1px;">${apt.appointment_time || ''}</div>
+                </td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: 800; color: #0f172a; width: 95px; font-family: sans-serif;">${feeFormatted} ج.م</td>
+                <td style="padding: 10px 6px; text-align: center; width: 90px;">
+                  <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; background-color: ${statusInfo.bg}; color: ${statusInfo.color}; border: 1px solid ${statusInfo.border};">
+                    ${statusInfo.label}
+                  </span>
+                </td>
+                <td style="padding: 10px 6px; text-align: center; width: 95px;">
+                  <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; background-color: ${paymentInfo.bg}; color: ${paymentInfo.color}; border: 1px solid ${paymentInfo.border};">
+                    ${paymentInfo.label}
+                  </span>
+                  <div style="font-size: 9px; color: #64748b; margin-top: 2px;">${paymentMethodLabel}</div>
+                </td>
+                <td style="padding: 10px 8px; color: #64748b; font-size: 10px; line-height: 1.4; max-width: 140px; word-break: break-word;">
+                  ${notesText}
+                </td>
+              </tr>
+            `;
+          })
+          .join('')
+      : `
+        <tr>
+          <td colspan="10" style="padding: 32px 16px; text-align: center; color: #64748b; font-size: 13px; font-weight: 700; background-color: #f8fafc;">
+            لا توجد سجلات حجوزات مطابقة لنطاق الفلتر المحدد
+          </td>
+        </tr>
+      `;
+
+  // HTML Template for the entire Arabic Report
+  container.innerHTML = `
+    <div style="width: 100%; box-sizing: border-box;">
+      <!-- TOP EXECUTIVE HEADER -->
+      <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 22px 26px; color: #ffffff; margin-bottom: 20px; border-bottom: 4px solid #00B8A9; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+          <!-- Right: Title & Subtitle -->
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background-color: rgba(0, 184, 169, 0.2); border: 1px solid #00B8A9; display: flex; align-items: center; justify-content: center; color: #00B8A9; font-weight: 900; font-size: 16px;">
+                AD
+              </div>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: -0.3px;">
+                تقارير وحجوزات عيادات أندروديرما للجلدية والليزر
+              </h1>
+            </div>
+            <p style="margin: 0 0 8px 0; font-size: 12.5px; color: #00B8A9; font-weight: 700;">
+              بيان الحجوزات والإيرادات الإدارية الرسمية
+            </p>
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 11px; color: #cbd5e1;">
+              <span><strong>الفرع المستهدف:</strong> ${displayBranchName}</span>
+              <span>•</span>
+              <span><strong>نطاق المواعيد:</strong> ${dateRangeLabel}</span>
+            </div>
+          </div>
+
+          <!-- Left: Metadata Box -->
+          <div style="background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 10px 16px; min-width: 220px; text-align: right;">
+            <div style="font-size: 10.5px; color: #94a3b8; margin-bottom: 3px;">تاريخ وتوقيت التقرير:</div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">${generationTimestamp}</div>
+            <div style="font-size: 10.5px; color: #94a3b8; margin-bottom: 3px;">المسؤول / الإدارة:</div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #00B8A9;">${generatedByEmail}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 EXECUTIVE SUMMARY KPI CARDS -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px;">
+        <!-- Card 1: Total Bookings -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px;">إجمالي الحجوزات</div>
+          <div style="font-size: 20px; font-weight: 900; color: #0f172a; font-family: sans-serif;">${totalCount}</div>
+          <div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px;">سجل حجز مسجل</div>
+        </div>
+
+        <!-- Card 2: Confirmed Bookings -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px;">المؤكدة</div>
+          <div style="font-size: 20px; font-weight: 900; color: #059669; font-family: sans-serif;">${confirmedCount}</div>
+          <div style="font-size: 9.5px; color: #059669; margin-top: 2px;">حجز معتمد ومكتمل</div>
+        </div>
+
+        <!-- Card 3: Collected Revenue -->
+        <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #065f46; margin-bottom: 4px;">المبالغ المحصلة (ج.م)</div>
+          <div style="font-size: 19px; font-weight: 900; color: #047857; font-family: sans-serif;">${paidRevenue.toLocaleString('ar-EG')} ج.م</div>
+          <div style="font-size: 9.5px; color: #065f46; margin-top: 2px;">${paidAppointments.length} عملية سداد ناجحة</div>
+        </div>
+
+        <!-- Card 4: Pending Revenue -->
+        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 4px;">المبالغ المعلقة</div>
+          <div style="font-size: 19px; font-weight: 900; color: #b45309; font-family: sans-serif;">${pendingRevenue.toLocaleString('ar-EG')} ج.م</div>
+          <div style="font-size: 9.5px; color: #92400e; margin-top: 2px;">${unpaidAppointments.length} حجز بانتظار التحصيل</div>
+        </div>
+      </div>
+
+      <!-- TABLE CONTAINER -->
+      <div style="border: 1px solid #cbd5e1; border-radius: 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <table style="width: 100%; border-collapse: collapse; text-align: right; background-color: #ffffff;">
+          <thead>
+            <tr style="background-color: #0f172a; color: #ffffff; font-size: 11.5px; font-weight: 800;">
+              <th style="padding: 12px 8px; text-align: center; width: 32px; border-bottom: 2px solid #00B8A9;">#</th>
+              <th style="padding: 12px 8px; width: 140px; border-bottom: 2px solid #00B8A9;">اسم المريض</th>
+              <th style="padding: 12px 8px; width: 110px; border-bottom: 2px solid #00B8A9;">رقم الهاتف</th>
+              <th style="padding: 12px 8px; width: 150px; border-bottom: 2px solid #00B8A9;">الخدمة / العلاج</th>
+              <th style="padding: 12px 8px; width: 120px; border-bottom: 2px solid #00B8A9;">الفرع</th>
+              <th style="padding: 12px 8px; width: 130px; border-bottom: 2px solid #00B8A9;">التاريخ والوقت</th>
+              <th style="padding: 12px 8px; text-align: center; width: 95px; border-bottom: 2px solid #00B8A9;">الكشف (ج.م)</th>
+              <th style="padding: 12px 8px; text-align: center; width: 90px; border-bottom: 2px solid #00B8A9;">حالة الحجز</th>
+              <th style="padding: 12px 8px; text-align: center; width: 95px; border-bottom: 2px solid #00B8A9;">طريقة الدفع</th>
+              <th style="padding: 12px 8px; width: 140px; border-bottom: 2px solid #00B8A9;">الملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10.5px; color: #64748b;">
+        <div style="font-weight: 700; color: #334155;">
+          منظومة أندروديرما الطبية • تقرير إداري سري ومحمي
+        </div>
+        <div>
+          تم الإنشاء بواسطة نظام الإدارة الإلكتروني الموحد • صفحة 1 من 1
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    // Render the container to high-res canvas
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 1180,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth(); // 297 mm
+    const pdfHeight = pdf.internal.pageSize.getHeight(); // 210 mm
+
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    if (imgHeight <= pdfHeight) {
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+    } else {
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
       }
-    },
-    margin: { left: 14, right: 14, bottom: 18 },
-  });
+    }
 
-  // Footer for each page
-  const pageCount = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(148, 163, 184); // slate-400
-
-    // Footer divider line
-    doc.setDrawColor(226, 232, 240);
-    doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
-
-    doc.text(
-      'Androderma Medical Suite • Confidential & Proprietary Clinical Data',
-      14,
-      pageHeight - 7
-    );
-    doc.text(
-      `Page ${i} of ${pageCount}`,
-      pageWidth - 14,
-      pageHeight - 7,
-      { align: 'right' }
-    );
+    const sanitizedBranch = branchId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileDate = now.toISOString().split('T')[0];
+    pdf.save(`Androderma_Report_${sanitizedBranch}_${fileDate}.pdf`);
+  } finally {
+    // Clean up temporary DOM element
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
   }
-
-  // Save the PDF
-  const sanitizedBranch = branchId.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const fileDate = now.toISOString().split('T')[0];
-  doc.save(`Androderma_Report_${sanitizedBranch}_${fileDate}.pdf`);
 }
+
+// Aliases for seamless backwards compatibility and clean integration
+export const generatePDF = exportAppointmentsPdfReport;
+export const generateAppointmentsPDF = exportAppointmentsPdfReport;
+

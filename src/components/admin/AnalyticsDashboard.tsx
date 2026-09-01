@@ -70,12 +70,14 @@ export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNot
   }, [appointments, isLoading]);
 
   // Export PDF Handler
-  const handleExportPdf = useCallback(() => {
+  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
+  const handleExportPdf = useCallback(async () => {
     try {
+      setIsExportingPdf(true);
       const branchObj = defaultBranches.find((b) => b.id === selectedExportBranch);
       const branchName = selectedExportBranch === 'all' ? 'جميع الفروع' : (branchObj ? branchObj.nameAr : selectedExportBranch);
 
-      exportAppointmentsPdfReport({
+      await exportAppointmentsPdfReport({
         branchId: selectedExportBranch,
         branchName,
         appointments,
@@ -86,6 +88,8 @@ export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNot
     } catch (err) {
       console.error('Analytics PDF export error:', err);
       onNotify('error', 'حدث خطأ أثناء تصدير تقرير الـ PDF');
+    } finally {
+      setIsExportingPdf(false);
     }
   }, [selectedExportBranch, appointments, onNotify]);
 
@@ -160,10 +164,11 @@ export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNot
 
           <button
             onClick={handleExportPdf}
-            className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)] cursor-pointer"
+            disabled={isExportingPdf}
+            className="flex items-center gap-1.5 rounded-xl bg-[#00B8A9] px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-[#00d6c4] hover:shadow-[0_0_15px_rgba(0,184,169,0.4)] cursor-pointer disabled:opacity-50"
           >
-            <FileDown className="h-4 w-4" />
-            <span>تصدير تقرير PDF</span>
+            <FileDown className={`h-4 w-4 ${isExportingPdf ? 'animate-bounce' : ''}`} />
+            <span>{isExportingPdf ? 'جاري تجهيز الـ PDF...' : 'تصدير تقرير PDF'}</span>
           </button>
         </div>
       </div>

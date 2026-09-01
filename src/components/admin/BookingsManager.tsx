@@ -345,8 +345,10 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
   }, [quickPaymentModal, loadData, onNotify]);
 
   // Export Branch-based PDF Report
-  const handleExportPdf = useCallback(() => {
+  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
+  const handleExportPdf = useCallback(async () => {
     try {
+      setIsExportingPdf(true);
       const branchObj = defaultBranches.find((b) => b.id === selectedBranchFilter);
       const branchName = selectedBranchFilter === 'all' ? 'جميع الفروع' : (branchObj ? branchObj.nameAr : selectedBranchFilter);
       
@@ -355,7 +357,7 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
       else if (selectedDateFilter === 'upcoming') dateRange = 'المواعيد القادمة';
       else if (selectedDateFilter === 'past') dateRange = 'السجلات والمواعيد السابقة';
 
-      exportAppointmentsPdfReport({
+      await exportAppointmentsPdfReport({
         branchId: selectedBranchFilter,
         branchName,
         appointments: filteredAppointments,
@@ -366,6 +368,8 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
     } catch (err) {
       console.error('PDF export error:', err);
       onNotify('error', 'حدث خطأ أثناء إنشاء وتصدير ملف الـ PDF');
+    } finally {
+      setIsExportingPdf(false);
     }
   }, [selectedBranchFilter, selectedDateFilter, filteredAppointments, onNotify]);
 
@@ -481,11 +485,12 @@ export const BookingsManager = React.memo(function BookingsManager({ onNotify }:
 
             <button
               onClick={handleExportPdf}
-              title="تصدير تقرير PDF للفرع المحدد"
-              className="flex items-center gap-1 rounded-xl border border-white/15 bg-slate-800/80 px-2.5 py-2 text-xs font-bold text-slate-200 transition hover:bg-slate-700"
+              disabled={isExportingPdf}
+              title="تصدير تقرير PDF معتمد باللغة العربية للفرع المحدد"
+              className="flex items-center gap-1 rounded-xl border border-white/15 bg-slate-800/80 px-2.5 py-2 text-xs font-bold text-slate-200 transition hover:bg-slate-700 disabled:opacity-50"
             >
-              <FileDown className="h-3.5 w-3.5 text-[#00B8A9]" />
-              <span>PDF</span>
+              <FileDown className={`h-3.5 w-3.5 text-[#00B8A9] ${isExportingPdf ? 'animate-bounce' : ''}`} />
+              <span>{isExportingPdf ? 'جاري التصدير...' : 'PDF'}</span>
             </button>
 
             <button
