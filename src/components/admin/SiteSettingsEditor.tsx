@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  Palette,
   Sliders,
   Save,
   Globe,
@@ -20,14 +19,6 @@ interface SiteSettingsEditorProps {
   isLoading?: boolean;
 }
 
-const COLOR_PRESETS = [
-  { name: 'زمردي أندرو ديرما (الافتراضي)', primary: '#00B8A9', accent: '#0F766E' },
-  { name: 'تركواز بحري ملكي', primary: '#06B6D4', accent: '#0E7490' },
-  { name: 'أخضر غابي نقي', primary: '#10B981', accent: '#047857' },
-  { name: 'أزرق ياقوتي طبي', primary: '#3B82F6', accent: '#1D4ED8' },
-  { name: 'بنفسجي فاخر', primary: '#8B5CF6', accent: '#6D28D9' },
-];
-
 export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   settings,
   onUpdateSettings,
@@ -36,8 +27,6 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   const [taglineAr, setTaglineAr] = useState<string>(settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي');
   const [logoUrl, setLogoUrl] = useState<string>(settings.logo_url || CLINIC_LOGO);
   const [faviconUrl, setFaviconUrl] = useState<string>(settings.favicon_url || settings.logo_url || CLINIC_LOGO);
-  const [primaryColor, setPrimaryColor] = useState<string>(settings.primary_color || '#00B8A9');
-  const [accentColor, setAccentColor] = useState<string>(settings.accent_color || '#0F766E');
   const [whatsappNumber, setWhatsappNumber] = useState<string>(settings.whatsapp_number || '201154021247');
   const [emailContact, setEmailContact] = useState<string>(settings.email_contact || 'info@androderma.com');
   const [emergencyNotice, setEmergencyNotice] = useState<string>(settings.emergency_notice_ar || '');
@@ -92,8 +81,6 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
         tagline_ar: taglineAr.trim(),
         logo_url: activeLogo,
         favicon_url: activeFavicon,
-        primary_color: primaryColor,
-        accent_color: accentColor,
         whatsapp_number: whatsappNumber.trim(),
         email_contact: emailContact.trim(),
         emergency_notice_ar: emergencyNotice.trim() || null,
@@ -114,7 +101,7 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
           </div>
           <div>
             <h2 className="text-lg font-black text-white">إعدادات الموقع وهوية الشعار والفافيكون</h2>
-            <p className="text-xs text-slate-400">تخصيص اللوجو والشعار والـ Favicon وألوان البراند والبيانات العامة</p>
+            <p className="text-xs text-slate-400">تخصيص اللوجو والشعار والـ Favicon والبيانات العامة وقنوات التواصل</p>
           </div>
         </div>
       </div>
@@ -260,102 +247,14 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Brand Identity & Colors (6 cols) */}
-          <div className="lg:col-span-6 p-6 rounded-2xl bg-slate-900/40 border border-white/10 backdrop-blur-xl shadow-xl space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-white/10">
-              <Palette className="w-4 h-4 text-[#00B8A9]" />
-              <h3 className="text-sm font-black text-white">هوية الألوان والتصميم (Theme Engine)</h3>
-            </div>
-
-            {/* Presets */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-2">نماذج ألوان جاهزة</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => {
-                      setPrimaryColor(preset.primary);
-                      setAccentColor(preset.accent);
-                    }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-white/5 bg-slate-950/40 hover:bg-slate-900/80 hover:border-white/20 transition-all text-right"
-                  >
-                    <div className="flex items-center gap-1">
-                      <span className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: preset.primary }} />
-                      <span className="w-3 h-3 rounded-full border border-white/20" style={{ backgroundColor: preset.accent }} />
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-300">{preset.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Pickers */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">اللون الأساسي (Primary Emerald)</label>
-                <div className="flex items-center gap-2.5 bg-slate-950/60 p-2 rounded-xl border border-white/10">
-                  <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="bg-transparent text-xs font-mono text-white focus:outline-none w-20 uppercase"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">اللون الثانوي (Accent Dark)</label>
-                <div className="flex items-center gap-2.5 bg-slate-950/60 p-2 rounded-xl border border-white/10">
-                  <input
-                    type="color"
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    className="bg-transparent text-xs font-mono text-white focus:outline-none w-20 uppercase"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Live Preview Card */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
-              <span className="text-[11px] font-bold text-slate-400">معاينة حية لتدرج الألوان:</span>
-              <div className="flex items-center justify-between p-3 rounded-lg border border-white/10" style={{ backgroundColor: `${primaryColor}15` }}>
-                <span className="text-xs font-black" style={{ color: primaryColor }}>
-                  {clinicNameAr}
-                </span>
-                <button
-                  type="button"
-                  className="px-3 py-1 rounded-md text-xs font-bold text-slate-950 shadow-sm"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  زر كشف تجريبي
-                </button>
-              </div>
-            </div>
+        {/* General Site Data */}
+        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 backdrop-blur-xl shadow-xl space-y-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+            <Globe className="w-4 h-4 text-[#00B8A9]" />
+            <h3 className="text-sm font-black text-white">البيانات العامة وقنوات التواصل</h3>
           </div>
 
-          {/* General Site Data (6 cols) */}
-          <div className="lg:col-span-6 p-6 rounded-2xl bg-slate-900/40 border border-white/10 backdrop-blur-xl shadow-xl space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-white/10">
-              <Globe className="w-4 h-4 text-[#00B8A9]" />
-              <h3 className="text-sm font-black text-white">البيانات العامة وقنوات التواصل</h3>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">اسم العيادات</label>
               <input
@@ -377,43 +276,43 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">واتساب الإدارة الموحد</label>
-                <input
-                  type="text"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="201154021247"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
-                  dir="ltr"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">البريد الإلكتروني الرسمي</label>
-                <input
-                  type="email"
-                  value={emailContact}
-                  onChange={(e) => setEmailContact(e.target.value)}
-                  placeholder="info@androderma.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
-                  dir="ltr"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">واتساب الإدارة الموحد</label>
+              <input
+                type="text"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="201154021247"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                dir="ltr"
+              />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">شريط تنبيهات الطوارئ العام (اختياري)</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">البريد الإلكتروني الرسمي</label>
               <input
-                type="text"
-                value={emergencyNotice}
-                onChange={(e) => setEmergencyNotice(e.target.value)}
-                placeholder="مثال: يرجى العلم بأنه تم نقل عيادة ليزر المعادي للدور الأول مؤقتاً..."
+                type="email"
+                value={emailContact}
+                onChange={(e) => setEmailContact(e.target.value)}
+                placeholder="info@androderma.com"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                dir="ltr"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">شريط تنبيهات الطوارئ العام (اختياري)</label>
+            <input
+              type="text"
+              value={emergencyNotice}
+              onChange={(e) => setEmergencyNotice(e.target.value)}
+              placeholder="مثال: يرجى العلم بأنه تم نقل عيادة ليزر المعادي للدور الأول مؤقتاً..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+            />
           </div>
         </div>
 
