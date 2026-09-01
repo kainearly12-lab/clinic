@@ -11,9 +11,11 @@ import {
   TrendingUp,
   LogOut,
   ShieldCheck,
+  CreditCard,
 } from 'lucide-react';
 import { BookingsManager } from './BookingsManager';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { PaymentSettingsManager } from './PaymentSettingsManager';
 import { ScheduleManager } from './ScheduleManager';
 import { BranchEditor } from './BranchEditor';
 import { SiteSettingsEditor } from './SiteSettingsEditor';
@@ -41,7 +43,7 @@ interface AdminDashboardProps {
   adminEmail?: string;
 }
 
-type AdminTab有效 = 'bookings' | 'schedule' | 'branches' | 'analytics' | 'settings' | 'logs';
+type AdminTab有效 = 'bookings' | 'analytics' | 'payments' | 'schedule' | 'branches' | 'settings' | 'logs';
 
 export const AdminDashboard = React.memo(function AdminDashboard({
   onBackToSite,
@@ -362,6 +364,7 @@ export const AdminDashboard = React.memo(function AdminDashboard({
           {[
             { id: 'bookings' as AdminTab有效, label: 'إدارة الحجوزات والمدفوعات', icon: Users },
             { id: 'analytics' as AdminTab有效, label: 'لوحة التحليلات ومعدلات الطلب', icon: TrendingUp },
+            { id: 'payments' as AdminTab有效, label: 'بوابات الدفع والتسعير المالي', icon: CreditCard },
             { id: 'schedule' as AdminTab有效, label: 'إدارة المواعيد والعطلات', icon: Calendar },
             { id: 'branches' as AdminTab有效, label: 'محرر بيانات الفروع والمواقع', icon: Building2 },
             { id: 'settings' as AdminTab有效, label: 'إعدادات الموقع والشعار والـ Favicon', icon: Sliders },
@@ -394,6 +397,10 @@ export const AdminDashboard = React.memo(function AdminDashboard({
 
           {activeTab === 'analytics' && (
             <AnalyticsDashboard onNotify={addToast} />
+          )}
+
+          {activeTab === 'payments' && (
+            <PaymentSettingsManager onNotify={addToast} />
           )}
 
           {activeTab === 'schedule' && (

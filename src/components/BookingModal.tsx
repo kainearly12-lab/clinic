@@ -30,6 +30,8 @@ import {
   fetchClinicPaymentSettings,
   uploadPaymentScreenshot,
   ClinicPaymentSettings,
+  DEFAULT_VODAFONE_ACCOUNTS,
+  DEFAULT_INSTAPAY_ACCOUNTS,
 } from '@/services/paymentSettingsService';
 import { AppointmentRecord } from '@/types/admin';
 
@@ -118,6 +120,8 @@ export function BookingModal({
     vodafone_cash_number: '01154021247',
     instapay_address: 'androderma@instapay',
     instapay_number: '01154021247',
+    vodafone_cash_accounts: DEFAULT_VODAFONE_ACCOUNTS,
+    instapay_accounts: DEFAULT_INSTAPAY_ACCOUNTS,
     payment_instructions_ar:
       'يرجى تحويل رسوم الكشف الطبي عبر فودافون كاش أو تطبيق إنستاباي وإرفاق سكرين شوت يوضح نجاح التحويل لتأكيد الموعد فوراً.',
     is_payment_enabled: true,
@@ -778,68 +782,186 @@ export function BookingModal({
                 </div>
               </div>
 
-              {/* Active Payment Details & One-Click Copy */}
-              <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 space-y-2">
+              {/* Active Payment Details & Multi-Account One-Click Copy */}
+              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-white/10 space-y-3">
                 {paymentMethod === 'vodafone_cash' ? (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 block">رقم محفظة فودافون كاش الرسمية:</span>
-                      <span className="font-mono text-sm font-black text-red-400" dir="ltr">
-                        {paymentSettings.vodafone_cash_number || '01154021247'}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
+                        <Smartphone className="w-3.5 h-3.5 text-red-400" />
+                        <span>محافظ فودافون كاش المعتمدة للتحويل ({paymentSettings.vodafone_cash_accounts?.filter((a) => a.isActive).length || 1}):</span>
                       </span>
+                      <span className="text-[10px] text-slate-400">اختر أي رقم وقم بالتحويل إليه</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopy(paymentSettings.vodafone_cash_number || '01154021247', 'vodafone')
-                      }
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition"
-                    >
-                      {copiedField === 'vodafone' ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400">تم النسخ!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>نسخ الرقم</span>
-                        </>
-                      )}
-                    </button>
+
+                    {paymentSettings.vodafone_cash_accounts &&
+                    paymentSettings.vodafone_cash_accounts.filter((a) => a.isActive).length > 0 ? (
+                      <div className="space-y-2">
+                        {paymentSettings.vodafone_cash_accounts
+                          .filter((a) => a.isActive)
+                          .map((acc, idx) => (
+                            <div
+                              key={acc.id || idx}
+                              className="p-2.5 rounded-xl bg-slate-900/80 border border-red-500/30 flex items-center justify-between gap-2 hover:border-red-500/60 transition"
+                            >
+                              <div className="overflow-hidden">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-white truncate">{acc.name}</span>
+                                  {idx === 0 && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
+                                      رئيسي
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-mono text-xs sm:text-sm font-black text-red-400 block tracking-wider mt-0.5" dir="ltr">
+                                  {acc.value}
+                                </span>
+                                {acc.notes && (
+                                  <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(acc.value, `voda-${acc.id || idx}`)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition shrink-0"
+                              >
+                                {copiedField === `voda-${acc.id || idx}` ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="text-emerald-400">تم النسخ!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>نسخ الرقم</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-mono text-sm font-black text-red-400" dir="ltr">
+                            {paymentSettings.vodafone_cash_number || '01154021247'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(paymentSettings.vodafone_cash_number || '01154021247', 'vodafone')
+                          }
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition"
+                        >
+                          {copiedField === 'vodafone' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400">تم النسخ!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>نسخ الرقم</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 block">عنوان الدفع إنستاباي (InstaPay Address):</span>
-                      <span className="font-mono text-sm font-black text-purple-300" dir="ltr">
-                        {paymentSettings.instapay_address || 'androderma@instapay'}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                        <span>عناوين التحويل عبر تطبيق إنستاباي ({paymentSettings.instapay_accounts?.filter((a) => a.isActive).length || 1}):</span>
                       </span>
+                      <span className="text-[10px] text-slate-400">حسابات رسمية بدون عمولات</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopy(paymentSettings.instapay_address || 'androderma@instapay', 'instapay')
-                      }
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition"
-                    >
-                      {copiedField === 'instapay' ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400">تم النسخ!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>نسخ العنوان</span>
-                        </>
-                      )}
-                    </button>
+
+                    {paymentSettings.instapay_accounts &&
+                    paymentSettings.instapay_accounts.filter((a) => a.isActive).length > 0 ? (
+                      <div className="space-y-2">
+                        {paymentSettings.instapay_accounts
+                          .filter((a) => a.isActive)
+                          .map((acc, idx) => (
+                            <div
+                              key={acc.id || idx}
+                              className="p-2.5 rounded-xl bg-slate-900/80 border border-purple-500/30 flex items-center justify-between gap-2 hover:border-purple-500/60 transition"
+                            >
+                              <div className="overflow-hidden">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-white truncate">{acc.name}</span>
+                                  {idx === 0 && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+                                      رئيسي
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-mono text-xs sm:text-sm font-black text-purple-300 block tracking-wider mt-0.5 truncate" dir="ltr">
+                                  {acc.value}
+                                </span>
+                                {acc.notes && (
+                                  <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(acc.value, `insta-${acc.id || idx}`)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition shrink-0"
+                              >
+                                {copiedField === `insta-${acc.id || idx}` ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="text-emerald-400">تم النسخ!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>نسخ العنوان</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-mono text-sm font-black text-purple-300" dir="ltr">
+                            {paymentSettings.instapay_address || 'androderma@instapay'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(paymentSettings.instapay_address || 'androderma@instapay', 'instapay')
+                          }
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition"
+                        >
+                          {copiedField === 'instapay' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400">تم النسخ!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>نسخ العنوان</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-                <p className="text-[10px] text-slate-400 leading-normal">
-                  {paymentSettings.payment_instructions_ar}
-                </p>
+                {paymentSettings.payment_instructions_ar && (
+                  <p className="text-[10px] text-slate-400 leading-normal pt-1 border-t border-white/5">
+                    {paymentSettings.payment_instructions_ar}
+                  </p>
+                )}
               </div>
 
               {/* ================= SCREENSHOT UPLOAD INPUT ================= */}
