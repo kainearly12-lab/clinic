@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { SiteSettingsRecord } from '@/types/admin';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
-import { updateBrowserFavicon } from '@/context/SiteSettingsContext';
+import { updateBrowserFavicon } from '@/utils/favicon';
 
 interface SiteSettingsEditorProps {
   settings: SiteSettingsRecord;

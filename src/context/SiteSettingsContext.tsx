@@ -1,7 +1,9 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { SiteSettingsRecord } from '@/types/admin';
 import { fetchSiteSettings, updateSiteSettings as updateSiteSettingsApi } from '@/services/adminService';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
+import { updateBrowserFavicon } from '@/utils/favicon';
 
 interface SiteSettingsContextType {
   settings: SiteSettingsRecord;
@@ -36,31 +38,6 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
   updateSettings: async () => ({ success: true }),
   refreshSettings: async () => {},
 });
-
-/**
- * Dynamically updates the browser's <link rel="icon"> favicon tag
- */
-export function updateBrowserFavicon(iconUrl: string) {
-  if (typeof document === 'undefined' || !iconUrl) return;
-
-  try {
-    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = iconUrl;
-
-    // Also update apple-touch-icon if present
-    const appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
-    if (appleLink) {
-      appleLink.href = iconUrl;
-    }
-  } catch (err) {
-    console.warn('Failed to update dynamic favicon:', err);
-  }
-}
 
 export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<SiteSettingsRecord>(defaultSettings);
