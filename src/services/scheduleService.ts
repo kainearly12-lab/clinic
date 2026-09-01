@@ -3,10 +3,14 @@ import { branches as defaultBranches } from '@/data/clinicData';
 import {
   BranchRecord,
   ScheduleExceptionRecord,
+  DailyBranchOverrideRecord,
   NormalizedBranch,
   TodayScheduleResult,
   WeeklyScheduleItem,
 } from '@/types/schedule';
+
+// In-memory fallback cache for fast daily overrides
+let localDailyOverrides: DailyBranchOverrideRecord[] = [];
 
 /**
  * Static fallback schedule matching clinic defaults in Cairo
@@ -385,6 +389,7 @@ export async function fetchScheduleExceptionForDate(
         is_closed: Boolean(data.is_holiday),
         title_ar: data.reason || (data.is_holiday ? 'عطلة رسمية' : 'تبديل فرع'),
         reason_ar: data.reason || null,
+        reason: data.reason || null,
       },
       error: null,
     };
@@ -392,6 +397,374 @@ export async function fetchScheduleExceptionForDate(
     const error = err instanceof Error ? err : new Error(String(err));
     return { data: null, error };
   }
+}
+
+/**
+ * 2.1 Fetch All Daily Branch Overrides (from Supabase daily_branch_overrides or schedule_exceptions)
+ */
+export async function fetchDailyBranchOverrides(): Promise<DailyBranchOverrideRecord[]> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return [...localDailyOverrides];
+  }
+
+  try {
+    // Attempt to query daily_branch_overrides table first
+    const { data, error } = await client
+      .from('daily_branch_overrides')
+      .select('*')
+      .order('override_date', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      const formatted: DailyBranchOverrideRecord[] = data.map((row) => ({
+        id: row.id,
+        override_date: row.override_date,
+        branch_id: row.branch_id || row.replacement_branch_id,
+        original_branch_id: row.original_branch_id || null,
+        reason: row.reason || row.reason_ar || 'تبديل موقع العيادة اليومي',
+        reason_ar: row.reason_ar || row.reason || 'تبديل موقع العيادة اليومي',
+        notes: row.notes || null,
+        is_active: row.is_active !== false,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+      localDailyOverrides = formatted;
+      return formatted;
+    }
+
+    // Fallback query to schedule_exceptions where is_holiday is false
+    const { data: excData, error: excError } = await client
+      .from('schedule_exceptions')
+      .select('*')
+      .eq('is_holiday', false)
+      .order('exception_date', { ascending: true });
+
+    if (!excError && excData && excData.length > 0) {
+      const formatted: DailyBranchOverrideRecord[] = excData
+        .filter((row) => row.replacement_branch_id)
+        .map((row) => ({
+          id: row.id,
+          override_date: row.exception_date,
+          branch_id: row.replacement_branch_id,
+          original_branch_id: null,
+          reason: row.reason || 'تبديل فرع الكشف',
+          reason_ar: row.reason || 'تبديل فرع الكشف',
+          notes: null,
+          is_active: true,
+          created_at: row.created_at,
+        }));
+      localDailyOverrides = formatted;
+      return formatted;
+    }
+
+    return [...localDailyOverrides];
+  } catch (err) {
+    console.warn('Error fetching daily branch overrides:', err);
+    return [...localDailyOverrides];
+  }
+}
+
+/**
+ * 2.2 Fetch Daily Branch Override for a Specific Date
+ */
+export async function fetchDailyBranchOverrideForDate(
+  dateString: string
+): Promise<DailyBranchOverrideRecord | null> {
+  const localMatch = localDailyOverrides.find(
+    (o) => o.override_date === dateString && o.is_active !== false
+  );
+  if (localMatch) return localMatch;
+
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('daily_branch_overrides')
+      .select('*')
+      .eq('override_date', dateString)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        id: data.id,
+        override_date: data.override_date,
+        branch_id: data.branch_id,
+        original_branch_id: data.original_branch_id || null,
+        reason: data.reason || data.reason_ar || 'تبديل فرع الكشف',
+        reason_ar: data.reason_ar || data.reason || 'تبديل فرع الكشف',
+        notes: data.notes || null,
+        is_active: data.is_active !== false,
+        created_at: data.created_at,
+      };
+    }
+  } catch {
+    // Ignore and fallback
+  }
+
+  return null;
+}
+
+/**
+ * 2.3 Save / Update Daily Branch Override
+ */
+export async function saveDailyBranchOverride(payload: {
+  override_date: string;
+  branch_id: string;
+  original_branch_id?: string | null;
+  reason?: string;
+  notes?: string;
+}): Promise<{ success: boolean; data?: DailyBranchOverrideRecord; error?: string }> {
+  const client = getSupabaseClient();
+  const dateStr = payload.override_date;
+  const reasonText = payload.reason || 'تبديل موقع العيادة اليومي';
+
+  const overrideRecord: DailyBranchOverrideRecord = {
+    id: `dbo-${Date.now()}`,
+    override_date: dateStr,
+    branch_id: payload.branch_id,
+    original_branch_id: payload.original_branch_id || null,
+    reason: reasonText,
+    reason_ar: reasonText,
+    notes: payload.notes || null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  };
+
+  // Immediate local update
+  const existIdx = localDailyOverrides.findIndex((o) => o.override_date === dateStr);
+  if (existIdx >= 0) {
+    localDailyOverrides[existIdx] = { ...localDailyOverrides[existIdx], ...overrideRecord };
+  } else {
+    localDailyOverrides.push(overrideRecord);
+  }
+
+  if (!client) {
+    return { success: true, data: overrideRecord };
+  }
+
+  try {
+    // 1. Save to daily_branch_overrides table
+    const { data: dbData, error: dbError } = await client
+      .from('daily_branch_overrides')
+      .upsert(
+        [
+          {
+            override_date: dateStr,
+            branch_id: payload.branch_id,
+            original_branch_id: payload.original_branch_id || null,
+            reason: reasonText,
+            reason_ar: reasonText,
+            notes: payload.notes || null,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        { onConflict: 'override_date' }
+      )
+      .select()
+      .single();
+
+    // 2. Also keep schedule_exceptions in sync so both queries stay consistent
+    await client.from('schedule_exceptions').upsert(
+      [
+        {
+          exception_date: dateStr,
+          is_holiday: false,
+          reason: reasonText,
+          replacement_branch_id: payload.branch_id,
+        },
+      ],
+      { onConflict: 'exception_date' }
+    );
+
+    if (dbError) {
+      console.warn('Upsert to daily_branch_overrides warning:', dbError.message);
+    }
+
+    return {
+      success: true,
+      data: dbData ? { ...overrideRecord, id: dbData.id } : overrideRecord,
+    };
+  } catch (err: unknown) {
+    console.error('Error saving daily branch override:', err);
+    return { success: true, data: overrideRecord };
+  }
+}
+
+/**
+ * 2.4 Delete Daily Branch Override
+ */
+export async function deleteDailyBranchOverride(
+  dateOrId: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  const dateStr = dateOrId.includes('-') && dateOrId.length === 10 ? dateOrId : null;
+
+  localDailyOverrides = localDailyOverrides.filter(
+    (o) => o.id !== dateOrId && o.override_date !== dateOrId
+  );
+
+  if (!client) {
+    return { success: true };
+  }
+
+  try {
+    if (dateStr) {
+      await client.from('daily_branch_overrides').delete().eq('override_date', dateStr);
+      await client
+        .from('schedule_exceptions')
+        .delete()
+        .eq('exception_date', dateStr)
+        .eq('is_holiday', false);
+    } else {
+      await client.from('daily_branch_overrides').delete().eq('id', dateOrId);
+      await client.from('schedule_exceptions').delete().eq('id', dateOrId);
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Helper to get Arabic operating days for a given branch
+ */
+export function getOperatingDaysForBranch(branchId: string): string[] {
+  const matching = DEFAULT_WEEKLY_ROTATION.filter((r) => r.branchId === branchId);
+  return matching.map((r) => r.dayNameAr);
+}
+
+/**
+ * Resolves the scheduled branch for any given date string YYYY-MM-DD
+ */
+export async function getScheduledBranchForDate(dateString: string): Promise<{
+  branch: NormalizedBranch | null;
+  dayIndex: number;
+  dayNameAr: string;
+  isHoliday: boolean;
+  isClosed: boolean;
+  isOverride: boolean;
+  reason?: string | null;
+  operatingDaysAr: string[];
+}> {
+  const parts = dateString.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const d = parseInt(parts[2], 10);
+  const targetDate = new Date(y, m, d);
+  const dayIndex = targetDate.getDay();
+  const dayNameAr = ARABIC_DAYS[dayIndex] || 'اليوم';
+
+  const [weeklyRes, exceptionRes, overrideRecord] = await Promise.all([
+    fetchWeeklyScheduleWithBranches(),
+    fetchScheduleExceptionForDate(dateString),
+    fetchDailyBranchOverrideForDate(dateString),
+  ]);
+
+  const allBranches = weeklyRes.branches.length > 0
+    ? weeklyRes.branches
+    : defaultBranches.map((b) => normalizeBranch(b)!);
+
+  const exception = exceptionRes.data;
+
+  // 1. Check Holiday / Closure Exception
+  if (exception && (exception.is_holiday || exception.is_closed || exception.exception_type === 'holiday')) {
+    return {
+      branch: null,
+      dayIndex,
+      dayNameAr,
+      isHoliday: true,
+      isClosed: true,
+      isOverride: false,
+      reason: exception.title_ar || exception.reason_ar || 'عطلة رسمية — العيادة مغلقة',
+      operatingDaysAr: [],
+    };
+  }
+
+  // 2. Check Daily Branch Override / Branch Swap Exception
+  const overrideBranchId =
+    overrideRecord?.branch_id ||
+    exception?.override_branch_id ||
+    exception?.replacement_branch_id;
+
+  if (overrideBranchId) {
+    const branch =
+      allBranches.find((b) => b.id === overrideBranchId) ||
+      allBranches[0] ||
+      normalizeBranch(defaultBranches[0])!;
+
+    return {
+      branch,
+      dayIndex,
+      dayNameAr,
+      isHoliday: false,
+      isClosed: false,
+      isOverride: true,
+      reason: overrideRecord?.reason || exception?.reason_ar || 'تم تبديل موقع العيادة لهذا اليوم',
+      operatingDaysAr: getOperatingDaysForBranch(branch.id),
+    };
+  }
+
+  // 3. Fallback to weekly rotation
+  const scheduledRotation = weeklyRes.data.find((item) => item.dayIndex === dayIndex);
+  const regularBranch =
+    scheduledRotation?.branch ||
+    allBranches.find((b) => b.id === DEFAULT_WEEKLY_ROTATION.find((r) => r.dayIndex === dayIndex)?.branchId) ||
+    allBranches[0] ||
+    normalizeBranch(defaultBranches[0])!;
+
+  return {
+    branch: regularBranch,
+    dayIndex,
+    dayNameAr,
+    isHoliday: false,
+    isClosed: false,
+    isOverride: false,
+    operatingDaysAr: getOperatingDaysForBranch(regularBranch.id),
+  };
+}
+
+/**
+ * Finds the next upcoming date where the doctor is scheduled at a specific branch
+ */
+export async function getNextAvailableDateForBranch(
+  branchId: string,
+  fromDateString?: string
+): Promise<{
+  dateString: string;
+  dayNameAr: string;
+  formattedDateAr: string;
+} | null> {
+  const start = fromDateString ? new Date(fromDateString) : new Date();
+  if (isNaN(start.getTime())) return null;
+
+  // Search ahead up to 21 days
+  for (let i = 1; i <= 21; i++) {
+    const nextDate = new Date(start);
+    nextDate.setDate(start.getDate() + i);
+    const dateStr = getIsoDateString(nextDate);
+    const resolved = await getScheduledBranchForDate(dateStr);
+
+    if (!resolved.isHoliday && !resolved.isClosed && resolved.branch?.id === branchId) {
+      const formatter = new Intl.DateTimeFormat('ar-EG', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+      return {
+        dateString: dateStr,
+        dayNameAr: resolved.dayNameAr,
+        formattedDateAr: formatter.format(nextDate),
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -409,9 +782,10 @@ export async function getTodayDynamicSchedule(
   const dayNameAr = ARABIC_DAYS[dayOfWeek] || 'اليوم';
   const dayNameEn = ENGLISH_DAYS[dayOfWeek] || 'Today';
 
-  const [weeklyRes, exceptionRes] = await Promise.all([
+  const [weeklyRes, exceptionRes, overrideRecord] = await Promise.all([
     fetchWeeklyScheduleWithBranches(),
     fetchScheduleExceptionForDate(dateStr),
+    fetchDailyBranchOverrideForDate(dateStr),
   ]);
 
   const allBranches = weeklyRes.branches;
@@ -435,25 +809,28 @@ export async function getTodayDynamicSchedule(
   let bannerBadgeText = '';
 
   const exceptionDetails = {
-    hasException: Boolean(exception),
-    type: exception?.exception_type || null,
-    titleAr: exception?.title_ar || null,
-    reasonAr: exception?.reason_ar || null,
+    hasException: Boolean(exception || overrideRecord),
+    type: (overrideRecord ? 'branch_swap' : exception?.exception_type) || null,
+    titleAr: (overrideRecord?.reason || exception?.title_ar) || null,
+    reasonAr: (overrideRecord?.reason || exception?.reason_ar) || null,
     originalBranchId: exception?.branch_id || (activeBranch ? activeBranch.id : null),
     originalBranchNameAr: activeBranch ? activeBranch.nameAr : null,
-    replacementBranchId: exception?.replacement_branch_id || null,
+    replacementBranchId: overrideRecord?.branch_id || exception?.replacement_branch_id || null,
     replacementBranchNameAr: null as string | null,
     isClosed: Boolean(exception?.is_closed),
   };
 
-  // Evaluate Exception Override (Holiday vs Branch Swap vs Branch Specific)
+  // Evaluate Daily Branch Override or Exception Override
   if (exception) {
     const isHolidayFlag =
       exception.exception_type === 'holiday' ||
       Boolean(exception.is_holiday) ||
       Boolean(exception.is_closed);
 
-    const swapBranchId = exception.override_branch_id || exception.replacement_branch_id;
+    const swapBranchId =
+      overrideRecord?.branch_id ||
+      exception.override_branch_id ||
+      exception.replacement_branch_id;
 
     if (isHolidayFlag) {
       isHoliday = true;
@@ -476,6 +853,16 @@ export async function getTodayDynamicSchedule(
       }
       bannerBadgeText = `الفرع النشط اليوم: ${activeBranch ? activeBranch.nameAr : 'عيادات أندروديرما'}`;
     }
+  } else if (overrideRecord && overrideRecord.branch_id) {
+    isBranchSwap = true;
+    const replacement =
+      allBranches.find((b) => b.id === overrideRecord.branch_id || b.nameAr.includes(overrideRecord.branch_id));
+    if (replacement) {
+      activeBranch = replacement;
+      exceptionDetails.replacementBranchId = overrideRecord.branch_id;
+      exceptionDetails.replacementBranchNameAr = replacement.nameAr;
+    }
+    bannerBadgeText = `⚡ تبديل الفرع اليوم: ${activeBranch ? activeBranch.nameAr : 'عيادات أندروديرما'}`;
   }
 
   // Real-time Open/Closed Status

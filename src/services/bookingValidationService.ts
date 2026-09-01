@@ -1,6 +1,8 @@
 import {
   fetchScheduleExceptionForDate,
+  fetchDailyBranchOverrideForDate,
   fetchWeeklyScheduleWithBranches,
+  getOperatingDaysForBranch,
   getIsoDateString,
   normalizeBranch,
 } from './scheduleService';
@@ -130,6 +132,12 @@ export interface BookingValidationResult {
   targetBranchId: string;
   /** Normalized Branch data for routing */
   targetBranch: NormalizedBranch;
+  /** Scheduled branch for that day (whether swapped or standard rotation) */
+  scheduledBranch: NormalizedBranch | null;
+  /** True if requested branch does not match the branch scheduled for that day */
+  isBranchMismatch: boolean;
+  /** Operating days in Arabic for the requested branch */
+  operatingDaysAr: string[];
   /** Direct WhatsApp number to route message to */
   targetWhatsAppNumber: string;
   /** Whether the schedule was swapped for this date */
@@ -143,9 +151,9 @@ export interface BookingValidationResult {
 }
 
 /**
- * 1. Validates a booking date against schedule exceptions and weekly rotation.
+ * 1. Validates a booking date against schedule exceptions, daily overrides, and weekly rotation.
  * - If date is an active holiday (is_holiday = true / is_closed = true), strictly flags invalid with error message.
- * - If date has an override_branch_id (branch swap), automatically routes to the replacement branch.
+ * - If date has an override_branch_id (branch swap) or daily branch override, automatically routes to the replacement branch.
  */
 export async function validateBookingDate(
   inputDate?: string | Date | null,
@@ -154,9 +162,10 @@ export async function validateBookingDate(
   const { date, dateString } = parseBookingDate(inputDate);
   const dayOfWeek = date.getDay();
 
-  // Fetch exception for date and weekly schedule
-  const [exceptionRes, weeklyRes] = await Promise.all([
+  // Fetch exception for date, daily branch override, and weekly schedule
+  const [exceptionRes, overrideRecord, weeklyRes] = await Promise.all([
     fetchScheduleExceptionForDate(dateString),
+    fetchDailyBranchOverrideForDate(dateString),
     fetchWeeklyScheduleWithBranches(),
   ]);
 
@@ -176,6 +185,13 @@ export async function validateBookingDate(
 
   const exception = exceptionRes.data;
 
+  // Determine what branch is naturally scheduled for that day
+  let scheduledBranch: NormalizedBranch | null =
+    regularItem?.branch ||
+    allBranches.find((b) => b.id === 'fifth-settlement') ||
+    allBranches[0] ||
+    null;
+
   if (exception) {
     const isHolidayFlag =
       exception.exception_type === 'holiday' ||
@@ -183,12 +199,14 @@ export async function validateBookingDate(
       Boolean(exception.is_closed);
 
     const overrideBranchId =
+      overrideRecord?.branch_id ||
       exception.override_branch_id ||
       exception.replacement_branch_id;
 
     if (isHolidayFlag) {
       isHoliday = true;
       isClosed = true;
+      scheduledBranch = null;
       // Mandated custom Arabic error alert
       errorMessageAr = 'عذراً، العيادة مغلقة في هذا اليوم';
       if (exception.title_ar && !exception.title_ar.includes('عطلة')) {
@@ -197,7 +215,14 @@ export async function validateBookingDate(
     } else if (overrideBranchId) {
       isBranchSwapped = true;
       targetBranchId = overrideBranchId;
+      const repl = allBranches.find((b) => b.id === overrideBranchId);
+      if (repl) scheduledBranch = repl;
     }
+  } else if (overrideRecord && overrideRecord.branch_id) {
+    isBranchSwapped = true;
+    targetBranchId = overrideRecord.branch_id;
+    const repl = allBranches.find((b) => b.id === overrideRecord.branch_id);
+    if (repl) scheduledBranch = repl;
   }
 
   // Resolve target normalized branch
@@ -211,9 +236,15 @@ export async function validateBookingDate(
     const joined = normalizeBranch(exception.replacement_branch || exception.override_branch);
     if (joined) {
       targetBranch = joined;
+      scheduledBranch = joined;
     }
   }
 
+  const isBranchMismatch = Boolean(
+    scheduledBranch && requestedBranchId && scheduledBranch.id !== requestedBranchId
+  );
+
+  const operatingDaysAr = getOperatingDaysForBranch(requestedBranchId);
   const targetWhatsAppNumber = getBranchWhatsAppNumber(targetBranch.id);
 
   return {
@@ -223,6 +254,9 @@ export async function validateBookingDate(
     errorMessageAr,
     targetBranchId: targetBranch.id,
     targetBranch,
+    scheduledBranch,
+    isBranchMismatch,
+    operatingDaysAr,
     targetWhatsAppNumber,
     isBranchSwapped,
     originalBranchId: requestedBranchId,

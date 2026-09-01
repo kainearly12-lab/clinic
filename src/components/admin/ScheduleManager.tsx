@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronRight,
@@ -10,8 +10,17 @@ import {
   Building2,
   Clock,
   Layers,
+  Zap,
+  MapPin,
+  Sparkles,
 } from 'lucide-react';
-import { BranchRecord, ScheduleExceptionRecord } from '@/types/schedule';
+import { BranchRecord, ScheduleExceptionRecord, DailyBranchOverrideRecord } from '@/types/schedule';
+import {
+  fetchDailyBranchOverrides,
+  saveDailyBranchOverride,
+  deleteDailyBranchOverride,
+  getIsoDateString,
+} from '@/services/scheduleService';
 
 interface ScheduleManagerProps {
   exceptions: ScheduleExceptionRecord[];
@@ -36,13 +45,35 @@ export const ScheduleManager = React.memo(function ScheduleManager({
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
-  // Modal / Form state for selected date
+  // Daily Branch Overrides State
+  const [dailyOverrides, setDailyOverrides] = useState<DailyBranchOverrideRecord[]>([]);
+  const [overrideDate, setOverrideDate] = useState<string>(() => getIsoDateString(new Date()));
+  const [overrideBranchId, setOverrideBranchId] = useState<string>(branches[0]?.id || 'nasr-city');
+  const [overrideReason, setOverrideReason] = useState<string>('تبديل استثنائي لموقع العيادة اليومي');
+  const [isSavingDailyOverride, setIsSavingDailyOverride] = useState<boolean>(false);
+  const [overrideFeedback, setOverrideFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Modal / Form state for calendar selected date
   const [isHolidayForm, setIsHolidayForm] = useState<boolean>(true);
   const [holidayTitle, setHolidayTitle] = useState<string>('عطلة رسمية — مغلق');
   const [holidayReason, setHolidayReason] = useState<string>('');
   const [targetHolidayBranch, setTargetHolidayBranch] = useState<string>('all');
   const [selectedOverrideBranch, setSelectedOverrideBranch] = useState<string>(branches[0]?.id || 'nasr-city');
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Load Daily Overrides
+  const loadDailyOverrides = useCallback(async () => {
+    try {
+      const data = await fetchDailyBranchOverrides();
+      setDailyOverrides(data);
+    } catch (err) {
+      console.warn('Failed to load daily overrides:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDailyOverrides();
+  }, [loadDailyOverrides]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -124,6 +155,69 @@ export const ScheduleManager = React.memo(function ScheduleManager({
     }
   };
 
+  // Submit Daily Branch Override Quick Widget
+  const handleSaveDailyOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!overrideDate || !overrideBranchId) return;
+
+    setIsSavingDailyOverride(true);
+    setOverrideFeedback(null);
+
+    try {
+      const res = await saveDailyBranchOverride({
+        override_date: overrideDate,
+        branch_id: overrideBranchId,
+        reason: overrideReason.trim() || 'تبديل استثنائي لموقع العيادة اليومي',
+      });
+
+      if (res.success) {
+        setOverrideFeedback({
+          type: 'success',
+          message: `تم تفعيل تبديل الفرع بنجاح لتاريخ ${overrideDate}. سيظهر التغيير فوراً في البانر العام ونموذج الحجز.`,
+        });
+        await loadDailyOverrides();
+        // Also refresh exceptions in parent
+        await onSaveException({
+          exception_date: overrideDate,
+          exception_type: 'branch_swap',
+          is_holiday: false,
+          is_closed: false,
+          branch_id: overrideBranchId,
+          replacement_branch_id: overrideBranchId,
+          title_ar: `تبديل للعمل بـ ${getBranchName(overrideBranchId)}`,
+          reason_ar: overrideReason.trim() || 'تبديل موقع العيادة اليومي',
+        });
+      } else {
+        setOverrideFeedback({
+          type: 'error',
+          message: res.error || 'حدث خطأ أثناء حفظ التبديل اليومي',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setOverrideFeedback({ type: 'error', message: msg });
+    } finally {
+      setIsSavingDailyOverride(false);
+      setTimeout(() => setOverrideFeedback(null), 5000);
+    }
+  };
+
+  // Delete Daily Branch Override
+  const handleDeleteDailyOverride = async (dateOrId: string) => {
+    try {
+      await deleteDailyBranchOverride(dateOrId);
+      await loadDailyOverrides();
+      await onDeleteException(dateOrId);
+      setOverrideFeedback({
+        type: 'success',
+        message: 'تم إلغاء التبديل اليومي والعودة إلى التوزيع الأسبوعي الطبيعي.',
+      });
+      setTimeout(() => setOverrideFeedback(null), 4000);
+    } catch (err) {
+      console.error('Delete daily override error:', err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDateStr) return;
@@ -192,7 +286,7 @@ export const ScheduleManager = React.memo(function ScheduleManager({
           <div>
             <h2 className="text-lg font-black text-white">إدارة المواعيد والعطلات وتبديل الفروع</h2>
             <p className="text-xs text-slate-400">
-              حدد عطلة شاملة لجميع الفروع أو خصص استثناء لفرع محدد مع مزامنة فورية في قاعدة البيانات
+              تحكم بتبديل موقع العيادة اليومي الفوري أو أضف عطلات رسمية واستثناءات للموقع والجدول
             </p>
           </div>
         </div>
@@ -217,6 +311,167 @@ export const ScheduleManager = React.memo(function ScheduleManager({
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 🌟 ADMIN DAILY BRANCH OVERRIDE CONTROL PANEL (Request 2 Feature) */}
+      {/* ========================================================================= */}
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-950/40 via-slate-900/80 to-slate-900/90 border border-teal-500/30 backdrop-blur-xl shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                لوحة التبديل السريع لموقع العيادة اليومي (Daily Branch Override)
+                <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold border border-teal-500/30">
+                  تأثير فوري ومباشر
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-300">
+                غيّر موقع تواجد د. هشام ليوم محدد في حالات الطوارئ مع تحديث فوري لشريط الموقع ونموذج الحجز
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {overrideFeedback && (
+          <div
+            className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+              overrideFeedback.type === 'success'
+                ? 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-200'
+                : 'bg-red-950/60 border border-red-500/40 text-red-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span>{overrideFeedback.message}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveDailyOverrideSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+          {/* Override Date & Quick Chips */}
+          <div className="md:col-span-4 space-y-1.5">
+            <label className="block text-xs font-bold text-slate-200 flex items-center justify-between">
+              <span>تاريخ التبديل</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setOverrideDate(getIsoDateString(new Date()))}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-300"
+                >
+                  اليوم
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+                    setOverrideDate(getIsoDateString(d));
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-300"
+                >
+                  غداً
+                </button>
+              </div>
+            </label>
+            <input
+              type="date"
+              required
+              value={overrideDate}
+              onChange={(e) => setOverrideDate(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+            />
+          </div>
+
+          {/* New Target Branch */}
+          <div className="md:col-span-4 space-y-1.5">
+            <label className="block text-xs font-bold text-slate-200">الفرع البديل المراد النقل إليه</label>
+            <select
+              value={overrideBranchId}
+              onChange={(e) => setOverrideBranchId(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id} className="bg-slate-900 text-white">
+                  {b.name_ar || b.nameAr || b.id} ({b.city_ar || b.cityAr || 'القاهرة'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reason / Notes */}
+          <div className="md:col-span-4 space-y-1.5">
+            <label className="block text-xs font-bold text-slate-200">سبب التبديل أو الملاحظة</label>
+            <input
+              type="text"
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              placeholder="مثال: نقل عيادة اليوم بسبب طوارئ التجمع"
+              className="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="md:col-span-12 flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={isSavingDailyOverride}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00B8A9] text-slate-950 text-xs font-black hover:bg-teal-400 transition-all shadow-[0_0_20px_rgba(0,184,169,0.3)] cursor-pointer disabled:opacity-50"
+            >
+              {isSavingDailyOverride ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>جاري حفظ التبديل ومزامنة الموقع...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 fill-current" />
+                  <span>تفعيل تبديل الفرع لهذا اليوم (حفظ مباشر)</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Active Overrides Quick List */}
+        {dailyOverrides.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+            <div className="text-[11px] font-bold text-teal-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>التبديلات والاستثناءات اليومية النشطة المسجلة ({dailyOverrides.length}):</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {dailyOverrides.map((ov) => {
+                const bName = getBranchName(ov.branch_id);
+                return (
+                  <div
+                    key={ov.id || ov.override_date}
+                    className="p-2.5 rounded-xl bg-slate-950/60 border border-teal-500/30 flex items-center justify-between text-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="font-bold text-white flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#00B8A9]" />
+                        <span className="truncate">{bName}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {ov.override_date} — <span className="text-amber-300">{ov.reason || 'تبديل معتمد'}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDailyOverride(ov.override_date || ov.id)}
+                      className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition cursor-pointer"
+                      title="إلغاء هذا التبديل والعودة للجدول الطبيعي"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

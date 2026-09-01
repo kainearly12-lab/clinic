@@ -44,6 +44,21 @@ export type ExceptionType =
   | 'custom_hours'
   | 'emergency_closure';
 
+export interface DailyBranchOverrideRecord {
+  id?: string;
+  override_date: string; // ISO date 'YYYY-MM-DD'
+  branch_id: string; // The branch active on this day
+  original_branch_id?: string | null;
+  reason?: string | null;
+  reason_ar?: string | null;
+  notes?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  // Joined relation if available
+  branch?: BranchRecord | null;
+}
+
 export interface ScheduleExceptionRecord {
   id?: string;
   exception_date: string; // ISO date 'YYYY-MM-DD'
@@ -55,6 +70,7 @@ export interface ScheduleExceptionRecord {
   is_closed?: boolean; // Boolean flag for closure status
   title_ar?: string; // e.g. 'عطلة رسمية — عيد الفطر' or 'تبديل فرع اليوم'
   reason_ar?: string | null;
+  reason?: string | null;
   open_time?: string | null;
   close_time?: string | null;
   hours_ar?: string | null;
