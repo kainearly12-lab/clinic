@@ -187,19 +187,25 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   const { language } = useLanguage();
   return (
-    <div className="glass dark:bg-[#15181e]/90 fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-2xl border border-slate-200/90 dark:border-emerald-500/30 p-2 shadow-lift sm:hidden">
-      <button onClick={onBook} className="btn-primary flex-1 py-3 text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
-        <CalendarDays className="h-3.5 w-3.5" /> {language === 'en' ? 'Book Your Consultation' : 'احجز كشفك الآن'}
-      </button>
-      <a
-        href={waLink}
-        target="_blank"
-        rel="noreferrer"
-        className="grid w-14 place-items-center rounded-xl bg-teal-700 text-white transition hover:bg-teal-800 shadow-sm"
-        aria-label="WhatsApp"
-      >
-        <MessageCircle className="h-5 w-5" />
-      </a>
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-white/90 dark:bg-[#12151b]/90 backdrop-blur-xl border-t border-slate-200/90 dark:border-teal-500/20 px-3.5 pt-2.5 pb-[calc(0.65rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_32px_rgba(0,0,0,0.15)]">
+      <div className="flex items-center gap-2 max-w-md mx-auto">
+        <button
+          onClick={onBook}
+          className="btn-primary flex-1 py-3 px-4 text-xs sm:text-sm font-black shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+        >
+          <CalendarDays className="h-4 w-4 text-teal-100" />
+          <span>{language === 'en' ? 'Book Your Consultation Now 📅' : 'احجز كشفك الآن 📅'}</span>
+        </button>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noreferrer"
+          className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm shrink-0 active:scale-95"
+          aria-label="WhatsApp"
+        >
+          <MessageCircle className="h-5 w-5" />
+        </a>
+      </div>
     </div>
   );
 }
@@ -392,7 +398,7 @@ function App() {
   }
 
   return (
-    <div className="overflow-hidden bg-[#F8FAF9] dark:bg-[#0c0e12] text-slate-900 dark:text-gray-100 min-h-screen">
+    <div className="overflow-hidden bg-[#F8FAF9] dark:bg-[#0c0e12] text-slate-900 dark:text-gray-100 min-h-screen pb-20 md:pb-0">
       <SplashScreen />
       <Header
         activeTab={activeTab}

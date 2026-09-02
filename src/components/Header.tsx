@@ -11,7 +11,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
-interface HeaderProps {
+export interface HeaderProps {
   activeTab?: 'home' | 'diagnostic' | 'admin' | 'about';
   onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
@@ -101,31 +101,31 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
         initial={{ y: -25, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-2.5 sm:top-4 inset-x-0 z-50 px-3 sm:px-6 pointer-events-none"
+        className="fixed top-2.5 sm:top-4 inset-x-0 z-50 px-2.5 sm:px-6 pointer-events-none max-w-full overflow-x-hidden"
       >
         <div className="mx-auto max-w-7xl w-full pointer-events-auto">
           {/* Glassmorphism Luxury Floating Header */}
-          <div className="relative overflow-hidden backdrop-blur-xl bg-slate-900/60 dark:bg-slate-900/50 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300 hover:border-[#00B8A9]/50 hover:shadow-[0_0_20px_rgba(0,184,169,0.2)] text-white">
+          <div className="relative overflow-hidden backdrop-blur-xl bg-slate-900/75 dark:bg-slate-900/65 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-full px-3.5 sm:px-6 py-2 sm:py-3 transition-all duration-300 hover:border-[#00B8A9]/50 hover:shadow-[0_0_20px_rgba(0,184,169,0.2)] text-white">
             
             <div className="flex items-center justify-between gap-2">
               {/* Brand Logo & Name */}
               <button
                 type="button"
                 onClick={(e) => handleNavClick(e, 'home', '#home')}
-                className="group flex items-center gap-3 text-start focus:outline-hidden shrink-0 cursor-pointer"
+                className="group flex items-center gap-2.5 sm:gap-3 text-start focus:outline-hidden shrink-0 cursor-pointer min-w-0"
                 aria-label={clinicName || 'عيادات Androderma'}
               >
                 <img
                   src={logoUrl || CLINIC_LOGO}
                   alt="Androderma Logo"
-                  className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.3)]"
+                  className="h-9 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(0,184,169,0.3)] shrink-0"
                   loading="eager"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = CLINIC_LOGO;
                   }}
                 />
-                <div className="flex flex-col text-start">
-                  <span className="font-display font-black text-base sm:text-lg tracking-tight text-white group-hover:text-[#00B8A9] transition-colors whitespace-nowrap">
+                <div className="flex flex-col text-start min-w-0">
+                  <span className="font-display font-black text-sm sm:text-lg tracking-tight text-white group-hover:text-[#00B8A9] transition-colors whitespace-nowrap truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">
                     {clinicName || 'عيادات Androderma'}
                   </span>
                   <span className="hidden sm:block text-[10px] font-bold tracking-wider text-teal-300 whitespace-nowrap">
@@ -200,20 +200,22 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
                   )}
                 </button>
 
-                {/* Primary Magnetic Booking Button */}
-                <MagneticButton
-                  onClick={handleOpenBookingModal}
-                  className="btn-primary py-2 px-3.5 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] transition-all duration-300 whitespace-nowrap cursor-pointer"
-                >
-                  {t('nav.bookNow')}
-                </MagneticButton>
+                {/* Primary Magnetic Booking Button - Hidden on mobile (< md) to keep top bar uncluttered and prevent horizontal overflow */}
+                <div className="hidden md:block">
+                  <MagneticButton
+                    onClick={handleOpenBookingModal}
+                    className="btn-primary py-2 px-3.5 sm:px-5 text-xs sm:text-sm font-bold shadow-sm hover:shadow-[0_0_20px_rgba(0,184,169,0.3)] transition-all duration-300 whitespace-nowrap cursor-pointer"
+                  >
+                    {t('nav.bookNow')}
+                  </MagneticButton>
+                </div>
 
                 {/* Mobile Hamburger Menu */}
                 <button
                   type="button"
                   onClick={() => setMenuOpen(true)}
                   aria-label={t('nav.menu')}
-                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all hover:bg-white/20 lg:hidden cursor-pointer"
+                  className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white shadow-xs transition-all hover:bg-white/20 lg:hidden cursor-pointer active:scale-95"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
@@ -237,6 +239,7 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
           setMenuOpen(false);
           if (onSelectTab) onSelectTab(tab, anchor);
         }}
+        onOpenBooking={handleOpenBookingModal}
       />
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
