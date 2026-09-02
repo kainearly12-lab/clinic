@@ -197,7 +197,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
               href="https://www.instagram.com/mostavaahmed_/?utm_source=ig_web_button_share_sheet"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold text-white underline hover:text-sage-300 transition-colors"
+              className="font-bold text-teal-400 hover:text-teal-300 underline transition-colors"
             >
               Mostafa Ahmed
             </a>
