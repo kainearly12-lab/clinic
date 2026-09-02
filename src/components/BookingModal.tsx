@@ -92,6 +92,15 @@ const TIME_SLOTS = [
   '10:00 مساءً',
 ];
 
+function sanitizeInput(value: string): string {
+  if (!value) return '';
+  return value
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/javascript:/gi, '')
+    .replace(/onload|onclick|onerror|onmouseover/gi, '')
+    .trim();
+}
+
 export function BookingModal({
   open,
   onClose,
@@ -113,6 +122,11 @@ export function BookingModal({
   const [paymentMethod, setPaymentMethod] = useState<'vodafone_cash' | 'instapay'>('vodafone_cash');
   const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
   const [paymentScreenshotName, setPaymentScreenshotName] = useState('');
+
+  // Security & Bot Mitigation State
+  const [honeypotValue, setHoneypotValue] = useState('');
+  const modalOpenedTimeRef = useRef<number>(Date.now());
+  const lastSubmitTimeRef = useRef<number>(0);
 
   // UI & Processing States
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,6 +168,8 @@ export function BookingModal({
   // 1. Fetch Dynamic Consultation Pricing on mount or open
   useEffect(() => {
     if (open) {
+      modalOpenedTimeRef.current = Date.now();
+      setHoneypotValue('');
       fetchClinicPaymentSettings()
         .then((settings) => {
           if (settings) {
@@ -355,18 +371,46 @@ export function BookingModal({
     e.preventDefault();
     setValidationError(null);
 
-    // Form Validations
-    const trimmedName = name.trim();
-    const trimmedPhone = phone.trim();
-    const trimmedService = service.trim();
-
-    if (!trimmedName) {
-      setValidationError('يرجى كتابة الاسم بالكامل');
+    // 1. Bot Honeypot Protection
+    if (honeypotValue && honeypotValue.trim().length > 0) {
+      console.warn('Automated bot submission blocked.');
+      setValidationError('تعذر إتمام الإرسال في الوقت الحالي');
       return;
     }
 
-    if (!trimmedPhone || trimmedPhone.length < 10) {
-      setValidationError('يرجى إدخال رقم هاتف صحيح للتواصل وتأكيد الحجز');
+    // 2. Client-side Rate-limiting & Rapid Submission Throttling
+    const now = Date.now();
+    const timeSinceModalOpened = now - modalOpenedTimeRef.current;
+    if (timeSinceModalOpened < 1800) {
+      setValidationError('يرجى مراجعة بياناتك جيداً قبل الضغط على تأكيد الحجز');
+      return;
+    }
+
+    if (now - lastSubmitTimeRef.current < 4000) {
+      setValidationError('يرجى الانتظار بضع ثوانٍ قبل إعادة المحاولة');
+      return;
+    }
+    lastSubmitTimeRef.current = now;
+
+    // 3. Sanitization & Form Validations
+    const trimmedName = sanitizeInput(name);
+    const rawPhone = sanitizeInput(phone).replace(/[^\d+]/g, '');
+    const trimmedService = sanitizeInput(service);
+    const trimmedNotes = sanitizeInput(notes);
+
+    if (!trimmedName || trimmedName.length < 3) {
+      setValidationError('يرجى كتابة الاسم الثلاثي بالكامل (3 أحرف على الأقل)');
+      return;
+    }
+
+    // Egyptian Mobile & Universal Phone Format Check (010, 011, 012, 015 or international with 10+ digits)
+    const egPhoneRegex = /^(010|011|012|015)[0-9]{8}$/;
+    const cleanDigits = rawPhone.replace(/\D/g, '');
+    const isValidEg = egPhoneRegex.test(cleanDigits);
+    const isValidGeneral = cleanDigits.length >= 10 && cleanDigits.length <= 15;
+
+    if (!isValidEg && !isValidGeneral) {
+      setValidationError('يرجى إدخال رقم هاتف محمول صحيح (مثال: 011xxxxxxxx)');
       return;
     }
 
@@ -400,7 +444,7 @@ export function BookingModal({
       // Insert directly into Supabase 'appointments' table
       const res = await createAppointment({
         patient_name: trimmedName,
-        patient_phone: trimmedPhone,
+        patient_phone: rawPhone,
         service_name: trimmedService,
         visit_type: 'كشف جديد',
         branch_id: targetBranchId,
@@ -412,7 +456,7 @@ export function BookingModal({
         amount: paymentSettings.consultation_price || 1200,
         payment_screenshot_url: paymentScreenshotUrl,
         payment_method: paymentMethod,
-        notes: notes.trim() ? notes.trim() : null,
+        notes: trimmedNotes ? trimmedNotes : null,
       });
 
       if (res.success && res.data) {
@@ -428,7 +472,7 @@ export function BookingModal({
         const fallbackApt: AppointmentRecord = {
           id: `apt-${Date.now()}`,
           patient_name: trimmedName,
-          patient_phone: trimmedPhone,
+          patient_phone: rawPhone,
           service_name: trimmedService,
           branch_id: targetBranchId,
           branch_name_ar: targetBranchName,
@@ -439,7 +483,7 @@ export function BookingModal({
           amount: paymentSettings.consultation_price || 1200,
           payment_screenshot_url: paymentScreenshotUrl,
           payment_method: paymentMethod,
-          notes: notes.trim() || null,
+          notes: trimmedNotes || null,
           created_at: new Date().toISOString(),
         };
         try {
@@ -603,6 +647,18 @@ export function BookingModal({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Anti-Bot Honeypot Field (Invisible to human users) */}
+            <input
+              type="text"
+              name="b_website_hp"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypotValue}
+              onChange={(e) => setHoneypotValue(e.target.value)}
+              className="hidden opacity-0 pointer-events-none absolute -z-50 h-0 w-0"
+              aria-hidden="true"
+            />
+
             {/* Section 1: Clinic Branch Selection with Smart Day-to-Branch Matching */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
