@@ -113,15 +113,35 @@ export async function exportAppointmentsPdfReport({
 
   // Compute metrics
   const totalCount = reportAppointments.length;
-  const confirmedCount = reportAppointments.filter(
-    (a) => a.status === 'confirmed' || a.status === 'completed'
-  ).length;
-  const paidAppointments = reportAppointments.filter((a) => a.payment_status === 'paid');
-  const paidRevenue = paidAppointments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
-  const unpaidAppointments = reportAppointments.filter(
-    (a) => a.payment_status === 'unpaid' || a.payment_status === 'pending' || a.payment_status === 'معلق'
-  );
-  const pendingRevenue = unpaidAppointments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+  const isConfirmed = (a: AppointmentRecord) =>
+    a.status === 'confirmed' ||
+    a.status === 'completed' ||
+    (a.status as string) === 'مؤكد' ||
+    (a.status as string) === 'مكتمل';
+
+  const isPaid = (a: AppointmentRecord) => {
+    const ps = String(a.payment_status || '').toLowerCase().trim();
+    return (
+      ps === 'paid' ||
+      ps === 'مدفوع' ||
+      ps === 'تم الدفع' ||
+      ps === 'مكتمل' ||
+      isConfirmed(a)
+    );
+  };
+
+  const safeAmount = (a: AppointmentRecord) => {
+    const raw = a.amount ?? (a as Record<string, unknown>).amount_paid;
+    return typeof raw === 'string'
+      ? parseFloat(raw.replace(/[^0-9.]/g, '')) || 0
+      : Number(raw) || Number(a.amount) || 0;
+  };
+
+  const confirmedCount = reportAppointments.filter(isConfirmed).length;
+  const paidAppointments = reportAppointments.filter(isPaid);
+  const paidRevenue = paidAppointments.reduce((sum, a) => sum + safeAmount(a), 0);
+  const unpaidAppointments = reportAppointments.filter((a) => !isPaid(a));
+  const pendingRevenue = unpaidAppointments.reduce((sum, a) => sum + safeAmount(a), 0);
 
   const displayBranchName = resolveBranchName(branchId, branchName);
   const now = new Date();

@@ -117,15 +117,28 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         .replace(/\[وسيلة:[^\]]*\]/g, '')
         .trim();
 
-      // Normalize payment status
-      let rawPaymentStatus = item.payment_status;
-      if (rawPaymentStatus === 'pending' || rawPaymentStatus === 'معلق' || rawPaymentStatus === 'unconfirmed') {
+      // Normalize payment status safely
+      let rawPaymentStatus: PaymentStatus = 'معلق';
+      const ps = String(item.payment_status || '').toLowerCase().trim();
+      const st = String(item.status || '').toLowerCase().trim();
+      if (
+        ps === 'paid' ||
+        ps === 'مدفوع' ||
+        ps === 'تم الدفع' ||
+        ps === 'مكتمل' ||
+        st === 'confirmed' ||
+        st === 'completed'
+      ) {
+        rawPaymentStatus = 'paid';
+      } else if (ps === 'unpaid' || ps === 'غير مدفوع') {
+        rawPaymentStatus = 'unpaid';
+      } else {
         rawPaymentStatus = 'معلق';
       }
 
-      // Parse amount safely - fallback to 1200 EGP if 0 or null
+      // Parse amount safely (e.g., Number(item.amount) || 0) - fallback to 1200 EGP if 0 or null
       let parsedAmount = 1200;
-      const rawAmt = item.amount_paid !== undefined && item.amount_paid !== null ? item.amount_paid : item.amount;
+      const rawAmt = item.amount !== undefined && item.amount !== null ? item.amount : item.amount_paid;
       if (typeof rawAmt === 'number' && !isNaN(rawAmt) && rawAmt > 0) {
         parsedAmount = rawAmt;
       } else if (typeof rawAmt === 'string') {
@@ -133,6 +146,8 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         if (!isNaN(num) && num > 0) {
           parsedAmount = num;
         }
+      } else if (typeof item.amount_paid === 'number' && !isNaN(item.amount_paid) && item.amount_paid > 0) {
+        parsedAmount = item.amount_paid;
       }
 
       return {
@@ -304,9 +319,18 @@ export async function updateAppointment(
       ? getBranchArabicName(updates.branch_id)
       : currentApt.branch_name_ar;
 
+    // Automatically promote payment_status to 'paid' when confirmation status is changed to 'confirmed'
+    const finalPaymentStatus =
+      updates.payment_status !== undefined
+        ? updates.payment_status
+        : updates.status === 'confirmed'
+        ? 'paid'
+        : currentApt.payment_status;
+
     localAppointments[idx] = {
       ...currentApt,
       ...updates,
+      payment_status: finalPaymentStatus,
       branch_name_ar: updatedBranchName,
       updated_at: new Date().toISOString(),
     };
@@ -326,7 +350,11 @@ export async function updateAppointment(
   try {
     const dbUpdate: Record<string, unknown> = {};
     if (updates.status) dbUpdate.status = updates.status;
-    if (updates.payment_status) dbUpdate.payment_status = updates.payment_status;
+    if (updates.payment_status) {
+      dbUpdate.payment_status = updates.payment_status;
+    } else if (updates.status === 'confirmed') {
+      dbUpdate.payment_status = 'paid';
+    }
     if (typeof updates.amount === 'number') dbUpdate.amount_paid = updates.amount;
     if (updates.patient_name) dbUpdate.patient_name = updates.patient_name;
     if (updates.patient_phone) dbUpdate.patient_phone = updates.patient_phone;
@@ -486,11 +514,18 @@ export async function togglePaymentStatus(
 
 /**
  * Update appointment status (e.g., 'confirmed', 'completed', 'cancelled')
+ * When changing status to 'confirmed' (مؤكد), automatically update payment_status to 'paid' (مدفوع)
  */
 export async function updateAppointmentStatus(
   appointmentId: string,
   newStatus: AppointmentStatus
 ): Promise<{ success: boolean; error?: string }> {
+  if (newStatus === 'confirmed') {
+    return updateAppointment(appointmentId, {
+      status: 'confirmed',
+      payment_status: 'paid',
+    });
+  }
   return updateAppointment(appointmentId, { status: newStatus });
 }
 
@@ -632,14 +667,35 @@ export function computeAnalytics(appointments: AppointmentRecord[]): AnalyticsSu
   });
 
   appointments.forEach((apt) => {
-    if (apt.status === 'confirmed' || apt.status === 'completed') {
+    const statusStr = String(apt.status || '').toLowerCase().trim();
+    const paymentStatusStr = String(apt.payment_status || '').toLowerCase().trim();
+
+    const isConfirmed =
+      statusStr === 'confirmed' ||
+      statusStr === 'completed' ||
+      statusStr === 'مؤكد' ||
+      statusStr === 'مكتمل';
+
+    const isPaid =
+      paymentStatusStr === 'paid' ||
+      paymentStatusStr === 'مدفوع' ||
+      paymentStatusStr === 'تم الدفع' ||
+      paymentStatusStr === 'مكتمل' ||
+      isConfirmed;
+
+    if (isConfirmed) {
       confirmedBookings += 1;
-    } else if (apt.status === 'pending') {
+    } else if (statusStr === 'pending' || statusStr === 'معلق' || !statusStr) {
       pendingBookings += 1;
     }
 
-    const amt = Number(apt.amount) || 0;
-    if (apt.payment_status === 'paid') {
+    // Safely parse monetary amount field (e.g. Number(item.amount) || 0)
+    const rawAmt = apt.amount ?? (apt as Record<string, unknown>).amount_paid ?? (apt as Record<string, unknown>).price;
+    const amt = typeof rawAmt === 'string'
+      ? parseFloat(rawAmt.replace(/[^0-9.]/g, '')) || 0
+      : Number(rawAmt) || Number(apt.amount) || 0;
+
+    if (isPaid) {
       paidCount += 1;
       totalRevenue += amt;
     } else {
@@ -657,7 +713,7 @@ export function computeAnalytics(appointments: AppointmentRecord[]): AnalyticsSu
       };
     }
     branchMap[branchKey].count += 1;
-    if (apt.payment_status === 'paid') {
+    if (isPaid) {
       branchMap[branchKey].revenue += amt;
     }
 
@@ -667,7 +723,7 @@ export function computeAnalytics(appointments: AppointmentRecord[]): AnalyticsSu
       dateMap[d] = { bookings: 0, revenue: 0 };
     }
     dateMap[d].bookings += 1;
-    if (apt.payment_status === 'paid') {
+    if (isPaid) {
       dateMap[d].revenue += amt;
     }
 

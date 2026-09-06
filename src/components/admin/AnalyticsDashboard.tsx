@@ -44,11 +44,11 @@ export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNot
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const loadData迷 = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const rawAppointments迷 = await fetchAppointments();
-      setAppointments(rawAppointments迷);
+      const rawAppointments = await fetchAppointments();
+      setAppointments(rawAppointments);
     } catch (err) {
       console.error('Failed to compute analytics:', err);
       onNotify('error', 'حدث خطأ في معالجة بيانات التحليلات');
@@ -58,8 +58,8 @@ export const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ onNot
   }, [onNotify]);
 
   useEffect(() => {
-    loadData迷();
-  }, [loadData迷]);
+    loadData();
+  }, [loadData]);
 
   // Memoized analytical summary computation to prevent expensive recalculations
   const summary = useMemo(() => {

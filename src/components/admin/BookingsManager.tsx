@@ -287,6 +287,23 @@ export const BookingsManager = React.memo(function BookingsManager({
     e.preventDefault();
     try {
       if (editingAppointment) {
+        const finalPaymentStatus: PaymentStatus =
+          formState.status === 'confirmed' ? 'paid' : formState.payment_status;
+
+        // Instant optimistic update for immediate financial card recalculation
+        setAppointments((prev) =>
+          prev.map((a) =>
+            a.id === editingAppointment.id
+              ? {
+                  ...a,
+                  ...formState,
+                  payment_status: finalPaymentStatus,
+                  amount: Number(formState.amount),
+                }
+              : a
+          )
+        );
+
         // Update
         const res = await updateAppointment(editingAppointment.id, {
           patient_name: formState.patient_name,
@@ -297,7 +314,7 @@ export const BookingsManager = React.memo(function BookingsManager({
           appointment_date: formState.appointment_date,
           appointment_time: formState.appointment_time,
           status: formState.status,
-          payment_status: formState.payment_status,
+          payment_status: finalPaymentStatus,
           amount: Number(formState.amount),
           notes: formState.notes,
           medical_notes: formState.medical_notes,
@@ -306,7 +323,7 @@ export const BookingsManager = React.memo(function BookingsManager({
         if (res.success) {
           onNotify('success', `تم تحديث حجز ${formState.patient_name} بنجاح`);
           const wasNotConfirmed = editingAppointment.status !== 'confirmed' && editingAppointment.payment_status !== 'paid';
-          const isNowConfirmed = formState.status === 'confirmed' || formState.payment_status === 'paid';
+          const isNowConfirmed = formState.status === 'confirmed' || finalPaymentStatus === 'paid';
           setEditingAppointment(null);
           await loadData();
 
@@ -318,10 +335,11 @@ export const BookingsManager = React.memo(function BookingsManager({
               appointment_date: formState.appointment_date,
               appointment_time: formState.appointment_time,
               status: formState.status,
-              payment_status: formState.payment_status,
+              payment_status: finalPaymentStatus,
             });
           }
         } else {
+          await loadData();
           onNotify('error', res.error || 'فشل تحديث الحجز');
         }
       } else {
@@ -428,13 +446,27 @@ export const BookingsManager = React.memo(function BookingsManager({
   // Quick Status Toggle
   const handleQuickStatusChange = useCallback(async (apt: AppointmentRecord, newStatus: AppointmentStatus) => {
     try {
+      // Instant local state update to ensure financial cards and metrics update instantly
+      const nextPaymentStatus: PaymentStatus = newStatus === 'confirmed' ? 'paid' : apt.payment_status;
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === apt.id
+            ? { ...a, status: newStatus, payment_status: nextPaymentStatus }
+            : a
+        )
+      );
+
       const res = await updateConfirmationStatus(apt.id, newStatus);
       if (res.success) {
         onNotify('info', `تم تغيير حالة الحجز إلى: ${getStatusLabel(newStatus)}`);
         await loadData();
 
         if (newStatus === 'confirmed') {
-          const appointment = apt;
+          const appointment = {
+            ...apt,
+            status: 'confirmed' as AppointmentStatus,
+            payment_status: 'paid' as PaymentStatus,
+          };
           const webhookUrl =
             import.meta.env.VITE_N8N_WEBHOOK_URL ||
             'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
@@ -467,8 +499,12 @@ export const BookingsManager = React.memo(function BookingsManager({
             }
           }
         }
+      } else {
+        await loadData();
+        onNotify('error', res.error || 'فشل تغيير الحالة');
       }
     } catch {
+      await loadData();
       onNotify('error', 'فشل تغيير الحالة');
     }
   }, [getStatusLabel, loadData, onNotify]);
@@ -486,6 +522,22 @@ export const BookingsManager = React.memo(function BookingsManager({
   const handleConfirmQuickPayment = useCallback(async () => {
     if (!quickPaymentModal) return;
     try {
+      const apt = quickPaymentModal.appointment;
+      const isPaid = quickPaymentModal.payment_status === 'paid';
+
+      // Instant optimistic update for immediate financial card shift
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === apt.id
+            ? {
+                ...a,
+                payment_status: quickPaymentModal.payment_status,
+                amount: quickPaymentModal.amount,
+              }
+            : a
+        )
+      );
+
       const res = await togglePaymentStatus(
         quickPaymentModal.appointment.id,
         quickPaymentModal.payment_status,
@@ -496,8 +548,6 @@ export const BookingsManager = React.memo(function BookingsManager({
           'success',
           `تم تحديث حالة الدفع إلى (${quickPaymentModal.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}) بمبلغ ${quickPaymentModal.amount} ج.م`
         );
-        const apt = quickPaymentModal.appointment;
-        const isPaid = quickPaymentModal.payment_status === 'paid';
         setQuickPaymentModal(null);
         await loadData();
 
@@ -507,8 +557,12 @@ export const BookingsManager = React.memo(function BookingsManager({
             payment_status: 'paid',
           });
         }
+      } else {
+        await loadData();
+        onNotify('error', res.error || 'فشل تحديث حالة الدفع');
       }
     } catch {
+      await loadData();
       onNotify('error', 'فشل تحديث حالة الدفع');
     }
   }, [quickPaymentModal, loadData, onNotify, triggerN8nConfirmationWebhook]);
