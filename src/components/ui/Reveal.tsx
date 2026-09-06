@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import type { Variants } from 'framer-motion';
 
 interface RevealProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ export function Reveal({ children, delay = 0, y = 24, className, once = true }: 
       initial={reduce ? { opacity: 0 } : { opacity: 0, y }}
       whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
       viewport={{ once, margin: '-80px' }}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] as const }}
     >
       {children}
     </motion.div>
@@ -50,7 +51,7 @@ export function Stagger({ children, className, delay = 0, stagger = 0.1 }: Stagg
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const staggerItem = {
+export const staggerItem: Variants = {
   hidden: { opacity: 0, y: 22 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
 };

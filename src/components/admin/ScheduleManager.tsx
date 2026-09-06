@@ -218,8 +218,10 @@ export const ScheduleManager = React.memo(function ScheduleManager({
             branch: {
               id: strVal,
               nameAr: selectedBranch?.name_ar || selectedBranch?.nameAr || strVal,
-              nameEn: selectedBranch?.nameEn || strVal,
               cityAr: selectedBranch?.city_ar || selectedBranch?.cityAr || 'القاهرة',
+              addressAr: selectedBranch?.address_ar || selectedBranch?.addressAr || '',
+              phone: selectedBranch?.phone || '01154021247',
+              mapsUrl: selectedBranch?.maps_url || selectedBranch?.mapsUrl || '',
             },
           };
         }
@@ -855,7 +857,10 @@ export const ScheduleManager = React.memo(function ScheduleManager({
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteDailyOverride(ov.override_date || ov.id)}
+                          onClick={() => {
+                            const target = ov.override_date || ov.id;
+                            if (target) handleDeleteDailyOverride(target);
+                          }}
                           className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition cursor-pointer"
                           title="إلغاء هذا التبديل والعودة للجدول الطبيعي"
                         >

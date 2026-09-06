@@ -214,6 +214,45 @@ export const BookingsManager = React.memo(function BookingsManager({
     return { totalRev, pendingRev, totalCount, paidCount, unpaidCount, confirmedCount };
   }, [appointments]);
 
+  // External n8n Webhook trigger on booking confirmation
+  const triggerN8nConfirmationWebhook = useCallback(
+    async (appointment: AppointmentRecord) => {
+      try {
+        const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+        if (!webhookUrl) {
+          console.warn('VITE_N8N_WEBHOOK_URL is not configured in environment variables');
+          onNotify('error', 'تم تأكيد الحجز محلياً (تعذر إرسال الواتساب)');
+          return;
+        }
+
+        const payload = {
+          event: 'APPOINTMENT_CONFIRMED',
+          patient_name: appointment.patient_name,
+          patient_phone: appointment.patient_phone,
+          doctor_name: appointment.doctor_name || 'أ.د أحمد زغلول',
+          appointment_date: appointment.appointment_date,
+          appointment_time: appointment.appointment_time,
+        };
+
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Webhook error: ${response.status} ${response.statusText}`);
+        }
+      } catch (err) {
+        console.error('Failed to trigger n8n booking confirmation webhook:', err);
+        onNotify('error', 'تم تأكيد الحجز محلياً (تعذر إرسال الواتساب)');
+      }
+    },
+    [onNotify]
+  );
+
   // Handle Save (Create / Update)
   const handleSaveAppointment = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,8 +276,22 @@ export const BookingsManager = React.memo(function BookingsManager({
 
         if (res.success) {
           onNotify('success', `تم تحديث حجز ${formState.patient_name} بنجاح`);
+          const wasNotConfirmed = editingAppointment.status !== 'confirmed' && editingAppointment.payment_status !== 'paid';
+          const isNowConfirmed = formState.status === 'confirmed' || formState.payment_status === 'paid';
           setEditingAppointment(null);
           await loadData();
+
+          if (wasNotConfirmed && isNowConfirmed) {
+            await triggerN8nConfirmationWebhook({
+              ...editingAppointment,
+              patient_name: formState.patient_name,
+              patient_phone: formState.patient_phone,
+              appointment_date: formState.appointment_date,
+              appointment_time: formState.appointment_time,
+              status: formState.status,
+              payment_status: formState.payment_status,
+            });
+          }
         } else {
           onNotify('error', res.error || 'فشل تحديث الحجز');
         }
@@ -270,7 +323,7 @@ export const BookingsManager = React.memo(function BookingsManager({
     } catch {
       onNotify('error', 'حدث خطأ غير متوقع');
     }
-  }, [editingAppointment, formState, loadData, onNotify]);
+  }, [editingAppointment, formState, loadData, onNotify, triggerN8nConfirmationWebhook]);
 
   // Open Edit Modal
   const openEditModal = useCallback((apt: AppointmentRecord) => {
@@ -331,11 +384,18 @@ export const BookingsManager = React.memo(function BookingsManager({
       if (res.success) {
         onNotify('info', `تم تغيير حالة الحجز إلى: ${getStatusLabel(newStatus)}`);
         await loadData();
+
+        if (newStatus === 'confirmed') {
+          await triggerN8nConfirmationWebhook({
+            ...apt,
+            status: 'confirmed',
+          });
+        }
       }
     } catch {
       onNotify('error', 'فشل تغيير الحالة');
     }
-  }, [getStatusLabel, loadData, onNotify]);
+  }, [getStatusLabel, loadData, onNotify, triggerN8nConfirmationWebhook]);
 
   // Quick Payment Toggle
   const handleTogglePayment = useCallback((apt: AppointmentRecord) => {
@@ -360,13 +420,22 @@ export const BookingsManager = React.memo(function BookingsManager({
           'success',
           `تم تحديث حالة الدفع إلى (${quickPaymentModal.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع'}) بمبلغ ${quickPaymentModal.amount} ج.م`
         );
+        const apt = quickPaymentModal.appointment;
+        const isPaid = quickPaymentModal.payment_status === 'paid';
         setQuickPaymentModal(null);
         await loadData();
+
+        if (isPaid) {
+          await triggerN8nConfirmationWebhook({
+            ...apt,
+            payment_status: 'paid',
+          });
+        }
       }
     } catch {
       onNotify('error', 'فشل تحديث حالة الدفع');
     }
-  }, [quickPaymentModal, loadData, onNotify]);
+  }, [quickPaymentModal, loadData, onNotify, triggerN8nConfirmationWebhook]);
 
   // Export Branch-based PDF Report
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
@@ -1290,8 +1359,13 @@ export const BookingsManager = React.memo(function BookingsManager({
                         const res = await togglePaymentStatus(screenshotModalApt.id, 'paid', screenshotModalApt.amount || 1200);
                         if (res.success) {
                           onNotify('success', `تم تأكيد استلام الدفع بنجاح للمريض ${screenshotModalApt.patient_name}`);
+                          const confirmedApt = {
+                            ...screenshotModalApt,
+                            payment_status: 'paid' as PaymentStatus,
+                          };
                           setScreenshotModalApt(null);
                           await loadData();
+                          await triggerN8nConfirmationWebhook(confirmedApt);
                         }
                       } catch {
                         onNotify('error', 'فشل تحديث حالة الدفع');

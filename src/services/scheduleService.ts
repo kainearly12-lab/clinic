@@ -434,34 +434,50 @@ export async function updateWeeklyScheduleDay(
   dayIndex: number,
   updates: {
     branchId?: string;
+    branch_id?: string;
     openTime?: string;
+    open_time?: string;
     closeTime?: string;
+    close_time?: string;
     hoursAr?: string;
+    hours_ar?: string;
     isClosed?: boolean;
+    is_closed?: boolean;
+    is_working_day?: boolean;
+    is_holiday?: boolean;
+    isHoliday?: boolean;
     reason?: string | null;
+    reasonAr?: string | null;
+    reason_ar?: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
   const client = getSupabaseClient();
+
+  const targetBranchId = updates.branchId || updates.branch_id;
+  const targetOpenTime = updates.openTime || updates.open_time;
+  const targetCloseTime = updates.closeTime || updates.close_time;
+  const targetIsClosed = typeof updates.isClosed === 'boolean' ? updates.isClosed : typeof updates.is_closed === 'boolean' ? updates.is_closed : undefined;
+  const targetReason = updates.reason !== undefined ? updates.reason : updates.reasonAr !== undefined ? updates.reasonAr : updates.reason_ar;
 
   // 1. Update in-memory rotation
   const matchIdx = localWeeklyRotation.findIndex((r) => r.dayIndex === dayIndex);
   if (matchIdx >= 0) {
     const current = localWeeklyRotation[matchIdx];
-    const openTime = updates.openTime || current.openTime;
-    const closeTime = updates.closeTime || current.closeTime;
-    const hoursAr = updates.hoursAr
-      ? formatTime12h(updates.hoursAr)
+    const openTime = targetOpenTime || current.openTime;
+    const closeTime = targetCloseTime || current.closeTime;
+    const hoursAr = updates.hoursAr || updates.hours_ar
+      ? formatTime12h(updates.hoursAr || updates.hours_ar || '')
       : formatTimeRange12h(openTime, closeTime);
 
     localWeeklyRotation[matchIdx] = {
       ...current,
-      branchId: updates.branchId || current.branchId,
+      branchId: targetBranchId || current.branchId,
       openTime,
       closeTime,
       hoursAr,
-      isClosed: typeof updates.isClosed === 'boolean' ? updates.isClosed : current.isClosed,
-      reasonAr: updates.reason !== undefined ? updates.reason : current.reasonAr,
-      reason: updates.reason !== undefined ? updates.reason : current.reason,
+      isClosed: targetIsClosed !== undefined ? targetIsClosed : current.isClosed,
+      reasonAr: targetReason !== undefined ? targetReason : current.reasonAr,
+      reason: targetReason !== undefined ? targetReason : current.reason,
     };
   }
 
@@ -506,23 +522,34 @@ export async function updateWeeklyScheduleDay(
 /**
  * 1.2 Save Full Weekly Schedule (all 7 days)
  */
+export interface ScheduleSaveInput {
+  dayIndex?: number;
+  day_of_week?: number;
+  branchId?: string;
+  branch_id?: string;
+  openTime?: string;
+  open_time?: string;
+  closeTime?: string;
+  close_time?: string;
+  isClosed?: boolean;
+  is_closed?: boolean;
+  reason?: string | null;
+  reasonAr?: string | null;
+  reason_ar?: string | null;
+}
+
 export async function saveFullWeeklySchedule(
-  items: {
-    dayIndex: number;
-    branchId: string;
-    openTime: string;
-    closeTime: string;
-    isClosed: boolean;
-    reason?: string | null;
-  }[]
+  items: ScheduleSaveInput[]
 ): Promise<{ success: boolean; error?: string }> {
   for (const item of items) {
-    await updateWeeklyScheduleDay(item.dayIndex, {
-      branchId: item.branchId,
-      openTime: item.openTime,
-      closeTime: item.closeTime,
-      isClosed: item.isClosed,
-      reason: item.reason,
+    const day = item.dayIndex !== undefined ? item.dayIndex : item.day_of_week;
+    if (day === undefined) continue;
+    await updateWeeklyScheduleDay(day, {
+      branchId: item.branchId || item.branch_id,
+      openTime: item.openTime || item.open_time,
+      closeTime: item.closeTime || item.close_time,
+      isClosed: item.isClosed !== undefined ? item.isClosed : item.is_closed,
+      reason: item.reason || item.reason_ar || item.reasonAr,
     });
   }
   notifyScheduleChanged();
@@ -1100,5 +1127,12 @@ export async function getTodayDynamicSchedule(
     exception: exceptionDetails,
     source: weeklyRes.source,
     timestamp: new Date().toISOString(),
+    isClosed: isClosed || isHoliday,
+    isHoliday,
+    reasonAr: exceptionDetails.reasonAr,
+    openStatus: {
+      isOpen: statusCalc.isOpen,
+      statusTextAr: statusCalc.statusTextAr,
+    },
   };
 }

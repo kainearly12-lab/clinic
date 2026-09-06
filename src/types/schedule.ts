@@ -5,10 +5,13 @@
 
 export interface BranchRecord {
   id: string;
+  name?: string;
+  nameEn?: string;
   name_ar?: string;
   nameAr?: string;
   city_ar?: string;
   cityAr?: string;
+  address?: string;
   address_ar?: string;
   addressAr?: string;
   phone?: string;
@@ -159,6 +162,14 @@ export interface TodayScheduleResult {
   source: 'supabase' | 'fallback';
   /** Timestamp when calculation was performed */
   timestamp: string;
+  /** Direct compatibility shortcuts */
+  isClosed?: boolean;
+  isHoliday?: boolean;
+  reasonAr?: string | null;
+  openStatus?: {
+    isOpen: boolean;
+    statusTextAr?: string;
+  };
 }
 
 /**
@@ -177,4 +188,7 @@ export interface WeeklyScheduleItem {
   isHoliday?: boolean;
   reasonAr?: string | null;
   reason?: string | null;
+  branchId?: string;
+  branch_id?: string;
+  is_working_day?: boolean;
 }
