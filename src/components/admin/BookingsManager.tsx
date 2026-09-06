@@ -219,7 +219,7 @@ export const BookingsManager = React.memo(function BookingsManager({
     async (appointment: AppointmentRecord) => {
       const webhookUrl =
         import.meta.env.VITE_N8N_WEBHOOK_URL ||
-        'https://cd0845a19b2e5d.lhr.life/webhook-test/clinic-booking-confirmed';
+        'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
       if (webhookUrl) {
         try {
           await fetch(webhookUrl, {
@@ -377,7 +377,7 @@ export const BookingsManager = React.memo(function BookingsManager({
 
         if (newStatus === 'confirmed') {
           const appointment = apt;
-          const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://cd0845a19b2e5d.lhr.life/webhook-test/clinic-booking-confirmed';
+          const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
           if (webhookUrl) {
             try {
               await fetch(webhookUrl, {
