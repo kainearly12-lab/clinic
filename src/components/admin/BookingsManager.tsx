@@ -222,21 +222,30 @@ export const BookingsManager = React.memo(function BookingsManager({
         'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
       if (webhookUrl) {
         try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event: 'appointment_confirmed',
-              appointment_id: appointment.id,
-              patient_name: appointment.patient_name || appointment.patientName,
-              patient_phone: appointment.patient_phone || appointment.patientPhone,
-              doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
-              date: appointment.date || appointment.appointment_date,
-              time: appointment.time || appointment.appointment_time,
-            }),
+          const payload = JSON.stringify({
+            event: 'appointment_confirmed',
+            appointment_id: appointment.id,
+            patient_name: appointment.patient_name || appointment.patientName,
+            patient_phone: appointment.patient_phone || appointment.patientPhone,
+            doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
+            date: appointment.date || appointment.appointment_date,
+            time: appointment.time || appointment.appointment_time,
           });
+
+          // sendBeacon bypasses CORS preflight and works reliably for fire-and-forget
+          const blob = new Blob([payload], { type: 'application/json' });
+          if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(webhookUrl, blob);
+          } else {
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            }).catch(() => {});
+          }
         } catch (error) {
-          console.warn('n8n webhook notification failed:', error);
+          console.warn('Webhook notification failed:', error);
         }
       }
     },
@@ -377,24 +386,35 @@ export const BookingsManager = React.memo(function BookingsManager({
 
         if (newStatus === 'confirmed') {
           const appointment = apt;
-          const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
+          const webhookUrl =
+            import.meta.env.VITE_N8N_WEBHOOK_URL ||
+            'https://webhook.site/a332b5b5-ba2d-44bc-ac9f-1a300531f301';
           if (webhookUrl) {
             try {
-              await fetch(webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  event: 'appointment_confirmed',
-                  appointment_id: appointment.id,
-                  patient_name: appointment.patient_name || appointment.patientName,
-                  patient_phone: appointment.patient_phone || appointment.patientPhone,
-                  doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
-                  date: appointment.date || appointment.appointment_date,
-                  time: appointment.time || appointment.appointment_time,
-                }),
+              const payload = JSON.stringify({
+                event: 'appointment_confirmed',
+                appointment_id: appointment.id,
+                patient_name: appointment.patient_name || appointment.patientName,
+                patient_phone: appointment.patient_phone || appointment.patientPhone,
+                doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
+                date: appointment.date || appointment.appointment_date,
+                time: appointment.time || appointment.appointment_time,
               });
+
+              // sendBeacon bypasses CORS preflight and works reliably for fire-and-forget
+              const blob = new Blob([payload], { type: 'application/json' });
+              if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+                navigator.sendBeacon(webhookUrl, blob);
+              } else {
+                fetch(webhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: payload,
+                  keepalive: true,
+                }).catch(() => {});
+              }
             } catch (error) {
-              console.warn('n8n webhook notification failed:', error);
+              console.warn('Webhook notification failed:', error);
             }
           }
         }
