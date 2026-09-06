@@ -123,6 +123,18 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         rawPaymentStatus = 'معلق';
       }
 
+      // Parse amount safely - fallback to 1200 EGP if 0 or null
+      let parsedAmount = 1200;
+      const rawAmt = item.amount_paid !== undefined && item.amount_paid !== null ? item.amount_paid : item.amount;
+      if (typeof rawAmt === 'number' && !isNaN(rawAmt) && rawAmt > 0) {
+        parsedAmount = rawAmt;
+      } else if (typeof rawAmt === 'string') {
+        const num = parseFloat(rawAmt.replace(/[^0-9.]/g, ''));
+        if (!isNaN(num) && num > 0) {
+          parsedAmount = num;
+        }
+      }
+
       return {
         id: item.id,
         patient_name: item.patient_name || 'مريض مجهول',
@@ -135,7 +147,7 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         appointment_time: formatSqlTimeToArabic(item.appointment_time),
         status: (item.status as AppointmentStatus) || 'pending',
         payment_status: (rawPaymentStatus as PaymentStatus) || 'معلق',
-        amount: item.amount_paid || item.amount || 0,
+        amount: parsedAmount,
         payment_screenshot_url: parsedScreenshotUrl,
         payment_method: parsedPaymentMethod,
         notes: displayNotes || null,
@@ -521,6 +533,39 @@ export async function deleteAppointment(
       console.warn('Supabase delete appointment warning:', error);
     }
     return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Clear/reset all appointments from live Supabase and local cache
+ */
+export async function clearAllAppointments(): Promise<{ success: boolean; count?: number; error?: string }> {
+  const supabase = getSupabaseClient();
+  const count = localAppointments.length;
+  localAppointments = [];
+
+  await logAdminActivity(
+    'booking_deleted',
+    `تم تصفية ومسح سجلات الحجوزات بالكامل (${count} حجز) من قبل الطبيب لإعادة الضبط`,
+    'appointment'
+  );
+
+  if (!supabase) {
+    return { success: true, count };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      console.warn('Supabase clear all appointments warning:', error);
+    }
+    return { success: true, count };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, error: msg };

@@ -19,6 +19,8 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Check,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import gsap from 'gsap';
 import { AppointmentRecord, AppointmentStatus, PaymentStatus, VisitType } from '@/types/admin';
@@ -27,6 +29,7 @@ import {
   createAppointment,
   updateAppointment,
   deleteAppointment,
+  clearAllAppointments,
   togglePaymentStatus,
   updateConfirmationStatus,
 } from '@/services/appointmentService';
@@ -89,6 +92,8 @@ export const BookingsManager = React.memo(function BookingsManager({
   const [whatsAppModalAppointment, setWhatsAppModalAppointment] = useState<AppointmentRecord | null>(null);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
   const [screenshotModalApt, setScreenshotModalApt] = useState<AppointmentRecord | null>(null);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
 
   // Form State for Add / Edit
   const [formState, setFormState] = useState({
@@ -196,23 +201,48 @@ export const BookingsManager = React.memo(function BookingsManager({
     selectedDateFilter,
   ]);
 
+  // Helper to parse appointment amount reliably
+  const parseAmount = useCallback((val: unknown, fallback = 1200): number => {
+    if (typeof val === 'number') {
+      return !isNaN(val) && val > 0 ? val : fallback;
+    }
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return !isNaN(num) && num > 0 ? num : fallback;
+    }
+    return fallback;
+  }, []);
+
+  // Helper to check if payment is confirmed paid
+  const isPaidStatus = useCallback((status: unknown): boolean => {
+    const s = String(status || '').toLowerCase().trim();
+    return s === 'paid' || s === 'مدفوع' || s === 'تم الدفع' || s === 'مكتمل';
+  }, []);
+
   // Financial Metrics Calculation
   const metrics = useMemo(() => {
-    const totalRev = appointments
-      .filter((a) => a.payment_status === 'paid')
-      .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+    let totalRev = 0;
+    let pendingRev = 0;
+    let paidCount = 0;
+    let unpaidCount = 0;
 
-    const pendingRev = appointments
-      .filter((a) => a.payment_status === 'unpaid')
-      .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+    for (const a of appointments) {
+      const amt = parseAmount(a.amount, 1200);
+      if (isPaidStatus(a.payment_status)) {
+        totalRev += amt;
+        paidCount++;
+      } else {
+        pendingRev += amt;
+        unpaidCount++;
+      }
+    }
 
     const totalCount = appointments.length;
-    const paidCount = appointments.filter((a) => a.payment_status === 'paid').length;
-    const unpaidCount = appointments.filter((a) => a.payment_status === 'unpaid').length;
     const confirmedCount = appointments.filter((a) => a.status === 'confirmed').length;
 
     return { totalRev, pendingRev, totalCount, paidCount, unpaidCount, confirmedCount };
-  }, [appointments]);
+  }, [appointments, parseAmount, isPaidStatus]);
 
   // External n8n Webhook trigger on booking confirmation
   const triggerN8nConfirmationWebhook = useCallback(
@@ -337,11 +367,11 @@ export const BookingsManager = React.memo(function BookingsManager({
       appointment_time: apt.appointment_time,
       status: apt.status,
       payment_status: apt.payment_status,
-      amount: apt.amount || 0,
+      amount: parseAmount(apt.amount, 1200),
       notes: apt.notes || '',
       medical_notes: apt.medical_notes || '',
     });
-  }, []);
+  }, [parseAmount]);
 
   // Delete Action
   const handleDeleteConfirm = useCallback(async () => {
@@ -359,6 +389,25 @@ export const BookingsManager = React.memo(function BookingsManager({
       onNotify('error', 'حدث خطأ أثناء الحذف');
     }
   }, [deletingAppointment, loadData, onNotify]);
+
+  // Clear / Reset All Bookings
+  const handleConfirmClearAll = useCallback(async () => {
+    setIsClearing(true);
+    try {
+      const res = await clearAllAppointments();
+      if (res.success) {
+        onNotify('success', `تم مسح وتصفية جميع الحجوزات بنجاح (${res.count || 0} حجز)`);
+        await loadData();
+        setIsClearConfirmOpen(false);
+      } else {
+        onNotify('error', res.error || 'فشل تصفية الحجوزات');
+      }
+    } catch {
+      onNotify('error', 'حدث خطأ أثناء تصفية الحجوزات');
+    } finally {
+      setIsClearing(false);
+    }
+  }, [loadData, onNotify]);
 
   // Helper for Status Label
   const getStatusLabel = useCallback((status: AppointmentStatus) => {
@@ -429,10 +478,10 @@ export const BookingsManager = React.memo(function BookingsManager({
     const nextStatus: PaymentStatus = apt.payment_status === 'paid' ? 'unpaid' : 'paid';
     setQuickPaymentModal({
       appointment: apt,
-      amount: apt.amount || 1000,
+      amount: parseAmount(apt.amount, 1200),
       payment_status: nextStatus,
     });
-  }, []);
+  }, [parseAmount]);
 
   const handleConfirmQuickPayment = useCallback(async () => {
     if (!quickPaymentModal) return;
@@ -594,6 +643,15 @@ export const BookingsManager = React.memo(function BookingsManager({
             <p className="text-[10px] text-slate-400">إشعارات طوارئ جماعية وتقارير PDF</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 w-full justify-end">
+            <button
+              onClick={() => setIsClearConfirmOpen(true)}
+              title="تصفية ومسح كافة الحجوزات لتنظيف السجلات وإعادة الضبط"
+              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/20 hover:border-red-400 shadow-sm cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-red-400" />
+              <span>تصفية الحجوزات</span>
+            </button>
+
             <button
               onClick={() => setIsBroadcastModalOpen(true)}
               title="أداة إرسال إشعارات الطوارئ ورسائل الواتساب الجماعية"
@@ -934,7 +992,7 @@ export const BookingsManager = React.memo(function BookingsManager({
 
                     {/* Amount */}
                     <td className="py-3.5 px-4 font-mono font-bold text-white whitespace-nowrap">
-                      {Number(apt.amount).toLocaleString()} ج.م
+                      {parseAmount(apt.amount, 1200).toLocaleString()} ج.م
                     </td>
 
                     {/* Actions */}
@@ -1214,6 +1272,40 @@ export const BookingsManager = React.memo(function BookingsManager({
                 className="rounded-xl bg-red-500 px-5 py-2 text-xs font-bold text-white hover:bg-red-600 transition shadow-lg"
               >
                 نعم، احذف الحجز
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear/Reset All Bookings Confirmation Modal */}
+      {isClearConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-slate-900 p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-red-500/20 text-red-400 border border-red-500/40">
+              <AlertTriangle className="h-6 w-6 text-red-400" />
+            </div>
+            <h3 className="text-base font-bold text-white">تأكيد تصفية ومسح الحجوزات</h3>
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
+              هل أنت متأكد من رغبتك في مسح كافة الحجوزات المسجلة بالكامل؟ سيتم حذف جميع الحجوزات لتنظيف السجلات وإعادة ضبط لوحة التحكم. لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                disabled={isClearing}
+                onClick={() => setIsClearConfirmOpen(false)}
+                className="rounded-xl px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+              >
+                تراجع وإلغاء
+              </button>
+              <button
+                type="button"
+                disabled={isClearing}
+                onClick={handleConfirmClearAll}
+                className="rounded-xl bg-red-500 px-5 py-2 text-xs font-bold text-white hover:bg-red-600 transition shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>{isClearing ? 'جاري المسح والتصفية...' : 'نعم، قم بتصفية الحجوزات'}</span>
               </button>
             </div>
           </div>
