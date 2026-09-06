@@ -67,20 +67,25 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
     setIsLoading(true);
     try {
       const data: ClinicPaymentSettings = await fetchClinicPaymentSettings();
-      setConsultationPrice(data.consultation_price || 1200);
-      setCurrency(data.currency || 'ج.م');
-      setIsPaymentEnabled(data.is_payment_enabled !== false);
-      setPaymentInstructions(data.payment_instructions_ar || '');
-      setVodafoneAccounts(
-        data.vodafone_cash_accounts && data.vodafone_cash_accounts.length > 0
-          ? data.vodafone_cash_accounts
-          : DEFAULT_VODAFONE_ACCOUNTS
-      );
-      setInstapayAccounts(
-        data.instapay_accounts && data.instapay_accounts.length > 0
-          ? data.instapay_accounts
-          : DEFAULT_INSTAPAY_ACCOUNTS
-      );
+      // Remove fallback hardcoded values once data is fetched from the database
+      if (typeof data.consultation_price === 'number') {
+        setConsultationPrice(data.consultation_price);
+      }
+      if (data.currency) {
+        setCurrency(data.currency);
+      }
+      if (typeof data.is_payment_enabled === 'boolean') {
+        setIsPaymentEnabled(data.is_payment_enabled);
+      }
+      if (data.payment_instructions_ar !== undefined) {
+        setPaymentInstructions(data.payment_instructions_ar);
+      }
+      if (Array.isArray(data.vodafone_cash_accounts)) {
+        setVodafoneAccounts(data.vodafone_cash_accounts);
+      }
+      if (Array.isArray(data.instapay_accounts)) {
+        setInstapayAccounts(data.instapay_accounts);
+      }
     } catch (err) {
       console.error('Error loading payment settings:', err);
       onNotify('error', 'تعذر تحميل إعدادات بوابات الدفع');

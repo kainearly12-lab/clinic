@@ -159,6 +159,7 @@ export async function fetchClinicPaymentSettings(): Promise<ClinicPaymentSetting
     const { data, error } = await supabase
       .from('clinic_payment_settings')
       .select('*')
+      .order('id', { ascending: true })
       .limit(1)
       .maybeSingle();
 
@@ -166,52 +167,114 @@ export async function fetchClinicPaymentSettings(): Promise<ClinicPaymentSetting
       return { ...cachedSettings };
     }
 
-    // Flexible column mapping
+    // 1. Consultation Price & Currency (from DB, without hardcoded fallback once data is present)
+    const dbPrice =
+      typeof data.consultation_price === 'number'
+        ? data.consultation_price
+        : data.consultation_price !== null &&
+          data.consultation_price !== undefined &&
+          !isNaN(Number(data.consultation_price))
+        ? Number(data.consultation_price)
+        : typeof data.price === 'number'
+        ? data.price
+        : typeof data.amount === 'number'
+        ? data.amount
+        : DEFAULT_PAYMENT_SETTINGS.consultation_price;
+
+    const dbCurrency = data.currency || DEFAULT_PAYMENT_SETTINGS.currency;
+
+    // 2. Primary Numbers / Addresses from DB columns
     const rawVodafoneSingle =
       data.vodafone_cash_number ||
       data.vodafone_cash ||
       data.wallet_number ||
-      DEFAULT_PAYMENT_SETTINGS.vodafone_cash_number;
+      '';
 
     const rawInstaSingle =
+      data.instapay_account ||
       data.instapay_address ||
       data.instapay_ipa ||
       data.instapay ||
-      DEFAULT_PAYMENT_SETTINGS.instapay_address;
+      '';
 
-    const vodafoneAccounts = parseAccountsList(
-      data.vodafone_cash_accounts || data.vodafone_accounts,
-      rawVodafoneSingle,
-      'المحفظة الرئيسية (فودافون كاش)',
-      DEFAULT_VODAFONE_ACCOUNTS
-    );
+    // 3. Extract Vodafone accounts from DB
+    let vodafoneAccounts: PaymentAccountItem[] = [];
+    if (data.vodafone_cash_numbers && typeof data.vodafone_cash_numbers === 'object') {
+      if (
+        Array.isArray(data.vodafone_cash_numbers.vodafone) &&
+        data.vodafone_cash_numbers.vodafone.length > 0
+      ) {
+        vodafoneAccounts = parseAccountsList(data.vodafone_cash_numbers.vodafone);
+      } else if (
+        Array.isArray(data.vodafone_cash_numbers) &&
+        data.vodafone_cash_numbers.length > 0
+      ) {
+        vodafoneAccounts = parseAccountsList(data.vodafone_cash_numbers);
+      }
+    } else if (data.vodafone_cash_accounts) {
+      vodafoneAccounts = parseAccountsList(data.vodafone_cash_accounts);
+    }
 
-    const instapayAccounts = parseAccountsList(
-      data.instapay_accounts,
-      rawInstaSingle,
-      'عنوان إنستاباي الرئيسي (IPA)',
-      DEFAULT_INSTAPAY_ACCOUNTS
-    );
+    if (vodafoneAccounts.length === 0 && rawVodafoneSingle) {
+      vodafoneAccounts = [
+        {
+          id: 'voda-primary',
+          name: 'المحفظة الرئيسية (فودافون كاش)',
+          value: rawVodafoneSingle,
+          isActive: true,
+        },
+      ];
+    }
+
+    // 4. Extract InstaPay accounts from DB
+    let instapayAccounts: PaymentAccountItem[] = [];
+    if (
+      data.vodafone_cash_numbers &&
+      typeof data.vodafone_cash_numbers === 'object' &&
+      Array.isArray(data.vodafone_cash_numbers.instapay) &&
+      data.vodafone_cash_numbers.instapay.length > 0
+    ) {
+      instapayAccounts = parseAccountsList(data.vodafone_cash_numbers.instapay);
+    } else if (data.instapay_accounts) {
+      instapayAccounts = parseAccountsList(data.instapay_accounts);
+    }
+
+    if (instapayAccounts.length === 0 && rawInstaSingle) {
+      instapayAccounts = [
+        {
+          id: 'insta-primary',
+          name: 'عنوان إنستاباي الرئيسي (IPA)',
+          value: rawInstaSingle,
+          isActive: true,
+        },
+      ];
+    }
+
+    // If database record is completely blank, fallback to defaults
+    if (vodafoneAccounts.length === 0) {
+      vodafoneAccounts = DEFAULT_VODAFONE_ACCOUNTS;
+    }
+    if (instapayAccounts.length === 0) {
+      instapayAccounts = DEFAULT_INSTAPAY_ACCOUNTS;
+    }
 
     const primaryVodafone =
-      vodafoneAccounts.find((a) => a.isActive)?.value || rawVodafoneSingle;
+      vodafoneAccounts.find((a) => a.isActive)?.value ||
+      rawVodafoneSingle ||
+      DEFAULT_PAYMENT_SETTINGS.vodafone_cash_number;
+
     const primaryInstapay =
-      instapayAccounts.find((a) => a.isActive)?.value || rawInstaSingle;
+      instapayAccounts.find((a) => a.isActive)?.value ||
+      rawInstaSingle ||
+      DEFAULT_PAYMENT_SETTINGS.instapay_address;
 
     const resolved: ClinicPaymentSettings = {
       id: data.id || 1,
-      consultation_price:
-        typeof data.consultation_price === 'number'
-          ? data.consultation_price
-          : typeof data.price === 'number'
-          ? data.price
-          : typeof data.amount === 'number'
-          ? data.amount
-          : DEFAULT_PAYMENT_SETTINGS.consultation_price,
-      currency: data.currency || 'ج.م',
+      consultation_price: dbPrice,
+      currency: dbCurrency,
       vodafone_cash_number: primaryVodafone,
       instapay_address: primaryInstapay,
-      instapay_number: data.instapay_number || primaryVodafone,
+      instapay_number: primaryVodafone,
       vodafone_cash_accounts: vodafoneAccounts,
       instapay_accounts: instapayAccounts,
       bank_account_info: data.bank_account_info || '',
@@ -258,18 +321,30 @@ export async function updateClinicPaymentSettings(
   const firstActiveVodafone =
     nextVodafoneAccounts.find((a) => a.isActive)?.value ||
     updates.vodafone_cash_number ||
-    cachedSettings.vodafone_cash_number;
+    cachedSettings.vodafone_cash_number ||
+    '01154021247';
 
   const firstActiveInstapay =
     nextInstapayAccounts.find((a) => a.isActive)?.value ||
     updates.instapay_address ||
-    cachedSettings.instapay_address;
+    cachedSettings.instapay_address ||
+    'androderma@instapay';
+
+  const nextConsultationPrice =
+    typeof updates.consultation_price === 'number'
+      ? updates.consultation_price
+      : Number(cachedSettings.consultation_price) || 1200;
+
+  const nextCurrency = (updates.currency || cachedSettings.currency || 'ج.م').trim();
 
   const nextSettings: ClinicPaymentSettings = {
     ...cachedSettings,
     ...updates,
+    consultation_price: nextConsultationPrice,
+    currency: nextCurrency,
     vodafone_cash_number: firstActiveVodafone,
     instapay_address: firstActiveInstapay,
+    instapay_number: firstActiveVodafone,
     vodafone_cash_accounts: nextVodafoneAccounts,
     instapay_accounts: nextInstapayAccounts,
     updated_at: new Date().toISOString(),
@@ -296,18 +371,19 @@ export async function updateClinicPaymentSettings(
   }
 
   try {
-    const payload: Record<string, unknown> = {
-      id: 1,
-      consultation_price: Number(nextSettings.consultation_price) || 1200,
-      currency: nextSettings.currency || 'ج.م',
-      vodafone_cash_number: nextSettings.vodafone_cash_number || '01154021247',
-      instapay_address: nextSettings.instapay_address || 'androderma@instapay',
-      instapay_number: nextSettings.instapay_number || '01154021247',
-      vodafone_cash_accounts: nextSettings.vodafone_cash_accounts,
-      instapay_accounts: nextSettings.instapay_accounts,
-      bank_account_info: nextSettings.bank_account_info || '',
-      payment_instructions_ar: nextSettings.payment_instructions_ar,
-      is_payment_enabled: Boolean(nextSettings.is_payment_enabled),
+    const targetId = cachedSettings.id && !isNaN(Number(cachedSettings.id)) ? Number(cachedSettings.id) : 1;
+
+    // Send payload matching the exact clinic_payment_settings table columns
+    const payload = {
+      id: targetId,
+      consultation_price: nextConsultationPrice,
+      currency: nextCurrency,
+      vodafone_cash_number: firstActiveVodafone.slice(0, 50),
+      instapay_account: firstActiveInstapay.slice(0, 50),
+      vodafone_cash_numbers: {
+        vodafone: nextVodafoneAccounts,
+        instapay: nextInstapayAccounts,
+      },
       updated_at: new Date().toISOString(),
     };
 
@@ -318,34 +394,24 @@ export async function updateClinicPaymentSettings(
       .maybeSingle();
 
     if (error) {
-      console.warn('Supabase direct upsert clinic_payment_settings error, trying with stringified JSON:', error);
-      // Try stringified JSON in case column type is text
-      payload.vodafone_cash_accounts = JSON.stringify(nextSettings.vodafone_cash_accounts);
-      payload.instapay_accounts = JSON.stringify(nextSettings.instapay_accounts);
-      const retryResult = await supabase
-        .from('clinic_payment_settings')
-        .upsert([payload])
-        .select()
-        .maybeSingle();
+      console.warn('Supabase direct upsert clinic_payment_settings error:', error);
+      return { success: false, error: error.message };
+    }
 
-      if (retryResult.error) {
-        // If columns do not exist, upsert base columns without the multi-account arrays
-        delete payload.vodafone_cash_accounts;
-        delete payload.instapay_accounts;
-        await supabase
-          .from('clinic_payment_settings')
-          .upsert([payload]);
-      }
+    if (data) {
+      nextSettings.id = data.id || targetId;
+      nextSettings.updated_at = data.updated_at || nextSettings.updated_at;
+      cachedSettings = nextSettings;
     }
 
     return {
       success: true,
-      data: data ? { ...nextSettings, ...data } : nextSettings,
+      data: nextSettings,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Failed to update clinic payment settings in Supabase:', err);
-    return { success: true, data: nextSettings, error: msg };
+    return { success: false, error: msg };
   }
 }
 
