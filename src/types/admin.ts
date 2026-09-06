@@ -38,6 +38,11 @@ export interface AppointmentRecord {
   patient_name: string;
   patient_phone: string;
   doctor_name?: string;
+  patientName?: string;
+  patientPhone?: string;
+  doctorName?: string;
+  date?: string;
+  time?: string;
   service_name: string;
   visit_type?: VisitType | string;
   branch_id: string;

@@ -217,40 +217,30 @@ export const BookingsManager = React.memo(function BookingsManager({
   // External n8n Webhook trigger on booking confirmation
   const triggerN8nConfirmationWebhook = useCallback(
     async (appointment: AppointmentRecord) => {
-      try {
-        const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
-        if (!webhookUrl) {
-          console.warn('VITE_N8N_WEBHOOK_URL is not configured in environment variables');
-          onNotify('error', 'تم تأكيد الحجز محلياً (تعذر إرسال الواتساب)');
-          return;
+      const webhookUrl =
+        import.meta.env.VITE_N8N_WEBHOOK_URL ||
+        'https://3c0405809e773d.lhr.life/webhook-test/clinic-booking-confirmed';
+      if (webhookUrl) {
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'appointment_confirmed',
+              appointment_id: appointment.id,
+              patient_name: appointment.patient_name || appointment.patientName,
+              patient_phone: appointment.patient_phone || appointment.patientPhone,
+              doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
+              date: appointment.date || appointment.appointment_date,
+              time: appointment.time || appointment.appointment_time,
+            }),
+          });
+        } catch (error) {
+          console.warn('n8n webhook notification failed:', error);
         }
-
-        const payload = {
-          event: 'APPOINTMENT_CONFIRMED',
-          patient_name: appointment.patient_name,
-          patient_phone: appointment.patient_phone,
-          doctor_name: appointment.doctor_name || 'أ.د أحمد زغلول',
-          appointment_date: appointment.appointment_date,
-          appointment_time: appointment.appointment_time,
-        };
-
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Webhook error: ${response.status} ${response.statusText}`);
-        }
-      } catch (err) {
-        console.error('Failed to trigger n8n booking confirmation webhook:', err);
-        onNotify('error', 'تم تأكيد الحجز محلياً (تعذر إرسال الواتساب)');
       }
     },
-    [onNotify]
+    []
   );
 
   // Handle Save (Create / Update)
@@ -386,16 +376,33 @@ export const BookingsManager = React.memo(function BookingsManager({
         await loadData();
 
         if (newStatus === 'confirmed') {
-          await triggerN8nConfirmationWebhook({
-            ...apt,
-            status: 'confirmed',
-          });
+          const appointment = apt;
+          const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://3c0405809e773d.lhr.life/webhook-test/clinic-booking-confirmed';
+          if (webhookUrl) {
+            try {
+              await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  event: 'appointment_confirmed',
+                  appointment_id: appointment.id,
+                  patient_name: appointment.patient_name || appointment.patientName,
+                  patient_phone: appointment.patient_phone || appointment.patientPhone,
+                  doctor_name: appointment.doctor_name || appointment.doctorName || 'أ.د أحمد زغلول',
+                  date: appointment.date || appointment.appointment_date,
+                  time: appointment.time || appointment.appointment_time,
+                }),
+              });
+            } catch (error) {
+              console.warn('n8n webhook notification failed:', error);
+            }
+          }
         }
       }
     } catch {
       onNotify('error', 'فشل تغيير الحالة');
     }
-  }, [getStatusLabel, loadData, onNotify, triggerN8nConfirmationWebhook]);
+  }, [getStatusLabel, loadData, onNotify]);
 
   // Quick Payment Toggle
   const handleTogglePayment = useCallback((apt: AppointmentRecord) => {
