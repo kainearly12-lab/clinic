@@ -5,6 +5,7 @@ import {
 } from '@/types/schedule';
 import { SiteSettingsRecord, ActivityLogRecord } from '@/types/admin';
 import { branches as defaultBranches } from '@/data/clinicData';
+import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { getDeviceType } from '@/utils/deviceDetector';
 import {
   notifyScheduleChanged,
@@ -57,14 +58,25 @@ const localBranches: BranchRecord[] = defaultBranches.map((b) => ({
 }));
 
 let localSettings: SiteSettingsRecord = {
-  id: 'main-settings',
+  id: '1',
+  site_title: 'عيادات Androderma',
+  tagline: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
+  official_email: 'info@androderma.com',
+  unified_hotline: '201154021247',
+  emergency_alert: null,
+  logo_url: CLINIC_LOGO,
+  favicon_url: CLINIC_LOGO,
+  primary_color: '#00B8A9',
+  secondary_color: '#0F766E',
+  maintenance_mode: false,
+
+  // Aliases for compatibility
   clinic_name_ar: 'عيادات Androderma',
   tagline_ar: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
-  primary_color: '#00B8A9',
-  accent_color: '#0F766E',
-  whatsapp_number: '201154021247',
   email_contact: 'info@androderma.com',
+  whatsapp_number: '201154021247',
   emergency_notice_ar: null,
+  accent_color: '#0F766E',
   is_maintenance_mode: false,
   updated_at: new Date().toISOString(),
 };
@@ -538,14 +550,51 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
       return { ...localSettings };
     }
 
-    return {
+    const siteTitle = data.site_title || data.clinic_name_ar || localSettings.site_title || 'عيادات Androderma';
+    const tagline = data.tagline || data.tagline_ar || localSettings.tagline || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
+    const officialEmail = data.official_email || data.email_contact || localSettings.official_email || 'info@androderma.com';
+    const unifiedHotline = data.unified_hotline || data.whatsapp_number || localSettings.unified_hotline || '201154021247';
+    const emergencyAlert = data.emergency_alert !== undefined
+      ? data.emergency_alert
+      : (data.emergency_notice_ar !== undefined ? data.emergency_notice_ar : localSettings.emergency_alert);
+    const logoUrl = data.logo_url || localSettings.logo_url || CLINIC_LOGO;
+    const faviconUrl = data.favicon_url || data.logo_url || localSettings.favicon_url || CLINIC_LOGO;
+    const primaryColor = data.primary_color || localSettings.primary_color || '#00B8A9';
+    const secondaryColor = data.secondary_color || data.accent_color || localSettings.secondary_color || '#0F766E';
+    const maintenanceMode = Boolean(
+      data.maintenance_mode !== undefined
+        ? data.maintenance_mode
+        : (data.is_maintenance_mode !== undefined ? data.is_maintenance_mode : localSettings.maintenance_mode)
+    );
+
+    const record: SiteSettingsRecord = {
       id: String(data.id || '1'),
-      clinic_name_ar: data.site_title || 'عيادات Androderma',
-      primary_color: data.primary_color || '#00B8A9',
-      accent_color: data.secondary_color || '#0F766E',
-      is_maintenance_mode: Boolean(data.maintenance_mode),
-      updated_at: new Date().toISOString(),
+      site_title: siteTitle,
+      tagline: tagline,
+      official_email: officialEmail,
+      unified_hotline: unifiedHotline,
+      emergency_alert: emergencyAlert,
+      logo_url: logoUrl,
+      favicon_url: faviconUrl,
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      maintenance_mode: maintenanceMode,
+
+      // UI and backwards-compatible aliases
+      clinic_name_ar: siteTitle,
+      tagline_ar: tagline,
+      email_contact: officialEmail,
+      whatsapp_number: unifiedHotline,
+      emergency_notice_ar: emergencyAlert,
+      accent_color: secondaryColor,
+      is_maintenance_mode: maintenanceMode,
+      meta_title: data.meta_title || siteTitle,
+      meta_description: data.meta_description || tagline,
+      updated_at: data.updated_at || new Date().toISOString(),
     };
+
+    localSettings = { ...localSettings, ...record };
+    return record;
   } catch {
     return { ...localSettings };
   }
@@ -572,17 +621,42 @@ export async function updateSiteSettings(
   }
 
   try {
+    const siteTitle = settings.site_title || settings.clinic_name_ar || localSettings.site_title || localSettings.clinic_name_ar || 'عيادات Androderma';
+    const tagline = settings.tagline || settings.tagline_ar || localSettings.tagline || localSettings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
+    const officialEmail = settings.official_email || settings.email_contact || localSettings.official_email || localSettings.email_contact || 'info@androderma.com';
+    const unifiedHotline = settings.unified_hotline || settings.whatsapp_number || localSettings.unified_hotline || localSettings.whatsapp_number || '201154021247';
+    const emergencyAlert = settings.emergency_alert !== undefined
+      ? settings.emergency_alert
+      : (settings.emergency_notice_ar !== undefined ? settings.emergency_notice_ar : localSettings.emergency_alert);
+    const logoUrl = settings.logo_url || localSettings.logo_url || CLINIC_LOGO;
+    const faviconUrl = settings.favicon_url || settings.logo_url || localSettings.favicon_url || CLINIC_LOGO;
+    const primaryColor = settings.primary_color || localSettings.primary_color || '#00B8A9';
+    const secondaryColor = settings.secondary_color || settings.accent_color || localSettings.secondary_color || localSettings.accent_color || '#0F766E';
+    const maintenanceMode = Boolean(
+      settings.maintenance_mode !== undefined
+        ? settings.maintenance_mode
+        : (settings.is_maintenance_mode !== undefined ? settings.is_maintenance_mode : localSettings.maintenance_mode)
+    );
+
     const payload = {
-      site_title: settings.clinic_name_ar || localSettings.clinic_name_ar,
-      primary_color: settings.primary_color || localSettings.primary_color,
-      secondary_color: settings.accent_color || localSettings.accent_color,
-      maintenance_mode: Boolean(settings.is_maintenance_mode),
+      site_title: siteTitle,
+      tagline: tagline,
+      official_email: officialEmail,
+      unified_hotline: unifiedHotline,
+      emergency_alert: emergencyAlert || null,
+      logo_url: logoUrl,
+      favicon_url: faviconUrl,
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      maintenance_mode: maintenanceMode,
     };
 
-    const { error } = await supabase.from('site_settings').upsert([{ id: 1, ...payload }]);
+    const targetId = localSettings.id && !isNaN(Number(localSettings.id)) ? Number(localSettings.id) : 1;
+    const { error } = await supabase.from('site_settings').upsert([{ id: targetId, ...payload }]);
 
     if (error) {
       console.warn('Supabase update site_settings error:', error);
+      return { success: false, error: error.message };
     }
     return { success: true };
   } catch (err: unknown) {

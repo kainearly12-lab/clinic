@@ -16,16 +16,25 @@ interface SiteSettingsContextType {
 }
 
 const defaultSettings: SiteSettingsRecord = {
-  id: 'main-settings',
-  clinic_name_ar: 'عيادات Androderma',
-  tagline_ar: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
+  id: '1',
+  site_title: 'عيادات Androderma',
+  tagline: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
+  official_email: 'info@androderma.com',
+  unified_hotline: '201154021247',
+  emergency_alert: null,
   logo_url: CLINIC_LOGO,
   favicon_url: CLINIC_LOGO,
   primary_color: '#00B8A9',
-  accent_color: '#0F766E',
-  whatsapp_number: '201154021247',
+  secondary_color: '#0F766E',
+  maintenance_mode: false,
+
+  // Compatibility aliases
+  clinic_name_ar: 'عيادات Androderma',
+  tagline_ar: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
   email_contact: 'info@androderma.com',
+  whatsapp_number: '201154021247',
   emergency_notice_ar: null,
+  accent_color: '#0F766E',
   is_maintenance_mode: false,
 };
 
@@ -59,8 +68,10 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         const activeLogo = data.logo_url || CLINIC_LOGO;
         updateBrowserFavicon(data.favicon_url || activeLogo);
 
-        if (data.clinic_name_ar) {
-          document.title = `${data.clinic_name_ar} | ${data.tagline_ar || 'العناية بالجلدية والليزر'}`;
+        const currentTitle = data.site_title || data.clinic_name_ar;
+        const currentTagline = data.tagline || data.tagline_ar;
+        if (currentTitle) {
+          document.title = `${currentTitle} | ${currentTagline || 'العناية بالجلدية والليزر'}`;
         }
       }
     } catch (err) {
@@ -86,8 +97,10 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
       updateBrowserFavicon(updated.favicon_url || targetLogo);
 
       // 2. Instantly update dynamic document title
-      if (updated.clinic_name_ar) {
-        document.title = `${updated.clinic_name_ar} | ${updated.tagline_ar || 'العناية بالجلدية والليزر'}`;
+      const activeTitle = updated.site_title || updated.clinic_name_ar;
+      const activeTagline = updated.tagline || updated.tagline_ar;
+      if (activeTitle) {
+        document.title = `${activeTitle} | ${activeTagline || 'العناية بالجلدية والليزر'}`;
       }
 
       // 3. Persist to Supabase and Admin service
@@ -103,8 +116,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     ? settings.logo_url
     : CLINIC_LOGO;
 
-  const clinicName = settings.clinic_name_ar || 'عيادات Androderma';
-  const tagline = settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
+  const clinicName = settings.site_title || settings.clinic_name_ar || 'عيادات Androderma';
+  const tagline = settings.tagline || settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
 
   return (
     <SiteSettingsContext.Provider

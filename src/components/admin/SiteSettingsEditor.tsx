@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sliders,
   Save,
@@ -23,18 +23,56 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   settings,
   onUpdateSettings,
 }: SiteSettingsEditorProps) {
-  const [clinicNameAr, setClinicNameAr] = useState<string>(settings.clinic_name_ar || 'عيادات Androderma');
-  const [taglineAr, setTaglineAr] = useState<string>(settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي');
+  const [clinicNameAr, setClinicNameAr] = useState<string>(settings.site_title || settings.clinic_name_ar || 'عيادات Androderma');
+  const [taglineAr, setTaglineAr] = useState<string>(settings.tagline || settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي');
   const [logoUrl, setLogoUrl] = useState<string>(settings.logo_url || CLINIC_LOGO);
   const [faviconUrl, setFaviconUrl] = useState<string>(settings.favicon_url || settings.logo_url || CLINIC_LOGO);
-  const [whatsappNumber, setWhatsappNumber] = useState<string>(settings.whatsapp_number || '201154021247');
-  const [emailContact, setEmailContact] = useState<string>(settings.email_contact || 'info@androderma.com');
-  const [emergencyNotice, setEmergencyNotice] = useState<string>(settings.emergency_notice_ar || '');
-  const [isMaintenanceMode] = useState<boolean>(Boolean(settings.is_maintenance_mode));
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(settings.unified_hotline || settings.whatsapp_number || '201154021247');
+  const [emailContact, setEmailContact] = useState<string>(settings.official_email || settings.email_contact || 'info@androderma.com');
+  const [emergencyNotice, setEmergencyNotice] = useState<string>(settings.emergency_alert || settings.emergency_notice_ar || '');
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(Boolean(settings.maintenance_mode !== undefined ? settings.maintenance_mode : settings.is_maintenance_mode));
+  const [primaryColor, setPrimaryColor] = useState<string>(settings.primary_color || '#00B8A9');
+  const [secondaryColor, setSecondaryColor] = useState<string>(settings.secondary_color || settings.accent_color || '#0F766E');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [faviconSynced, setFaviconSynced] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state whenever settings are fetched or updated from Supabase
+  useEffect(() => {
+    if (settings) {
+      if (settings.site_title || settings.clinic_name_ar) {
+        setClinicNameAr(settings.site_title || settings.clinic_name_ar || '');
+      }
+      if (settings.tagline || settings.tagline_ar) {
+        setTaglineAr(settings.tagline || settings.tagline_ar || '');
+      }
+      if (settings.logo_url) {
+        setLogoUrl(settings.logo_url);
+      }
+      if (settings.favicon_url) {
+        setFaviconUrl(settings.favicon_url);
+      }
+      if (settings.unified_hotline || settings.whatsapp_number) {
+        setWhatsappNumber(settings.unified_hotline || settings.whatsapp_number || '');
+      }
+      if (settings.official_email || settings.email_contact) {
+        setEmailContact(settings.official_email || settings.email_contact || '');
+      }
+      if (settings.emergency_alert !== undefined || settings.emergency_notice_ar !== undefined) {
+        setEmergencyNotice(settings.emergency_alert || settings.emergency_notice_ar || '');
+      }
+      if (settings.maintenance_mode !== undefined || settings.is_maintenance_mode !== undefined) {
+        setIsMaintenanceMode(Boolean(settings.maintenance_mode !== undefined ? settings.maintenance_mode : settings.is_maintenance_mode));
+      }
+      if (settings.primary_color) {
+        setPrimaryColor(settings.primary_color);
+      }
+      if (settings.secondary_color || settings.accent_color) {
+        setSecondaryColor(settings.secondary_color || settings.accent_color || '#0F766E');
+      }
+    }
+  }, [settings]);
 
   // Handle local image file upload and conversion to Base64
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,13 +115,26 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
       updateBrowserFavicon(activeFavicon);
 
       await onUpdateSettings({
-        clinic_name_ar: clinicNameAr.trim(),
-        tagline_ar: taglineAr.trim(),
+        id: settings.id,
+        // Supabase direct database columns
+        site_title: clinicNameAr.trim(),
+        tagline: taglineAr.trim(),
+        official_email: emailContact.trim(),
+        unified_hotline: whatsappNumber.trim(),
+        emergency_alert: emergencyNotice.trim() || null,
         logo_url: activeLogo,
         favicon_url: activeFavicon,
-        whatsapp_number: whatsappNumber.trim(),
+        primary_color: primaryColor,
+        secondary_color: secondaryColor,
+        maintenance_mode: isMaintenanceMode,
+
+        // Backwards-compatible aliases
+        clinic_name_ar: clinicNameAr.trim(),
+        tagline_ar: taglineAr.trim(),
         email_contact: emailContact.trim(),
+        whatsapp_number: whatsappNumber.trim(),
         emergency_notice_ar: emergencyNotice.trim() || null,
+        accent_color: secondaryColor,
         is_maintenance_mode: isMaintenanceMode,
       });
     } finally {

@@ -8,16 +8,25 @@
  */
 
 export interface SiteSettingsRecord {
-  id?: string;
-  clinic_name_ar?: string;
-  tagline_ar?: string;
+  id?: string | number;
+  // Supabase direct columns
+  site_title?: string;
+  tagline?: string;
+  official_email?: string;
+  unified_hotline?: string;
+  emergency_alert?: string | null;
   logo_url?: string;
   favicon_url?: string;
   primary_color?: string;
-  accent_color?: string;
+  secondary_color?: string;
+  maintenance_mode?: boolean;
+  // Compatibility & UI aliases
+  clinic_name_ar?: string;
+  tagline_ar?: string;
   whatsapp_number?: string;
   email_contact?: string;
   emergency_notice_ar?: string | null;
+  accent_color?: string;
   is_maintenance_mode?: boolean;
   meta_title?: string;
   meta_description?: string;
