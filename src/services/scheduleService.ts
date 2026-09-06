@@ -20,6 +20,75 @@ export { formatTime12h, formatTimeRange12h, formatSingleTime12h, formatArabicDat
 // In-memory fallback cache for fast daily overrides
 let localDailyOverrides: DailyBranchOverrideRecord[] = [];
 
+// In-memory cache for Supabase weekly_schedule row UUIDs mapped by day_of_week (0-6)
+const cachedWeeklyRowIds: Record<number, string> = {};
+
+export const CANONICAL_BRANCH_MAP = {
+  'nasr-city': {
+    uuid: 'ced08c5c-3f0d-49c1-b8c0-5856961909e4',
+    nameAr: 'فرع مدينة نصر',
+    slug: 'nasr-city',
+  },
+  'fifth-settlement': {
+    uuid: '55306d12-9d6d-401a-9785-b118ee60b45f',
+    nameAr: 'فرع التجمع الخامس',
+    slug: 'fifth-settlement',
+  },
+  'tagamoa': {
+    uuid: '55306d12-9d6d-401a-9785-b118ee60b45f',
+    nameAr: 'فرع التجمع الخامس',
+    slug: 'fifth-settlement',
+  },
+  'maadi': {
+    uuid: '38d81efd-c175-47e2-97b5-9666fab10bd2',
+    nameAr: 'فرع المعادي',
+    slug: 'maadi',
+  },
+  'new-giza': {
+    uuid: 'a8aadd71-7ab9-4001-bf10-b0e93012b9b0',
+    nameAr: 'فرع نيو جيزة',
+    slug: 'new-giza',
+  },
+  'zayed': {
+    uuid: 'a8aadd71-7ab9-4001-bf10-b0e93012b9b0',
+    nameAr: 'فرع نيو جيزة',
+    slug: 'new-giza',
+  },
+};
+
+/**
+ * Resolves any branch ID, slug, or Arabic name to its canonical Supabase UUID
+ */
+export function resolveBranchUuid(branchIdOrName?: string | null): string {
+  if (!branchIdOrName) return 'ced08c5c-3f0d-49c1-b8c0-5856961909e4';
+  const val = branchIdOrName.trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+    return val;
+  }
+  if (CANONICAL_BRANCH_MAP[val as keyof typeof CANONICAL_BRANCH_MAP]) {
+    return CANONICAL_BRANCH_MAP[val as keyof typeof CANONICAL_BRANCH_MAP].uuid;
+  }
+  if (val.includes('مدينة نصر') || val.includes('نصر')) return 'ced08c5c-3f0d-49c1-b8c0-5856961909e4';
+  if (val.includes('التجمع') || val.includes('fifth') || val.includes('tagamoa')) return '55306d12-9d6d-401a-9785-b118ee60b45f';
+  if (val.includes('المعادي') || val.includes('maadi')) return '38d81efd-c175-47e2-97b5-9666fab10bd2';
+  if (val.includes('جيزة') || val.includes('زايد') || val.includes('giza') || val.includes('zayed')) return 'a8aadd71-7ab9-4001-bf10-b0e93012b9b0';
+  return 'ced08c5c-3f0d-49c1-b8c0-5856961909e4';
+}
+
+/**
+ * Resolves any branch UUID, slug, or text to its official Arabic name
+ */
+export function resolveBranchName(branchIdOrName?: string | null): string {
+  if (!branchIdOrName) return 'فرع مدينة نصر';
+  const val = branchIdOrName.trim();
+  if (val.startsWith('فرع ')) return val;
+  if (val === 'ced08c5c-3f0d-49c1-b8c0-5856961909e4' || val.includes('nasr') || val.includes('نصر')) return 'فرع مدينة نصر';
+  if (val === '55306d12-9d6d-401a-9785-b118ee60b45f' || val.includes('tagamoa') || val.includes('fifth') || val.includes('التجمع')) return 'فرع التجمع الخامس';
+  if (val === '38d81efd-c175-47e2-97b5-9666fab10bd2' || val.includes('maadi') || val.includes('المعادي')) return 'فرع المعادي';
+  if (val === 'a8aadd71-7ab9-4001-bf10-b0e93012b9b0' || val.includes('giza') || val.includes('zayed') || val.includes('جيزة')) return 'فرع نيو جيزة';
+  return val;
+}
+
 /**
  * Static initial schedule matching Cairo clinic operations in 12-hour Egyptian Arabic format
  */
@@ -329,6 +398,11 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
       };
     }
 
+    // Cache row IDs for on-conflict-safe upserts
+    rawSchedules.forEach((row) => {
+      cachedWeeklyRowIds[Number(row.day_of_week)] = row.id;
+    });
+
     const scheduleItems: WeeklyScheduleItem[] = rawSchedules.map((row) => {
       const dayIdx = Number(row.day_of_week);
       const branch =
@@ -358,15 +432,19 @@ export async function fetchWeeklyScheduleWithBranches(): Promise<{
         (isClosed ? 'إجازة أسبوعية — غير متاح لكشوفات اليوم' : null);
 
       return {
+        id: row.id,
         dayIndex: dayIdx,
         dayNameAr: ARABIC_DAYS[dayIdx] || row.day_name_ar || 'اليوم',
         dayNameEn: ENGLISH_DAYS[dayIdx] || row.day_name_en || 'Today',
         branch,
+        branchId: row.branch_id,
+        branch_id: row.branch_id,
         hoursAr,
         openTime: start,
         closeTime: end,
         isSpecialDay: dayIdx === 5,
         isClosed,
+        is_working_day: !isClosed,
         reasonAr,
         reason: row.reason || null,
       };
@@ -492,26 +570,60 @@ export async function updateWeeklyScheduleDay(
     const targetItem = localWeeklyRotation.find((r) => r.dayIndex === dayIndex);
     if (!targetItem) return { success: true };
 
-    const payload = {
+    // Resolve row ID for this day from cache or database
+    let targetRowId = cachedWeeklyRowIds[dayIndex];
+    if (!targetRowId) {
+      const { data: existingRow } = await client
+        .from('weekly_schedule')
+        .select('id')
+        .eq('day_of_week', dayIndex)
+        .maybeSingle();
+      if (existingRow) {
+        targetRowId = existingRow.id;
+        cachedWeeklyRowIds[dayIndex] = targetRowId;
+      }
+    }
+
+    const branchUuid = resolveBranchUuid(targetBranchId || targetItem.branchId);
+    const openTime = targetItem.openTime.length === 5 ? `${targetItem.openTime}:00` : targetItem.openTime;
+    const closeTime = targetItem.closeTime.length === 5 ? `${targetItem.closeTime}:00` : targetItem.closeTime;
+
+    const payload: {
+      id?: string;
+      day_of_week: number;
+      branch_id: string;
+      start_time: string;
+      end_time: string;
+      is_working_day: boolean;
+      updated_at: string;
+    } = {
       day_of_week: dayIndex,
-      day_name_ar: targetItem.dayNameAr,
-      day_name_en: targetItem.dayNameEn,
-      branch_id: targetItem.branchId,
-      start_time: targetItem.openTime,
-      end_time: targetItem.closeTime,
-      hours_ar: targetItem.hoursAr,
+      branch_id: branchUuid,
+      start_time: openTime || '13:00:00',
+      end_time: closeTime || '21:00:00',
       is_working_day: !targetItem.isClosed,
-      reason: targetItem.reasonAr || null,
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await client
+    if (targetRowId) {
+      payload.id = targetRowId;
+    }
+
+    const { data: upsertData, error } = await client
       .from('weekly_schedule')
-      .upsert([payload], { onConflict: 'day_of_week' });
+      .upsert([payload])
+      .select();
 
     if (error) {
       console.warn('Supabase upsert weekly_schedule warning:', error.message);
+      return { success: false, error: error.message };
     }
+
+    if (upsertData && upsertData[0]) {
+      cachedWeeklyRowIds[dayIndex] = upsertData[0].id;
+    }
+
+    notifyScheduleChanged();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -520,7 +632,7 @@ export async function updateWeeklyScheduleDay(
 }
 
 /**
- * 1.2 Save Full Weekly Schedule (all 7 days)
+ * 1.2 Save Full Weekly Schedule (all 7 days) directly using Supabase batch upsert
  */
 export interface ScheduleSaveInput {
   dayIndex?: number;
@@ -541,19 +653,97 @@ export interface ScheduleSaveInput {
 export async function saveFullWeeklySchedule(
   items: ScheduleSaveInput[]
 ): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+
+  // 1. Update in-memory rotation immediately
   for (const item of items) {
     const day = item.dayIndex !== undefined ? item.dayIndex : item.day_of_week;
     if (day === undefined) continue;
-    await updateWeeklyScheduleDay(day, {
-      branchId: item.branchId || item.branch_id,
-      openTime: item.openTime || item.open_time,
-      closeTime: item.closeTime || item.close_time,
-      isClosed: item.isClosed !== undefined ? item.isClosed : item.is_closed,
-      reason: item.reason || item.reason_ar || item.reasonAr,
-    });
+    const matchIdx = localWeeklyRotation.findIndex((r) => r.dayIndex === day);
+    if (matchIdx >= 0) {
+      const openTime = item.openTime || item.open_time || localWeeklyRotation[matchIdx].openTime;
+      const closeTime = item.closeTime || item.close_time || localWeeklyRotation[matchIdx].closeTime;
+      localWeeklyRotation[matchIdx] = {
+        ...localWeeklyRotation[matchIdx],
+        branchId: item.branchId || item.branch_id || localWeeklyRotation[matchIdx].branchId,
+        openTime,
+        closeTime,
+        hoursAr: formatTimeRange12h(openTime, closeTime),
+        isClosed: item.isClosed !== undefined ? item.isClosed : item.is_closed !== undefined ? item.is_closed : localWeeklyRotation[matchIdx].isClosed,
+        reasonAr: item.reasonAr || item.reason_ar || item.reason || localWeeklyRotation[matchIdx].reasonAr,
+        reason: item.reason || item.reasonAr || localWeeklyRotation[matchIdx].reason,
+      };
+    }
   }
+
   notifyScheduleChanged();
-  return { success: true };
+
+  if (!client) {
+    return { success: true };
+  }
+
+  try {
+    // Query current weekly_schedule rows from Supabase to retrieve primary keys for all 7 days
+    const { data: dbRows } = await client.from('weekly_schedule').select('id, day_of_week');
+    const dayToIdMap: Record<number, string> = { ...cachedWeeklyRowIds };
+    if (dbRows) {
+      dbRows.forEach((r) => {
+        dayToIdMap[Number(r.day_of_week)] = r.id;
+        cachedWeeklyRowIds[Number(r.day_of_week)] = r.id;
+      });
+    }
+
+    const payloads = localWeeklyRotation.map((item) => {
+      const openTime = item.openTime.length === 5 ? `${item.openTime}:00` : item.openTime;
+      const closeTime = item.closeTime.length === 5 ? `${item.closeTime}:00` : item.closeTime;
+      const rowId = dayToIdMap[item.dayIndex];
+
+      const payload: {
+        id?: string;
+        day_of_week: number;
+        branch_id: string;
+        start_time: string;
+        end_time: string;
+        is_working_day: boolean;
+        updated_at: string;
+      } = {
+        day_of_week: item.dayIndex,
+        branch_id: resolveBranchUuid(item.branchId),
+        start_time: openTime || '13:00:00',
+        end_time: closeTime || '21:00:00',
+        is_working_day: !item.isClosed,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (rowId) {
+        payload.id = rowId;
+      }
+
+      return payload;
+    });
+
+    const { data: upsertData, error } = await client
+      .from('weekly_schedule')
+      .upsert(payloads)
+      .select();
+
+    if (error) {
+      console.warn('Supabase batch upsert weekly_schedule error:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    if (upsertData) {
+      upsertData.forEach((r) => {
+        cachedWeeklyRowIds[Number(r.day_of_week)] = r.id;
+      });
+    }
+
+    notifyScheduleChanged();
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
 }
 
 /**
@@ -620,25 +810,38 @@ export async function fetchDailyBranchOverrides(): Promise<DailyBranchOverrideRe
   }
 
   try {
-    // Attempt to query daily_branch_overrides table first
+    // Query live daily_branch_overrides table
     const { data, error } = await client
       .from('daily_branch_overrides')
       .select('*')
       .order('override_date', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      const formatted: DailyBranchOverrideRecord[] = data.map((row) => ({
-        id: row.id,
-        override_date: row.override_date,
-        branch_id: row.branch_id || row.replacement_branch_id,
-        original_branch_id: row.original_branch_id || null,
-        reason: row.reason || row.reason_ar || 'تبديل موقع العيادة اليومي',
-        reason_ar: row.reason_ar || row.reason || 'تبديل موقع العيادة اليومي',
-        notes: row.notes || null,
-        is_active: row.is_active !== false,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      }));
+      const formatted: DailyBranchOverrideRecord[] = data.map((row) => {
+        const branchName = row.branch_name || 'فرع مدينة نصر';
+        const branchUuid = resolveBranchUuid(branchName);
+        const fallbackBranch = defaultBranches.find((def) => def.nameAr === branchName) || defaultBranches[0];
+
+        return {
+          id: String(row.id),
+          override_date: row.override_date,
+          branch_name: branchName,
+          branch_id: branchUuid,
+          reason: row.reason || 'تبديل موقع العيادة اليومي',
+          reason_ar: row.reason || 'تبديل موقع العيادة اليومي',
+          notes: null,
+          is_active: true,
+          created_at: row.created_at,
+          branch: {
+            id: branchUuid,
+            nameAr: branchName,
+            cityAr: fallbackBranch?.cityAr || 'القاهرة',
+            addressAr: fallbackBranch?.addressAr || '',
+            phone: fallbackBranch?.phones?.[0]?.number || '01154021247',
+            mapsUrl: fallbackBranch?.mapsUrl || '',
+          },
+        };
+      });
       localDailyOverrides = formatted;
       return formatted;
     }
@@ -653,17 +856,29 @@ export async function fetchDailyBranchOverrides(): Promise<DailyBranchOverrideRe
     if (!excError && excData && excData.length > 0) {
       const formatted: DailyBranchOverrideRecord[] = excData
         .filter((row) => row.replacement_branch_id)
-        .map((row) => ({
-          id: row.id,
-          override_date: row.exception_date,
-          branch_id: row.replacement_branch_id,
-          original_branch_id: null,
-          reason: row.reason || 'تبديل فرع الكشف',
-          reason_ar: row.reason || 'تبديل فرع الكشف',
-          notes: null,
-          is_active: true,
-          created_at: row.created_at,
-        }));
+        .map((row) => {
+          const branchName = resolveBranchName(row.replacement_branch_id);
+          const fallbackBranch = defaultBranches.find((def) => def.nameAr === branchName) || defaultBranches[0];
+          return {
+            id: row.id,
+            override_date: row.exception_date,
+            branch_name: branchName,
+            branch_id: row.replacement_branch_id,
+            reason: row.reason || 'تبديل فرع الكشف',
+            reason_ar: row.reason || 'تبديل فرع الكشف',
+            notes: null,
+            is_active: true,
+            created_at: row.created_at,
+            branch: {
+              id: row.replacement_branch_id,
+              nameAr: branchName,
+              cityAr: fallbackBranch?.cityAr || 'القاهرة',
+              addressAr: fallbackBranch?.addressAr || '',
+              phone: fallbackBranch?.phones?.[0]?.number || '01154021247',
+              mapsUrl: fallbackBranch?.mapsUrl || '',
+            },
+          };
+        });
       localDailyOverrides = formatted;
       return formatted;
     }
@@ -681,9 +896,7 @@ export async function fetchDailyBranchOverrides(): Promise<DailyBranchOverrideRe
 export async function fetchDailyBranchOverrideForDate(
   dateString: string
 ): Promise<DailyBranchOverrideRecord | null> {
-  const localMatch = localDailyOverrides.find(
-    (o) => o.override_date === dateString && o.is_active !== false
-  );
+  const localMatch = localDailyOverrides.find((o) => o.override_date === dateString);
   if (localMatch) return localMatch;
 
   const client = getSupabaseClient();
@@ -694,24 +907,25 @@ export async function fetchDailyBranchOverrideForDate(
       .from('daily_branch_overrides')
       .select('*')
       .eq('override_date', dateString)
-      .eq('is_active', true)
       .maybeSingle();
 
     if (!error && data) {
+      const branchName = data.branch_name || 'فرع مدينة نصر';
+      const branchUuid = resolveBranchUuid(branchName);
       return {
-        id: data.id,
+        id: String(data.id),
         override_date: data.override_date,
-        branch_id: data.branch_id,
-        original_branch_id: data.original_branch_id || null,
-        reason: data.reason || data.reason_ar || 'تبديل فرع الكشف',
-        reason_ar: data.reason_ar || data.reason || 'تبديل فرع الكشف',
-        notes: data.notes || null,
-        is_active: data.is_active !== false,
+        branch_name: branchName,
+        branch_id: branchUuid,
+        reason: data.reason || 'تبديل فرع الكشف',
+        reason_ar: data.reason || 'تبديل فرع الكشف',
+        notes: null,
+        is_active: true,
         created_at: data.created_at,
       };
     }
   } catch {
-    // Ignore and fallback
+    // Fallback
   }
 
   return null;
@@ -723,19 +937,22 @@ export async function fetchDailyBranchOverrideForDate(
 export async function saveDailyBranchOverride(payload: {
   override_date: string;
   branch_id: string;
+  branch_name?: string;
   original_branch_id?: string | null;
   reason?: string;
   notes?: string;
 }): Promise<{ success: boolean; data?: DailyBranchOverrideRecord; error?: string }> {
   const client = getSupabaseClient();
   const dateStr = payload.override_date;
-  const reasonText = payload.reason || 'تبديل موقع العيادة اليومي';
+  const branchName = payload.branch_name || resolveBranchName(payload.branch_id);
+  const branchUuid = resolveBranchUuid(payload.branch_id);
+  const reasonText = payload.reason || 'تبديل استثنائي لموقع العيادة اليومي';
 
   const overrideRecord: DailyBranchOverrideRecord = {
     id: `dbo-${Date.now()}`,
     override_date: dateStr,
-    branch_id: payload.branch_id,
-    original_branch_id: payload.original_branch_id || null,
+    branch_name: branchName,
+    branch_id: branchUuid,
     reason: reasonText,
     reason_ar: reasonText,
     notes: payload.notes || null,
@@ -758,20 +975,15 @@ export async function saveDailyBranchOverride(payload: {
   }
 
   try {
-    // 1. Save to daily_branch_overrides table
+    // 1. Save to daily_branch_overrides table using onConflict on override_date
     const { data: dbData, error: dbError } = await client
       .from('daily_branch_overrides')
       .upsert(
         [
           {
             override_date: dateStr,
-            branch_id: payload.branch_id,
-            original_branch_id: payload.original_branch_id || null,
+            branch_name: branchName,
             reason: reasonText,
-            reason_ar: reasonText,
-            notes: payload.notes || null,
-            is_active: true,
-            updated_at: new Date().toISOString(),
           },
         ],
         { onConflict: 'override_date' }
@@ -779,32 +991,46 @@ export async function saveDailyBranchOverride(payload: {
       .select()
       .single();
 
-    // 2. Also keep schedule_exceptions in sync so both queries stay consistent
-    await client.from('schedule_exceptions').upsert(
-      [
-        {
-          exception_date: dateStr,
-          is_holiday: false,
-          reason: reasonText,
-          replacement_branch_id: payload.branch_id,
-        },
-      ],
-      { onConflict: 'exception_date' }
-    );
-
     if (dbError) {
-      console.warn('Upsert to daily_branch_overrides warning:', dbError.message);
+      console.warn('Upsert to daily_branch_overrides error:', dbError.message);
+      return { success: false, error: dbError.message };
+    }
+
+    if (dbData) {
+      overrideRecord.id = String(dbData.id);
+      overrideRecord.created_at = dbData.created_at || overrideRecord.created_at;
+    }
+
+    // 2. Also keep schedule_exceptions table in sync with valid branch UUID
+    const { data: existingExc } = await client
+      .from('schedule_exceptions')
+      .select('id')
+      .eq('exception_date', dateStr);
+
+    const excPayload = {
+      exception_date: dateStr,
+      is_holiday: false,
+      reason: reasonText,
+      replacement_branch_id: branchUuid,
+    };
+
+    if (existingExc && existingExc.length > 0) {
+      await client
+        .from('schedule_exceptions')
+        .update(excPayload)
+        .eq('id', existingExc[0].id);
+    } else {
+      await client
+        .from('schedule_exceptions')
+        .insert([excPayload]);
     }
 
     notifyScheduleChanged();
-
-    return {
-      success: true,
-      data: dbData ? { ...overrideRecord, id: dbData.id } : overrideRecord,
-    };
-  } catch (err: unknown) {
-    console.error('Error saving daily branch override:', err);
     return { success: true, data: overrideRecord };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Error saving daily branch override:', err);
+    return { success: false, error: msg };
   }
 }
 
@@ -836,7 +1062,7 @@ export async function deleteDailyBranchOverride(
         .eq('exception_date', dateStr)
         .eq('is_holiday', false);
     } else {
-      await client.from('daily_branch_overrides').delete().eq('id', dateOrId);
+      await client.from('daily_branch_overrides').delete().eq('id', Number(dateOrId) || dateOrId);
       await client.from('schedule_exceptions').delete().eq('id', dateOrId);
     }
     notifyScheduleChanged();

@@ -54,6 +54,7 @@ export interface DailyBranchOverrideRecord {
   id?: string;
   override_date: string; // ISO date 'YYYY-MM-DD'
   branch_id: string; // The branch active on this day
+  branch_name?: string; // Arabic branch name stored in daily_branch_overrides table
   original_branch_id?: string | null;
   reason?: string | null;
   reason_ar?: string | null;
@@ -176,6 +177,7 @@ export interface TodayScheduleResult {
  * Complete weekly schedule item paired with branch data
  */
 export interface WeeklyScheduleItem {
+  id?: string;
   dayIndex: number;
   dayNameAr: string;
   dayNameEn: string;

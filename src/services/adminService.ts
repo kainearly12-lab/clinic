@@ -11,6 +11,8 @@ import {
   notifyScheduleChanged,
   updateWeeklyScheduleDay,
   saveFullWeeklySchedule,
+  resolveBranchUuid,
+  resolveBranchName,
 } from '@/services/scheduleService';
 import {
   ADMIN_WHITELIST,
@@ -348,6 +350,9 @@ export async function saveScheduleException(
   }
 
   try {
+    const branchUuid = targetBranch ? resolveBranchUuid(targetBranch) : null;
+    const branchName = targetBranch ? resolveBranchName(targetBranch) : null;
+
     // Check if exception for this date already exists in DB
     const { data: existingRows } = await supabase
       .from('schedule_exceptions')
@@ -358,14 +363,16 @@ export async function saveScheduleException(
       exception_date: dateStr,
       is_holiday: Boolean(payload.is_holiday),
       reason: reasonText,
-      replacement_branch_id: targetBranch,
+      replacement_branch_id: branchUuid,
     };
+
+    let resultId = exceptionData.id;
 
     if (existingRows && existingRows.length > 0) {
       const { data, error } = await supabase
         .from('schedule_exceptions')
         .update(dbPayload)
-        .eq('exception_date', dateStr)
+        .eq('id', existingRows[0].id)
         .select()
         .single();
 
@@ -373,7 +380,7 @@ export async function saveScheduleException(
         console.error('Supabase update exception error:', error);
         return { success: true, data: exceptionData };
       }
-      return { success: true, data: { ...exceptionData, id: data.id } };
+      if (data) resultId = data.id;
     } else {
       const { data, error } = await supabase
         .from('schedule_exceptions')
@@ -385,8 +392,32 @@ export async function saveScheduleException(
         console.error('Supabase insert exception error:', error);
         return { success: true, data: exceptionData };
       }
-      return { success: true, data: { ...exceptionData, id: data.id } };
+      if (data) resultId = data.id;
     }
+
+    // If it's a branch swap (not a holiday), keep daily_branch_overrides table synchronized as well
+    if (!payload.is_holiday && branchName) {
+      await supabase
+        .from('daily_branch_overrides')
+        .upsert(
+          [
+            {
+              override_date: dateStr,
+              branch_name: branchName,
+              reason: reasonText,
+            },
+          ],
+          { onConflict: 'override_date' }
+        );
+    } else if (payload.is_holiday) {
+      // If it became a holiday, remove any daily branch override for this date
+      await supabase
+        .from('daily_branch_overrides')
+        .delete()
+        .eq('override_date', dateStr);
+    }
+
+    return { success: true, data: { ...exceptionData, id: resultId } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, error: msg };
@@ -424,13 +455,12 @@ export async function deleteScheduleException(
   }
 
   try {
-    const query = dateOrId.includes('-') && dateOrId.length === 10
-      ? supabase.from('schedule_exceptions').delete().eq('exception_date', dateOrId)
-      : supabase.from('schedule_exceptions').delete().eq('id', dateOrId);
-
-    const { error } = await query;
-    if (error) {
-      console.warn('Supabase delete exception error:', error);
+    const isDate = dateOrId.includes('-') && dateOrId.length === 10;
+    if (isDate) {
+      await supabase.from('schedule_exceptions').delete().eq('exception_date', dateOrId);
+      await supabase.from('daily_branch_overrides').delete().eq('override_date', dateOrId);
+    } else {
+      await supabase.from('schedule_exceptions').delete().eq('id', dateOrId);
     }
     return { success: true };
   } catch (err: unknown) {
