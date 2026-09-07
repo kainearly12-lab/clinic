@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight, Zap } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logAdminActivity } from '@/services/adminService';
+import { ToastContainer } from '@/components/admin/ToastContainer';
+import { ToastMessage } from '@/types/admin';
 import {
   verifyAdminCredentials,
   injectSuperAdminSession,
@@ -21,8 +23,58 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
   const [email, setEmail] = useState(() => (isPreview ? 'kainearly12@gmail.com' : 'admin@androderma.com'));
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const addToast = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 5000);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleForgotPassword = async () => {
+    const adminEmail = email.trim().toLowerCase();
+    if (!adminEmail) {
+      addToast('error', 'يرجى إدخال البريد الإلكتروني للمسؤول أولاً لإرسال رابط إعادة التعيين.');
+      return;
+    }
+
+    setIsResettingPassword(true);
+
+    try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        addToast('error', 'خدمة المصادقة وقاعدة البيانات غير متوفرة حالياً. يرجى التواصل مع إدارة النظام.');
+        setIsResettingPassword(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
+        redirectTo: `${window.location.origin}/admin`,
+      });
+
+      if (error) {
+        console.warn('Supabase password reset error:', error);
+        addToast('error', error.message || 'تعذر إرسال رابط إعادة تعيين كلمة المرور. يرجى التحقق من البريد والمحاولة مجدداً.');
+      } else {
+        addToast('success', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى البريد الإلكتروني المعتمد للعيادة.');
+      }
+    } catch (err: unknown) {
+      console.warn('Exception during password reset request:', err);
+      const message = err instanceof Error ? err.message : 'حدث خطأ غير متوقع أثناء محاولة إرسال رابط إعادة تعيين كلمة المرور';
+      addToast('error', message);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   // Sync default email if preview state changes
   useEffect(() => {
@@ -257,6 +309,25 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
                   />
                   <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
+                {/* Forgot Password Action */}
+                <div className="flex items-center justify-end mt-1.5">
+                  <button
+                    id="admin-forgot-password-btn"
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isResettingPassword || isLoading}
+                    className="text-xs text-slate-400 hover:text-[#00B8A9] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {isResettingPassword ? (
+                      <>
+                        <span className="h-3 w-3 rounded-full border-2 border-[#00B8A9] border-t-transparent animate-spin shrink-0" />
+                        <span>جاري إرسال الرابط...</span>
+                      </>
+                    ) : (
+                      <span>نسيت كلمة المرور؟</span>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 space-y-2">
@@ -299,6 +370,9 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
               </span>
             </div>
           </motion.div>
+
+          {/* Toast Feedback for Admin Auth Actions */}
+          <ToastContainer toasts={toasts} onDismiss={removeToast} />
         </div>
       )}
     </AnimatePresence>
