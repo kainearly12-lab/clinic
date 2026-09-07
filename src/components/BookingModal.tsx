@@ -20,18 +20,13 @@ import {
   Smartphone,
   ShieldCheck,
   MessageCircle,
-  CalendarClock,
   MapPin,
 } from 'lucide-react';
 import { branches } from '@/data/clinicData';
 import { Modal } from './ui/Modal';
 import { MagneticButton } from './ui/MagneticButton';
 import { validateBookingDate } from '@/services/bookingValidationService';
-import {
-  getScheduledBranchForDate,
-  getNextAvailableDateForBranch,
-  getOperatingDaysForBranch,
-} from '@/services/scheduleService';
+import { getScheduledBranchForDate } from '@/services/scheduleService';
 import { NormalizedBranch } from '@/types/schedule';
 import { createAppointment } from '@/services/appointmentService';
 import {
@@ -159,7 +154,6 @@ export function BookingModal({
     reason?: string | null;
     operatingDaysAr: string[];
   } | null>(null);
-  const [isSearchingNextDate, setIsSearchingNextDate] = useState(false);
   const [hasAutoMatchedBranch, setHasAutoMatchedBranch] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -289,24 +283,6 @@ export function BookingModal({
       isSubscribed = false;
     };
   }, [preferredDate, hasAutoMatchedBranch, initialBranch]);
-
-  // Handler to look up and apply next available date for current branch
-  const handleFindNextDateForBranch = async (targetBranchId: string) => {
-    setIsSearchingNextDate(true);
-    try {
-      const nextAvailable = await getNextAvailableDateForBranch(targetBranchId, preferredDate);
-      if (nextAvailable) {
-        setPreferredDate(nextAvailable.dateString);
-        setBranch(targetBranchId);
-      } else {
-        alert('لم يتم العثور على مواعيد إضافية مجدولة لهذا الفرع خلال الفترة القادمة');
-      }
-    } catch (err) {
-      console.error('Error finding next date:', err);
-    } finally {
-      setIsSearchingNextDate(false);
-    }
-  };
 
   // Copy to clipboard helper
   const handleCopy = useCallback((text: string, fieldKey: string) => {
@@ -702,42 +678,6 @@ export function BookingModal({
                   );
                 })}
               </div>
-
-              {/* Day-to-Branch Smart Matching Status */}
-              {scheduledInfo && !scheduledInfo.isHoliday && !scheduledInfo.isClosed && scheduledInfo.branch && branch !== scheduledInfo.branch.id && (
-                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <div className="font-bold text-white text-xs">
-                        تنبيه جدول التواجد: د. هشام متواجد بـ <span className="text-teal-300 underline font-black">{scheduledInfo.branch.nameAr}</span> يوم {scheduledInfo.dayNameAr} ({preferredDate})
-                      </div>
-                      <div className="text-[11px] text-amber-200/90">
-                        فرع <span className="font-bold text-white">{branches.find((b) => b.id === branch)?.nameAr || branch}</span> متاح كشفه أيام: {getOperatingDaysForBranch(branch).join(' و ') || 'مواعيد محددة'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setBranch(scheduledInfo.branch!.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B8A9] text-slate-950 text-xs font-black hover:bg-teal-400 transition shadow-sm cursor-pointer"
-                    >
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>التحويل التلقائي لفرع {scheduledInfo.branch.nameAr}</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isSearchingNextDate}
-                      onClick={() => handleFindNextDateForBranch(branch)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-amber-500/40 text-amber-200 text-xs font-bold hover:bg-slate-700 transition cursor-pointer"
-                    >
-                      <CalendarClock className="w-3.5 h-3.5" />
-                      {isSearchingNextDate ? 'جاري البحث...' : `أقرب يوم متاح لـ ${branches.find((b) => b.id === branch)?.nameAr}`}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Section 2: Patient Info (Name & Phone) */}
