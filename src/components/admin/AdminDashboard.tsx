@@ -895,6 +895,7 @@ export const AdminDashboard = React.memo(function AdminDashboard({
               logs={logs}
               onRefresh={() => loadDashboardData(true)}
               isLoading={isLoading}
+              onNotify={addToast}
             />
           )}
         </div>

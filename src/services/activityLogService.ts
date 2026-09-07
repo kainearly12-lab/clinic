@@ -325,9 +325,10 @@ export async function fetchActivityLogs(): Promise<ActivityLogRecord[]> {
 /**
  * 30-Day Activity Log Retention Policy & Cleanup
  * Cleans activity logs older than 30 days from live Supabase and local memory.
- * - Attempts to call RPC function `clean_old_activity_logs()`
- * - Falls back to standard Supabase delete query with `.lt('created_at', cutoffDate)`
- * - Cleans in-memory and localStorage cache to ensure strict 30-day retention
+ * - SAFETY / RLS POLICY REMINDER:
+ *   Ensure DELETE permissions are enabled on the `activity_logs` table in Supabase RLS policies
+ *   (e.g., `CREATE POLICY "Enable delete for admin/service" ON activity_logs FOR DELETE USING (true);`),
+ *   otherwise PostgREST queries will return permission denied or 0 affected rows.
  */
 export async function cleanOldActivityLogs(): Promise<{
   success: boolean;
@@ -336,11 +337,10 @@ export async function cleanOldActivityLogs(): Promise<{
   error?: string;
 }> {
   const supabase = getSupabaseClient();
-  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-  const cutoffTime = Date.now() - thirtyDaysMs;
-  const cutoffDateIso = new Date(cutoffTime).toISOString();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoffTime = new Date(thirtyDaysAgo).getTime();
 
-  // 1. In-memory cleanup
+  // 1. In-memory and client-side cleanup
   const beforeCount = localLogs.length;
   localLogs = localLogs.filter((log) => {
     const logTime = new Date(log.created_at).getTime();
@@ -352,49 +352,51 @@ export async function cleanOldActivityLogs(): Promise<{
     return {
       success: true,
       deletedCount: localDeleted,
-      cutoffDate: cutoffDateIso,
+      cutoffDate: thirtyDaysAgo,
     };
   }
 
   try {
-    // 2. Try Supabase RPC clean_old_activity_logs() first
+    // 2. Try Supabase RPC clean_old_activity_logs() if defined in SQL
     const { data: rpcDeleted, error: rpcError } = await supabase.rpc('clean_old_activity_logs');
 
     if (!rpcError && typeof rpcDeleted === 'number') {
       return {
         success: true,
         deletedCount: rpcDeleted,
-        cutoffDate: cutoffDateIso,
+        cutoffDate: thirtyDaysAgo,
       };
     }
 
-    // 3. Fallback to direct DELETE query via PostgREST
+    // 3. Direct PostgREST DELETE execution
+    // Supabase Policy Reminder: Ensure DELETE permissions are enabled on the activity_logs table in Supabase RLS
     const { count, error: deleteError } = await supabase
       .from('activity_logs')
       .delete({ count: 'exact' })
-      .lt('created_at', cutoffDateIso);
+      .lt('created_at', thirtyDaysAgo);
 
     if (deleteError) {
-      console.warn('[activity_logs] Fallback delete query notice for activity_logs:', deleteError.message);
+      console.error('[activity_logs] Failed to delete logs older than 30 days:', deleteError.message);
       return {
-        success: true,
-        deletedCount: localDeleted,
-        cutoffDate: cutoffDateIso,
+        success: false,
+        deletedCount: 0,
+        cutoffDate: thirtyDaysAgo,
+        error: deleteError.message || 'خطأ في أذونات الحذف من قاعدة بيانات Supabase',
       };
     }
 
     return {
       success: true,
       deletedCount: typeof count === 'number' ? count : localDeleted,
-      cutoffDate: cutoffDateIso,
+      cutoffDate: thirtyDaysAgo,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn('[activity_logs] cleanOldActivityLogs error (non-fatal):', msg);
+    console.error('[activity_logs] cleanOldActivityLogs exception:', msg);
     return {
-      success: true,
-      deletedCount: localDeleted,
-      cutoffDate: cutoffDateIso,
+      success: false,
+      deletedCount: 0,
+      cutoffDate: thirtyDaysAgo,
       error: msg,
     };
   }
