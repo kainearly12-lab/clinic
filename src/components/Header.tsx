@@ -12,8 +12,8 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface HeaderProps {
-  activeTab?: 'home' | 'diagnostic' | 'admin' | 'about' | 'book';
-  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book', targetAnchor?: string) => void;
+  activeTab?: 'home' | 'diagnostic' | 'admin' | 'about' | 'book' | 'terms';
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book' | 'terms', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
 }
 

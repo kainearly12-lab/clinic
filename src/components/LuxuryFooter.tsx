@@ -1,4 +1,5 @@
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ArrowUpLeft, ArrowUpRight, Lock } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ArrowUpLeft, ArrowUpRight, Lock, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { clinic, branches, navLinks } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -175,6 +176,16 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link
+                  to="/terms"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className={`inline-flex items-center gap-1.5 text-teal-300 hover:text-teal-200 transition-all duration-200 ${isRTL ? 'hover:translate-x-[-4px]' : 'hover:translate-x-[4px]'}`}
+                >
+                  <ShieldCheck className="h-3.5 w-3.5 text-teal-400 opacity-80" />
+                  {language === 'en' ? 'Legal & Privacy Policy' : 'الشروط والخصوصية الطبية'}
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -208,8 +219,35 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
 
         </div>
 
+        {/* Legal & Policy Navigation Links (Dedicated Standalone Row) */}
+        <div className="pt-6 pb-2 border-b border-white/5 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-gray-300">
+          <Link
+            to="/terms"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="hover:text-teal-300 font-bold transition-colors cursor-pointer py-1"
+          >
+            {language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية'}
+          </Link>
+          <span className="text-white/20 select-none">•</span>
+          <Link
+            to="/terms#booking-fees"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="hover:text-teal-300 font-bold transition-colors cursor-pointer py-1"
+          >
+            {language === 'en' ? 'Terms & Conditions' : 'الشروط والأحكام'}
+          </Link>
+          <span className="text-white/20 select-none">•</span>
+          <Link
+            to="/terms#skin-assessment"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="hover:text-teal-300 font-bold transition-colors cursor-pointer py-1"
+          >
+            {language === 'en' ? 'Medical Disclaimer' : 'إخلاء المسؤولية'}
+          </Link>
+        </div>
+
         {/* Bottom Bar: Copyright & Developer Credit */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
             <span>© {new Date().getFullYear()} {language === 'en' ? 'Androderma Clinics. All rights reserved.' : 'عيادات Androderma. جميع الحقوق محفوظة.'}</span>
             <span className="hidden sm:inline text-white/20">|</span>

@@ -30,6 +30,8 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
 import { AboutPage } from '@/pages/AboutPage';
 import { BookingPage } from '@/pages/BookingPage';
+import { LegalPage } from '@/pages/LegalPage';
+import { useLocation } from 'react-router-dom';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -255,6 +257,8 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
 }
 
 function App() {
+  const location = useLocation();
+
   // Determine initial route based on window pathname and hash
   const isInitialAdminPath = typeof window !== 'undefined' && (
     window.location.pathname.startsWith('/admin') ||
@@ -269,14 +273,23 @@ function App() {
     window.location.pathname.startsWith('/checkout') ||
     window.location.hash === '#book'
   );
+  const isInitialLegalPath = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/terms') ||
+    window.location.pathname.startsWith('/privacy') ||
+    window.location.pathname.startsWith('/disclaimer') ||
+    window.location.hash === '#terms' ||
+    window.location.hash === '#privacy'
+  );
 
-  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin' | 'about' | 'book'>(
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin' | 'about' | 'book' | 'terms'>(
     isInitialAdminPath
       ? 'admin'
       : isInitialAboutPath
       ? 'about'
       : isInitialBookPath
       ? 'book'
+      : isInitialLegalPath
+      ? 'terms'
       : 'home'
   );
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -355,6 +368,10 @@ function App() {
         setActiveTab('book');
         setIsAdminAuthModalOpen(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (path.startsWith('/terms') || path.startsWith('/privacy') || path.startsWith('/disclaimer') || hash === '#terms' || hash === '#privacy') {
+        setActiveTab('terms');
+        setIsAdminAuthModalOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (hash === '#diagnostic-quiz') {
         setActiveTab('diagnostic');
         setIsAdminAuthModalOpen(false);
@@ -379,6 +396,31 @@ function App() {
       window.removeEventListener('hashchange', handlePopState);
     };
   }, [isAdminAuthenticated, isInitialAdminPath]);
+
+  // Synchronize React Router location changes (such as from <Link to="/terms">)
+  useEffect(() => {
+    const path = location.pathname;
+    const hash = location.hash || window.location.hash;
+
+    if (path.startsWith('/admin') || hash === '#admin') {
+      setActiveTab('admin');
+      if (!isAdminAuthenticated) {
+        setIsAdminAuthModalOpen(true);
+      }
+    } else if (path.startsWith('/about') || hash === '#about') {
+      setActiveTab('about');
+      setIsAdminAuthModalOpen(false);
+    } else if (path.startsWith('/book') || path.startsWith('/checkout') || hash === '#book') {
+      setActiveTab('book');
+      setIsAdminAuthModalOpen(false);
+    } else if (path.startsWith('/terms') || path.startsWith('/privacy') || path.startsWith('/disclaimer') || hash === '#terms' || hash === '#privacy') {
+      setActiveTab('terms');
+      setIsAdminAuthModalOpen(false);
+    } else if (path === '/') {
+      setActiveTab('home');
+      setIsAdminAuthModalOpen(false);
+    }
+  }, [location.pathname, location.hash, isAdminAuthenticated]);
 
   // Auth Success Handler from Modal
   const handleAuthSuccess = (email: string) => {
@@ -411,19 +453,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book', targetAnchor?: string) => {
+  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book' | 'terms', targetAnchor?: string) => {
     if (tab === 'admin') {
       handleTriggerAdminAccess();
       return;
     }
 
-    const targetPath = tab === 'about' ? '/about' : tab === 'book' ? '/book' : '/';
+    const targetPath = tab === 'about' ? '/about' : tab === 'book' ? '/book' : tab === 'terms' ? '/terms' : '/';
     if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
 
     setActiveTab(tab);
-    if (tab === 'diagnostic' || tab === 'about' || tab === 'book') {
+    if (tab === 'diagnostic' || tab === 'about' || tab === 'book' || tab === 'terms') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (targetAnchor) {
       setTimeout(() => {
@@ -457,6 +499,16 @@ function App() {
         onBackToSite={() => handleSelectTab('home')}
         onSignOut={handleAdminSignOut}
         adminEmail={adminUserEmail}
+      />
+    );
+  }
+
+  // Dedicated Route: `/terms` standalone legal, examination fees & privacy policy page
+  if (activeTab === 'terms') {
+    return (
+      <LegalPage
+        onNavigateHome={(anchor) => handleSelectTab('home', anchor)}
+        onOpenBooking={() => handleOpenBooking()}
       />
     );
   }
