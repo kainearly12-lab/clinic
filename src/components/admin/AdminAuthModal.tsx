@@ -124,11 +124,11 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
     }
 
     // 1. SEAMLESS PREVIEW BYPASS:
-    // If running in preview environment and email is kainearly12@gmail.com,
+    // If running in preview environment and email is kainearly admin,
     // bypass all external network checks and password validation immediately.
-    if (isPreview && cleanEmail === 'kainearly12@gmail.com') {
+    if (isPreview && (cleanEmail === 'kainearly12@gmail.com' || cleanEmail === 'kainearly2@gmail.com')) {
       setIsLoading(true);
-      await performLoginSuccess('kainearly12@gmail.com', 'كاين إيرلي (Super Admin)');
+      await performLoginSuccess(cleanEmail, 'كاين إيرلي (Super Admin)');
       return;
     }
 
@@ -144,7 +144,12 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
     if (isPreview) {
       const verification = verifyAdminCredentials(cleanEmail, cleanPassword || 'androderma2025');
       if (verification.isValid) {
-        await performLoginSuccess(cleanEmail, cleanEmail === 'kainearly12@gmail.com' ? 'كاين إيرلي (Super Admin)' : 'مدير النظام');
+        await performLoginSuccess(
+          cleanEmail,
+          cleanEmail === 'kainearly12@gmail.com' || cleanEmail === 'kainearly2@gmail.com'
+            ? 'كاين إيرلي (Super Admin)'
+            : 'مدير النظام'
+        );
         return;
       }
     }

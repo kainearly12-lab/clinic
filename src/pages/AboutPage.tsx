@@ -28,6 +28,7 @@ import {
 import { clinic, branches as fallbackBranches } from '@/data/clinicData';
 import { useWeeklySchedule } from '@/hooks/useSchedule';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { useTheme } from '@/context/ThemeContext';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -46,7 +47,13 @@ interface AboutPageProps {
  * Built with Three.js WebGL: dual icosahedron core, organic wireframes, cyan/teal particle field.
  * Smooth mouse-tracking parallax, scroll-depth rotation, auto-pauses offscreen.
  */
-function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
+function MedicalCore3DCanvas({
+  prefersReducedMotion,
+  isDark = true,
+}: {
+  prefersReducedMotion: boolean;
+  isDark?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isWebGLSupported, setIsWebGLSupported] = useState(true);
@@ -100,10 +107,10 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
     // Outer Organic Mesh: Dual Icosahedron Core
     const outerGeo = new THREE.IcosahedronGeometry(2.1, 3);
     const outerMat = new THREE.MeshBasicMaterial({
-      color: 0x00f5d4,
+      color: isDark ? 0x00f5d4 : 0x0d9488,
       wireframe: true,
       transparent: true,
-      opacity: 0.2,
+      opacity: isDark ? 0.2 : 0.25,
     });
     const outerMesh = new THREE.Mesh(outerGeo, outerMat);
     scene.add(outerMesh);
@@ -111,10 +118,10 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
     // Inner Medical Nucleus Mesh
     const innerGeo = new THREE.DodecahedronGeometry(1.2, 1);
     const innerMat = new THREE.MeshBasicMaterial({
-      color: 0x0ea5e9,
+      color: isDark ? 0x0ea5e9 : 0x0284c7,
       wireframe: true,
       transparent: true,
-      opacity: 0.35,
+      opacity: isDark ? 0.35 : 0.3,
     });
     const innerMesh = new THREE.Mesh(innerGeo, innerMat);
     scene.add(innerMesh);
@@ -240,7 +247,7 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       particleMat.dispose();
       renderer.dispose();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, isDark]);
 
   if (!isWebGLSupported) {
     return (
@@ -259,7 +266,7 @@ function MedicalCore3DCanvas({ prefersReducedMotion }: { prefersReducedMotion: b
       className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
       aria-hidden="true"
     >
-      <canvas ref={canvasRef} className="w-full h-full block opacity-80" />
+      <canvas ref={canvasRef} className="w-full h-full block opacity-70 dark:opacity-80" />
     </div>
   );
 }
@@ -349,10 +356,10 @@ function SpatialSpotlightCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`group relative rounded-3xl p-px overflow-hidden transition-all duration-400 bg-gradient-to-b from-white/10 via-white/5 to-transparent ${
+      className={`group relative rounded-3xl p-px overflow-hidden transition-all duration-400 bg-gradient-to-b from-slate-200/70 dark:from-white/10 via-slate-100/40 dark:via-white/5 to-transparent ${
         isHovered
-          ? 'shadow-[0_20px_50px_rgba(0,245,212,0.2)] border-cyan-400/40'
-          : 'shadow-lg border-transparent'
+          ? 'shadow-[0_20px_50px_rgba(0,184,169,0.18)] dark:shadow-[0_20px_50px_rgba(0,245,212,0.2)] border-teal-500/40 dark:border-cyan-400/40'
+          : 'shadow-md dark:shadow-lg border-transparent'
       }`}
       style={{
         transitionProperty: 'transform, box-shadow, border-color',
@@ -373,8 +380,8 @@ function SpatialSpotlightCard({
       <div
         className={`relative z-10 h-full rounded-[23px] backdrop-blur-xl p-8 flex flex-col justify-between border transition-all duration-400 overflow-hidden ${
           isHovered
-            ? 'bg-slate-900/90 border-cyan-400/40 shadow-[inset_0_0_20px_rgba(0,245,212,0.08)]'
-            : 'bg-[#0c1424]/90 border-cyan-500/20'
+            ? 'bg-white/95 dark:bg-slate-900/90 border-teal-500/40 dark:border-cyan-400/40 shadow-[inset_0_0_20px_rgba(0,245,212,0.08)]'
+            : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800'
         }`}
       >
         {/* Medical Light Scan Beam Pass */}
@@ -421,7 +428,7 @@ function SpatialSpotlightCard({
                   ? { scale: [1, 1.1, 1] }
                   : { scale: 1 }
               }
-              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/30 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:shadow-[0_0_35px_rgba(0,245,212,0.5)] transition-shadow duration-300"
+              className="h-14 w-14 rounded-2xl bg-teal-50 dark:bg-gradient-to-br dark:from-[#00F5D4]/20 dark:via-teal-500/10 dark:to-transparent border border-teal-500/30 dark:border-[#00F5D4]/30 grid place-items-center text-teal-600 dark:text-[#00F5D4] shadow-xs dark:shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:shadow-md dark:group-hover:shadow-[0_0_35px_rgba(0,245,212,0.5)] transition-shadow duration-300"
             >
               <Icon className="h-7 w-7" />
             </motion.div>
@@ -436,9 +443,8 @@ function SpatialSpotlightCard({
                 duration: 0.5,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="text-5xl font-black font-mono tracking-tighter text-transparent select-none transition-all duration-300"
+              className="text-5xl font-black font-mono tracking-tighter text-transparent select-none transition-all duration-300 [-webkit-text-stroke:1.5px_#0d9488] dark:[-webkit-text-stroke:1.5px_#00F5D4] group-hover:[-webkit-text-stroke:1.8px_#0f766e] dark:group-hover:[-webkit-text-stroke:1.8px_#00F5D4]"
               style={{
-                WebkitTextStroke: isHovered ? '1.8px #00F5D4' : '1.5px #00F5D4',
                 textShadow: isHovered
                   ? '0 0 25px rgba(0,245,212,0.7), 0 0 45px rgba(0,245,212,0.35)'
                   : '0 0 10px rgba(0,245,212,0.2)',
@@ -453,8 +459,8 @@ function SpatialSpotlightCard({
             <div
               className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-1 rounded-full border transition-all duration-300 ${
                 isHovered
-                  ? 'text-[#00F5D4] bg-[#00F5D4]/15 border-[#00F5D4]/40 -translate-y-0.5 shadow-[0_0_15px_rgba(0,245,212,0.25)]'
-                  : 'text-[#00F5D4] bg-[#00F5D4]/10 border-[#00F5D4]/20 translate-y-0'
+                  ? 'text-teal-800 dark:text-[#00F5D4] bg-teal-100/80 dark:bg-[#00F5D4]/15 border-teal-300 dark:border-[#00F5D4]/40 -translate-y-0.5 shadow-xs dark:shadow-[0_0_15px_rgba(0,245,212,0.25)]'
+                  : 'text-teal-700 dark:text-[#00F5D4] bg-teal-50 dark:bg-[#00F5D4]/10 border-teal-200 dark:border-[#00F5D4]/20 translate-y-0'
               }`}
             >
               <Sparkles className="h-3 w-3" />
@@ -463,33 +469,33 @@ function SpatialSpotlightCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-xl sm:text-2xl font-black text-white mt-4 group-hover:text-[#00F5D4] transition-colors leading-snug">
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-4 group-hover:text-teal-600 dark:group-hover:text-[#00F5D4] transition-colors leading-snug">
             {title}
           </h3>
 
           {/* Description */}
-          <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+          <p className="mt-3 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
             {desc}
           </p>
         </div>
 
         {/* Bottom Section with Animated Progress Line */}
-        <div className="mt-6 pt-5 border-t border-white/10">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-white transition-colors mb-3">
+        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-white/10">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors mb-3">
             <span>معايير إكلينيكية معتمدة</span>
             <div
               className={`h-2 w-2 rounded-full transition-all duration-300 ${
                 isHovered
-                  ? 'bg-[#00F5D4] shadow-[0_0_14px_#00F5D4] scale-125'
-                  : 'bg-[#00F5D4]/80'
+                  ? 'bg-teal-600 dark:bg-[#00F5D4] shadow-xs dark:shadow-[0_0_14px_#00F5D4] scale-125'
+                  : 'bg-teal-500/80 dark:bg-[#00F5D4]/80'
               }`}
             />
           </div>
 
           {/* Animated Bottom Progress Line (Expands across full width on hover) */}
-          <div className="w-full h-[2px] rounded-full bg-white/5 overflow-hidden">
+          <div className="w-full h-[2px] rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#00F5D4] via-teal-300 to-cyan-400 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-teal-400 to-cyan-500 dark:from-[#00F5D4] dark:via-teal-300 dark:to-cyan-400 transition-all duration-500 ease-out"
               style={{
                 width: isHovered || (isTouchDevice && mobileScanned) ? '100%' : '24px',
                 boxShadow: isHovered ? '0 0 10px rgba(0,245,212,0.6)' : 'none',
@@ -547,7 +553,7 @@ function StackedPillarCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setIsHovered(false)}
       style={{ zIndex: 10 + index }}
-      className="gsap-stack-card absolute inset-x-0 top-0 w-full max-w-5xl mx-auto rounded-3xl p-px overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-white/10 transition-shadow duration-500 hover:shadow-[0_25px_70px_rgba(0,245,212,0.25)] select-none"
+      className="gsap-stack-card absolute inset-x-0 top-0 w-full max-w-5xl mx-auto rounded-3xl p-px overflow-hidden shadow-lg dark:shadow-[0_25px_60px_rgba(0,0,0,0.9)] bg-gradient-to-r from-teal-500/20 via-cyan-500/20 to-slate-200/60 dark:from-cyan-500/30 dark:via-teal-500/20 dark:to-white/10 transition-shadow duration-500 hover:shadow-xl dark:hover:shadow-[0_25px_70px_rgba(0,245,212,0.25)] select-none"
     >
       {/* Dynamic Cursor Spotlight Radial Glow */}
       <div
@@ -558,25 +564,24 @@ function StackedPillarCard({
         }}
       />
 
-      {/* Luxury Dark Glassmorphism Container */}
-      <div className="relative z-10 w-full min-h-[260px] md:min-h-[220px] rounded-[23px] backdrop-blur-xl bg-slate-950/80 border border-cyan-500/20 p-6 sm:p-8 md:p-9 flex flex-col justify-between overflow-hidden">
+      {/* Luxury Glassmorphism Container */}
+      <div className="relative z-10 w-full min-h-[260px] md:min-h-[220px] rounded-[23px] backdrop-blur-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 md:p-9 flex flex-col justify-between overflow-hidden shadow-xs dark:shadow-none">
         {/* Subtle Ambient Glow Orb in Corner */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-teal-500/10 dark:bg-cyan-500/10 blur-3xl pointer-events-none" />
 
         {/* Sleek Horizontal Flex Layout */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 w-full">
           {/* Side Column: Icon + Step Badge + Massive Glowing Identifier */}
-          <div className="flex sm:flex-row md:flex-col items-center sm:items-center md:items-start justify-between md:justify-center gap-3 shrink-0 w-full md:w-auto md:min-w-[190px] border-b md:border-b-0 md:border-l border-white/10 pb-4 md:pb-0 md:pl-7">
+          <div className="flex sm:flex-row md:flex-col items-center sm:items-center md:items-start justify-between md:justify-center gap-3 shrink-0 w-full md:w-auto md:min-w-[190px] border-b md:border-b-0 md:border-l border-slate-200 dark:border-white/10 pb-4 md:pb-0 md:pl-7">
             <div className="flex items-center gap-3.5">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-gradient-to-br from-[#00F5D4]/20 via-teal-500/10 to-transparent border border-[#00F5D4]/35 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:scale-105 transition-transform duration-300 shrink-0">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-teal-50 dark:bg-gradient-to-br dark:from-[#00F5D4]/20 dark:via-teal-500/10 dark:to-transparent border border-teal-500/30 dark:border-[#00F5D4]/35 grid place-items-center text-teal-600 dark:text-[#00F5D4] shadow-xs dark:shadow-[0_0_25px_rgba(0,245,212,0.25)] group-hover:scale-105 transition-transform duration-300 shrink-0">
                 <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
 
               {/* Glowing Numerical Identifier */}
               <span
-                className="text-4xl sm:text-5xl font-black font-mono tracking-tighter text-transparent select-none"
+                className="text-4xl sm:text-5xl font-black font-mono tracking-tighter text-transparent select-none [-webkit-text-stroke:1.5px_#0d9488] dark:[-webkit-text-stroke:1.5px_#00F5D4]"
                 style={{
-                  WebkitTextStroke: '1.5px #00F5D4',
                   textShadow: isHovered
                     ? '0 0 25px rgba(0,245,212,0.7)'
                     : '0 0 15px rgba(0,245,212,0.35)',
@@ -586,7 +591,7 @@ function StackedPillarCard({
               </span>
             </div>
 
-            <span className="text-[11px] font-mono font-bold text-[#00F5D4] uppercase tracking-wider bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25 whitespace-nowrap">
+            <span className="text-[11px] font-mono font-bold text-teal-700 dark:text-[#00F5D4] uppercase tracking-wider bg-teal-50 dark:bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-teal-200 dark:border-[#00F5D4]/25 whitespace-nowrap">
               {badge}
             </span>
           </div>
@@ -595,34 +600,34 @@ function StackedPillarCard({
           <div className="flex-1 flex flex-col justify-between w-full">
             <div>
               <div className="flex items-center justify-between gap-4">
-                <h3 className="text-xl sm:text-2xl font-black text-white hover:text-[#00F5D4] transition-colors leading-snug">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-[#00F5D4] transition-colors leading-snug">
                   {title}
                 </h3>
-                <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 bg-white/[0.04] px-3 py-1 rounded-full border border-white/10 shrink-0">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
+                <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.04] px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-600 dark:bg-[#00F5D4] animate-pulse" />
                   <span>0{index + 1} / 0{total}</span>
                 </span>
               </div>
 
-              <p className="mt-2.5 text-slate-300 text-sm sm:text-base leading-relaxed">
+              <p className="mt-2.5 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
                 {desc}
               </p>
             </div>
 
             {/* Tags Row */}
-            <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-2 sm:gap-3">
               {tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-200 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/10 hover:border-[#00F5D4]/40 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-white/[0.04] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-teal-500/40 dark:hover:border-[#00F5D4]/40 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-[#00F5D4] shrink-0" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-teal-600 dark:text-[#00F5D4] shrink-0" />
                   <span>{tag}</span>
                 </span>
               ))}
               {quote && (
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-xs italic text-emerald-400/90 font-medium mr-auto">
-                  <Quote className="h-3.5 w-3.5 inline text-emerald-400" />
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-xs italic text-teal-700 dark:text-emerald-400/90 font-medium mr-auto">
+                  <Quote className="h-3.5 w-3.5 inline text-teal-600 dark:text-emerald-400" />
                   <span>{quote}</span>
                 </span>
               )}
@@ -685,48 +690,48 @@ function BorderBeamCard({
         rotateY,
         transformStyle: 'preserve-3d',
       }}
-      className="relative rounded-3xl p-[1.5px] overflow-hidden group transition-shadow duration-500 shadow-[0_12px_35px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_55px_rgba(0,245,212,0.22)]"
+      className="relative rounded-3xl p-[1.5px] overflow-hidden group transition-shadow duration-500 shadow-md hover:shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] dark:hover:shadow-[0_20px_55px_rgba(0,245,212,0.22)]"
     >
       {/* Continuous Border Beam Animation Container */}
-      <div className="absolute inset-[-100%] animate-[spin_8s_linear_infinite] opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,transparent_280deg,#00F5D4_340deg,#38BDF8_360deg)]" />
+      <div className="absolute inset-[-100%] animate-[spin_8s_linear_infinite] opacity-30 group-hover:opacity-80 dark:opacity-40 dark:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,transparent_280deg,#0d9488_340deg,#38BDF8_360deg)] dark:bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,transparent_280deg,#00F5D4_340deg,#38BDF8_360deg)]" />
 
       {/* Card Content Body */}
-      <div className="relative z-10 h-full rounded-[22.5px] bg-[#0c1424]/95 backdrop-blur-2xl p-7 sm:p-9 flex flex-col justify-between">
+      <div className="relative z-10 h-full rounded-[22.5px] bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 backdrop-blur-2xl p-7 sm:p-9 flex flex-col justify-between">
         <div>
           {/* Header Row */}
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#00F5D4]/25 to-teal-500/5 border border-[#00F5D4]/40 grid place-items-center text-[#00F5D4] shadow-[0_0_20px_rgba(0,245,212,0.25)] group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(0,245,212,0.5)] transition-all duration-300">
+              <div className="h-12 w-12 rounded-2xl bg-teal-50 dark:bg-gradient-to-br dark:from-[#00F5D4]/25 dark:to-teal-500/5 border border-teal-500/30 dark:border-[#00F5D4]/40 grid place-items-center text-teal-600 dark:text-[#00F5D4] shadow-xs dark:shadow-[0_0_20px_rgba(0,245,212,0.25)] group-hover:scale-110 group-hover:shadow-md dark:group-hover:shadow-[0_0_30px_rgba(0,245,212,0.5)] transition-all duration-300">
                 <Icon className="h-6 w-6" />
               </div>
-              <span className="text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+              <span className="text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase bg-teal-50 dark:bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
                 مبدأ {num}
               </span>
             </div>
 
-            <div className="text-3xl font-black font-mono text-slate-600 group-hover:text-[#00F5D4] transition-colors">
+            <div className="text-3xl font-black font-mono text-slate-400 dark:text-slate-600 group-hover:text-teal-600 dark:group-hover:text-[#00F5D4] transition-colors">
               {num}
             </div>
           </div>
 
           {/* Title & Desc */}
-          <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-[#00F5D4] transition-colors leading-snug">
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-[#00F5D4] transition-colors leading-snug">
             {title}
           </h3>
 
-          <p className="mt-3.5 text-slate-300 text-sm sm:text-base leading-relaxed">
+          <p className="mt-3.5 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
             {desc}
           </p>
         </div>
 
         {/* Tags Row */}
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap gap-2">
+        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-white/10 flex flex-wrap gap-2">
           {tags.map((tag, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 bg-white/[0.04] px-3 py-1 rounded-lg border border-white/5 group-hover:border-[#00F5D4]/30 group-hover:text-white transition-all"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.04] px-3 py-1 rounded-lg border border-slate-200 dark:border-white/5 group-hover:border-teal-500/40 dark:group-hover:border-[#00F5D4]/30 group-hover:text-slate-900 dark:group-hover:text-white transition-all"
             >
-              <Check className="h-3 w-3 text-[#00F5D4]" />
+              <Check className="h-3 w-3 text-teal-600 dark:text-[#00F5D4]" />
               {tag}
             </span>
           ))}
@@ -740,6 +745,8 @@ function BorderBeamCard({
  * Main Standalone Masterpiece AboutPage Component
  */
 export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const prefersReducedMotion = Boolean(useReducedMotion());
   const [activePillar, setActivePillar] = useState<'skin' | 'laser' | 'hair'>('skin');
   const mainRef = useRef<HTMLDivElement>(null);
@@ -1040,7 +1047,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
   return (
     <div
       ref={mainRef}
-      className="relative min-h-screen bg-[#070b14] text-slate-100 overflow-x-hidden selection:bg-[#00F5D4]/30 selection:text-[#00F5D4]"
+      className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-x-hidden selection:bg-teal-500/30 selection:text-teal-700 dark:selection:bg-[#00F5D4]/30 dark:selection:text-[#00F5D4]"
       dir="rtl"
     >
       {/* 1. Subtle SVG Noise Grain Overlay */}
@@ -1052,8 +1059,8 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       />
 
       {/* Atmospheric Ambient Glow Orbs */}
-      <div className="pointer-events-none fixed -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-[#00F5D4]/10 blur-[160px] z-0" />
-      <div className="pointer-events-none fixed top-1/3 -left-40 h-[600px] w-[600px] rounded-full bg-teal-600/10 blur-[180px] z-0" />
+      <div className="pointer-events-none fixed -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-teal-500/10 dark:bg-[#00F5D4]/10 blur-[160px] z-0" />
+      <div className="pointer-events-none fixed top-1/3 -left-40 h-[600px] w-[600px] rounded-full bg-cyan-600/10 dark:bg-teal-600/10 blur-[180px] z-0" />
       <div className="pointer-events-none fixed bottom-20 right-10 h-[500px] w-[500px] rounded-full bg-emerald-600/10 blur-[160px] z-0" />
 
       {/* ========================================================================= */}
@@ -1061,7 +1068,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       <section className="relative min-h-screen flex items-center pt-32 pb-20 lg:pt-36 lg:pb-28 overflow-hidden">
         {/* 3D Medical Core Canvas Background */}
-        <MedicalCore3DCanvas prefersReducedMotion={prefersReducedMotion} />
+        <MedicalCore3DCanvas prefersReducedMotion={prefersReducedMotion} isDark={isDark} />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
@@ -1072,26 +1079,26 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-3 rounded-full px-4 py-2 bg-[#00F5D4]/10 border border-[#00F5D4]/30 backdrop-blur-xl shadow-[0_0_25px_rgba(0,245,212,0.2)] mb-6"
+                className="inline-flex items-center gap-3 rounded-full px-4 py-2 bg-teal-50 dark:bg-[#00F5D4]/10 border border-teal-200 dark:border-[#00F5D4]/30 backdrop-blur-xl shadow-xs dark:shadow-[0_0_25px_rgba(0,245,212,0.2)] mb-6"
               >
-                <span className="h-2.5 w-2.5 rounded-full bg-[#00F5D4] animate-pulse" />
-                <span className="text-xs font-black tracking-widest text-[#00F5D4] uppercase font-mono">
+                <span className="h-2.5 w-2.5 rounded-full bg-teal-600 dark:bg-[#00F5D4] animate-pulse" />
+                <span className="text-xs font-black tracking-widest text-teal-700 dark:text-[#00F5D4] uppercase font-mono">
                   رؤية د. أحمد زغلول — التجميل القائم على الدليل
                 </span>
               </motion.div>
 
               {/* Giant Editorial Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.3] sm:leading-[1.18] text-white tracking-tight">
-                <span className="inline-block gsap-hero-word text-slate-200">بشرتك</span>{' '}
-                <span className="inline-block gsap-hero-word text-slate-200">تستحق</span>{' '}
-                <span className="inline-block gsap-hero-word bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.3] sm:leading-[1.18] text-slate-900 dark:text-white tracking-tight">
+                <span className="inline-block gsap-hero-word text-slate-800 dark:text-slate-200">بشرتك</span>{' '}
+                <span className="inline-block gsap-hero-word text-slate-800 dark:text-slate-200">تستحق</span>{' '}
+                <span className="inline-block gsap-hero-word bg-gradient-to-l from-teal-600 via-teal-500 to-cyan-600 dark:from-[#00F5D4] dark:via-teal-200 dark:to-white bg-clip-text text-transparent">
                   تجربة طبية
                 </span>{' '}
-                <span className="inline-block gsap-hero-word bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                <span className="inline-block gsap-hero-word bg-gradient-to-l from-teal-600 via-teal-500 to-cyan-600 dark:from-[#00F5D4] dark:via-teal-200 dark:to-white bg-clip-text text-transparent">
                   مبنية على الدقة
                 </span>{' '}
-                <span className="inline-block gsap-hero-word text-slate-100">والتجميل</span>{' '}
-                <span className="inline-block gsap-hero-word text-[#00F5D4]">الآمن.</span>
+                <span className="inline-block gsap-hero-word text-slate-800 dark:text-slate-100">والتجميل</span>{' '}
+                <span className="inline-block gsap-hero-word text-teal-600 dark:text-[#00F5D4]">الآمن.</span>
               </h1>
 
               {/* Narrative Story Copy */}
@@ -1099,9 +1106,9 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.8 }}
-                className="mt-6 text-base sm:text-lg leading-relaxed text-slate-300 max-w-2xl font-normal"
+                className="mt-6 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl font-normal"
               >
-                في عيادات <span className="text-white font-bold">Androderma</span>، نؤمن بأن جمال البشرة الطبيعي
+                في عيادات <span className="text-slate-900 dark:text-white font-bold">Androderma</span>، نؤمن بأن جمال البشرة الطبيعي
                 ينبع من صحتها الحقيقية. ندمج بين الفحص السريري الدقيق وأحدث منظومات الليزر المعتمدة دولياً،
                 لنقدم لكل مراجع خطة علاجية مخصصة قائمة على الواقعية والنتائج المستدامة دون مبالغة تجارية.
               </motion.p>
@@ -1126,43 +1133,43 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 {onNavigateHome && (
                   <button
                     onClick={() => onNavigateHome('services')}
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-teal-500/40 dark:hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all cursor-pointer shadow-xs dark:shadow-none"
                   >
                     <span>استكشف المنظومة العلاجية</span>
-                    <ArrowLeft className="h-4 w-4 text-[#00F5D4]" />
+                    <ArrowLeft className="h-4 w-4 text-teal-600 dark:text-[#00F5D4]" />
                   </button>
                 )}
               </motion.div>
 
               {/* Clinical Trust Badges Row */}
-              <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-6 w-full text-right">
+              <div className="mt-10 pt-8 border-t border-slate-200 dark:border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-6 w-full text-right">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/25 grid place-items-center text-teal-600 dark:text-[#00F5D4] shrink-0">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">معايير طبية صارمة</div>
-                    <div className="text-[11px] text-slate-400">سلامة المرضى أولوية مطلقة</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">معايير طبية صارمة</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">سلامة المرضى أولوية مطلقة</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/25 grid place-items-center text-teal-600 dark:text-[#00F5D4] shrink-0">
                     <Stethoscope className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">تشخيص سريري مخصص</div>
-                    <div className="text-[11px] text-slate-400">بناءً على طبقات كل بشرة</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">تشخيص سريري مخصص</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">بناءً على طبقات كل بشرة</div>
                   </div>
                 </div>
 
                 <div className="hidden sm:flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/10 border border-teal-500/25 grid place-items-center text-[#00F5D4] shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/25 grid place-items-center text-teal-600 dark:text-[#00F5D4] shrink-0">
                     <Award className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">أحدث أجهزة الليزر</div>
-                    <div className="text-[11px] text-slate-400">أنظمة تبريد وحماية للبشرة</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">أحدث أجهزة الليزر</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">أنظمة تبريد وحماية للبشرة</div>
                   </div>
                 </div>
               </div>
@@ -1177,30 +1184,30 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 className="relative w-full max-w-md"
               >
                 {/* Volumetric Glowing Cyan Aura behind Portrait */}
-                <div className="absolute inset-0 -m-8 rounded-full bg-gradient-to-tr from-[#00F5D4]/30 via-teal-500/15 to-transparent blur-3xl pointer-events-none" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-[#00F5D4]/30 pointer-events-none animate-pulse" />
+                <div className="absolute inset-0 -m-8 rounded-full bg-gradient-to-tr from-teal-500/20 dark:from-[#00F5D4]/30 via-teal-500/10 dark:via-teal-500/15 to-transparent blur-3xl pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-teal-500/20 dark:border-[#00F5D4]/30 pointer-events-none animate-pulse" />
 
                 {/* Floating Top Vision Badge */}
-                <div className="absolute -top-4 right-4 z-30 inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-[#090D16]/95 border border-[#00F5D4]/45 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-                  <Sparkles className="h-3.5 w-3.5 text-[#00F5D4]" />
-                  <span className="text-xs font-black text-white">رؤية د. أحمد زغلول</span>
+                <div className="absolute -top-4 right-4 z-30 inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-white/95 dark:bg-[#090D16]/95 border border-teal-500/30 dark:border-[#00F5D4]/45 shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+                  <Sparkles className="h-3.5 w-3.5 text-teal-600 dark:text-[#00F5D4]" />
+                  <span className="text-xs font-black text-slate-900 dark:text-white">رؤية د. أحمد زغلول</span>
                 </div>
 
                 {/* Custom Architectural Arch Container with Dynamic Backdrop Blur */}
-                <div className="relative z-10 overflow-hidden rounded-t-[140px] rounded-b-3xl p-1 bg-gradient-to-b from-[#00F5D4]/45 via-teal-500/20 to-white/5 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
-                  <div className="relative rounded-t-[136px] rounded-b-[22px] overflow-hidden bg-gradient-to-b from-[#0e1628]/95 via-[#0a0f1d]/95 to-[#070b14] backdrop-blur-xl pt-8 px-4 pb-0">
+                <div className="relative z-10 overflow-hidden rounded-t-[140px] rounded-b-3xl p-1 bg-gradient-to-b from-teal-500/30 dark:from-[#00F5D4]/45 via-teal-500/15 dark:via-teal-500/20 to-slate-200/40 dark:to-white/5 shadow-xl dark:shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
+                  <div className="relative rounded-t-[136px] rounded-b-[22px] overflow-hidden bg-gradient-to-b from-slate-100 dark:from-[#0e1628]/95 via-slate-50 dark:via-[#0a0f1d]/95 to-slate-100 dark:to-[#070b14] backdrop-blur-xl pt-8 px-4 pb-0">
                     {/* Background Radial Light Accent */}
-                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-[#00F5D4]/20 blur-2xl pointer-events-none" />
+                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-teal-500/15 dark:bg-[#00F5D4]/20 blur-2xl pointer-events-none" />
 
                     <img
                       src={DOCTOR_PORTRAIT_URL}
                       alt="د. أحمد زغلول — استشاري الجلدية والليزر وتجميل البشرة"
-                      className="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105"
+                      className="relative z-10 w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105"
                       loading="eager"
                     />
 
                     {/* Bottom Gradient Fade */}
-                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#070b14] via-[#070b14]/80 to-transparent pointer-events-none z-20" />
+                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-100 dark:from-[#070b14] via-slate-100/80 dark:via-[#070b14]/80 to-transparent pointer-events-none z-20" />
                   </div>
                 </div>
 
@@ -1209,13 +1216,13 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6, duration: 0.8 }}
-                  className="absolute -bottom-5 inset-x-4 sm:inset-x-6 z-30 rounded-2xl bg-[#090D16]/95 border border-[#00F5D4]/35 p-4 shadow-[0_15px_35px_rgba(0,0,0,0.75)] backdrop-blur-xl text-center"
+                  className="absolute -bottom-5 inset-x-4 sm:inset-x-6 z-30 rounded-2xl bg-white/95 dark:bg-[#090D16]/95 border border-teal-500/30 dark:border-[#00F5D4]/35 p-4 shadow-lg dark:shadow-[0_15px_35px_rgba(0,0,0,0.75)] backdrop-blur-xl text-center"
                 >
-                  <div className="text-base font-black text-white">د. أحمد زغلول</div>
-                  <div className="text-xs font-bold text-[#00F5D4] mt-0.5">
+                  <div className="text-base font-black text-slate-900 dark:text-white">د. أحمد زغلول</div>
+                  <div className="text-xs font-bold text-teal-600 dark:text-[#00F5D4] mt-0.5">
                     استشاري الأمراض الجلدية وتجميل البشرة والليزر
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                     المشرف الطبي العام ومؤسس عيادات Androderma
                   </div>
                 </motion.div>
@@ -1224,11 +1231,11 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
           </div>
 
           {/* Scroll Down Indicator */}
-          <div className="mt-16 flex flex-col items-center justify-center text-slate-400">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 mb-2">
+          <div className="mt-16 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-2">
               SCROLL TO EXPLORE
             </span>
-            <ChevronDown className="h-4 w-4 text-[#00F5D4] animate-bounce" />
+            <ChevronDown className="h-4 w-4 text-teal-600 dark:text-[#00F5D4] animate-bounce" />
           </div>
         </div>
       </section>
@@ -1236,17 +1243,17 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 2: "WHO WE ARE" — ASYMMETRIC SPATIAL SHOWCASE                     */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 border-t border-white/5 overflow-hidden">
+      <section className="relative py-24 sm:py-32 border-t border-slate-200 dark:border-white/5 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
-              <span className="h-1.5 w-6 bg-[#00F5D4] rounded-full" />
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase mb-3">
+              <span className="h-1.5 w-6 bg-teal-600 dark:bg-[#00F5D4] rounded-full" />
               <span>هويتنا ورسالتنا الإنسانية</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white leading-tight">
               "لسنا فقط عيادة… نحن تجربة طبية متكاملة."
             </h2>
-            <p className="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed">
+            <p className="mt-4 text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
               تأسست عيادات Androderma لتقدم مفهوماً علاجياً وتجميلياً متفرداً يركز على سلامتك واستدامة نتائجك أولاً.
             </p>
           </div>
@@ -1295,21 +1302,21 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 3: AWWWARDS STACKING CARDS ("منظومة علاجية متكاملة")               */}
       {/* ========================================================================= */}
-      <section className="gsap-stack-section relative min-h-screen flex flex-col justify-center items-center py-20 lg:py-28 border-t border-white/5 overflow-hidden bg-gradient-to-b from-[#070b14] via-[#080d19] to-[#070b14]">
+      <section className="gsap-stack-section relative min-h-screen flex flex-col justify-center items-center py-20 lg:py-28 border-t border-slate-200 dark:border-white/5 overflow-hidden bg-slate-50/50 dark:bg-gradient-to-b dark:from-[#070b14] dark:via-[#080d19] dark:to-[#070b14]">
         {/* Atmospheric Ambient Glow Orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] rounded-full bg-[#00F5D4]/5 blur-[160px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] rounded-full bg-teal-500/5 dark:bg-[#00F5D4]/5 blur-[160px] pointer-events-none" />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
           {/* Section Header */}
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3 bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-[#00F5D4]/20">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase mb-3 bg-teal-50 dark:bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/20">
               <Layers className="h-4 w-4" />
               <span>ركائز التميز الطبي</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
               منظومة علاجية متكاملة
             </h2>
-            <p className="mt-3 text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
+            <p className="mt-3 text-slate-600 dark:text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
               أربعة أبعاد رئيسية تشكل تجربة المراجع داخل عيادات Androderma وتحدد جودة الرعاية وسلامة النتائج
             </p>
           </div>
@@ -1337,17 +1344,17 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 4: GLOWING LASER TIMELINE PATH ("رحلة التميز الطبي")             */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#09101d] to-[#070b14] overflow-hidden">
+      <section className="relative py-24 sm:py-32 bg-slate-50 dark:bg-gradient-to-b dark:from-[#070b14] dark:via-[#09101d] dark:to-[#070b14] border-t border-slate-200 dark:border-white/5 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-20">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase mb-3 bg-teal-50 dark:bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/20">
               <Compass className="h-4 w-4" />
               <span>مراحل تجربة المراجع</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white">
               رحلة التميز الطبي
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base">
+            <p className="mt-4 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               كيف نضمن لك تجربة علاجية استثنائية من اللحظة الأولى وحتى استدامة النتائج
             </p>
           </div>
@@ -1360,8 +1367,9 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 <path
                   d="M 50 50 Q 275 10 500 50 T 950 50"
                   fill="none"
-                  stroke="rgba(255,255,255,0.08)"
+                  stroke="currentColor"
                   strokeWidth="3"
+                  className="text-slate-200 dark:text-white/10"
                 />
                 {/* Glowing Animated Laser Line */}
                 <path
@@ -1379,93 +1387,93 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
             {/* 4 Sequential Milestones Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
               {/* Step 1: الرؤية والتشخيص */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white dark:bg-[#0c1424]/90 border border-slate-200 dark:border-cyan-500/25 hover:border-teal-500/60 dark:hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-md dark:shadow-xl transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-[#00F5D4] bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                  <span className="text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] bg-teal-50 dark:bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
                     STAGE 01
                   </span>
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-500/35 grid place-items-center text-[#00F5D4] font-mono font-black text-sm">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/20 border border-teal-200 dark:border-teal-500/35 grid place-items-center text-teal-700 dark:text-[#00F5D4] font-mono font-black text-sm">
                     01
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-6 group-hover:text-teal-600 dark:group-hover:text-[#00F5D4] transition-colors">
                   الرؤية والتشخيص
                 </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                   فحص سريري متكامل للبشرة وتحديد الاحتياجات الفعلية بكل دقة وشفافية دون افتراضات سريعة.
                 </p>
 
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-[#00F5D4]">
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 text-xs font-bold text-teal-600 dark:text-[#00F5D4]">
                   استشارة تخصصية معمقة
                 </div>
               </div>
 
               {/* Step 2: الدقة في التخطيط */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white dark:bg-[#0c1424]/90 border border-slate-200 dark:border-cyan-500/25 hover:border-cyan-500/60 dark:hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-md dark:shadow-xl transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/25">
+                  <span className="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-200 dark:border-cyan-500/25">
                     STAGE 02
                   </span>
-                  <div className="h-10 w-10 rounded-xl bg-cyan-500/20 border border-cyan-500/35 grid place-items-center text-cyan-400 font-mono font-black text-sm">
+                  <div className="h-10 w-10 rounded-xl bg-cyan-50 dark:bg-cyan-500/20 border border-cyan-200 dark:border-cyan-500/35 grid place-items-center text-cyan-700 dark:text-cyan-400 font-mono font-black text-sm">
                     02
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-white mt-6 group-hover:text-cyan-300 transition-colors">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-6 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                   الدقة في التخطيط
                 </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                   صياغة خطة علاجية مخصصة تجمع بين أحدث التقنيات وعدد الجلسات الفعلي لتحقيق الهدف المطلوب.
                 </p>
 
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-cyan-400">
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 text-xs font-bold text-cyan-600 dark:text-cyan-400">
                   خطة علاجية مخصصة
                 </div>
               </div>
 
               {/* Step 3: التكنولوجيا والأمان */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white dark:bg-[#0c1424]/90 border border-slate-200 dark:border-cyan-500/25 hover:border-emerald-500/60 dark:hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-md dark:shadow-xl transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/25">
+                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-500/25">
                     STAGE 03
                   </span>
-                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/35 grid place-items-center text-emerald-400 font-mono font-black text-sm">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/35 grid place-items-center text-emerald-700 dark:text-emerald-400 font-mono font-black text-sm">
                     03
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-white mt-6 group-hover:text-emerald-300 transition-colors">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-6 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
                   التكنولوجيا والأمان
                 </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                   تنفيذ الجلسات بأحدث أجهزة الليزر المزودة بالتبريد المتطور وتحت إشراف طبي صارم لراحتك.
                 </p>
 
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-emerald-400">
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                   تنفيذ دقيق بأعلى تبريد
                 </div>
               </div>
 
               {/* Step 4: التجربة والنتائج */}
-              <div className="gsap-journey-step relative p-8 rounded-3xl bg-[#0c1424]/90 border border-cyan-500/25 hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-xl transition-all group">
+              <div className="gsap-journey-step relative p-8 rounded-3xl bg-white dark:bg-[#0c1424]/90 border border-slate-200 dark:border-cyan-500/25 hover:border-teal-500/60 dark:hover:border-[#00F5D4]/60 backdrop-blur-xl shadow-md dark:shadow-xl transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-[#00F5D4] bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                  <span className="text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] bg-teal-50 dark:bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
                     STAGE 04
                   </span>
-                  <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-500/35 grid place-items-center text-[#00F5D4] font-mono font-black text-sm">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/20 border border-teal-200 dark:border-teal-500/35 grid place-items-center text-teal-700 dark:text-[#00F5D4] font-mono font-black text-sm">
                     04
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-white mt-6 group-hover:text-[#00F5D4] transition-colors">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-6 group-hover:text-teal-600 dark:group-hover:text-[#00F5D4] transition-colors">
                   التجربة والنتائج
                 </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                   متابعة مستمرة وإرشادات وقائية لضمان استقرار وتطور النتائج الجمالية والصحية على المدى الطويل.
                 </p>
 
-                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-bold text-[#00F5D4]">
+                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10 text-xs font-bold text-teal-600 dark:text-[#00F5D4]">
                   استدامة وتألق طويل المدى
                 </div>
               </div>
@@ -1477,17 +1485,17 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 5: INTERACTIVE TREATMENT PILLARS SWITCHER                        */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 border-t border-white/5">
+      <section className="relative py-24 sm:py-32 border-t border-slate-200 dark:border-white/5">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-14">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase mb-3 bg-teal-50 dark:bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/20">
               <Microscope className="h-4 w-4" />
               <span>مجالات التخصص الإكلينيكي</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white">
               المنظومة العلاجية التخصصية
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base">
+            <p className="mt-4 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               تخصصات طبية دقيقة تلبي كافة احتياجات بشرتك وشعرك بأعلى معايير الأمان
             </p>
           </div>
@@ -1498,8 +1506,8 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               onClick={() => setActivePillar('skin')}
               className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'skin'
-                  ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                  ? 'bg-teal-600 dark:bg-[#00F5D4] text-white dark:text-slate-950 shadow-md dark:shadow-[0_0_25px_rgba(0,245,212,0.4)]'
+                  : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 shadow-xs dark:shadow-none'
               }`}
             >
               <Microscope className="h-4 w-4" />
@@ -1510,8 +1518,8 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               onClick={() => setActivePillar('laser')}
               className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'laser'
-                  ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                  ? 'bg-teal-600 dark:bg-[#00F5D4] text-white dark:text-slate-950 shadow-md dark:shadow-[0_0_25px_rgba(0,245,212,0.4)]'
+                  : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 shadow-xs dark:shadow-none'
               }`}
             >
               <Zap className="h-4 w-4" />
@@ -1522,8 +1530,8 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               onClick={() => setActivePillar('hair')}
               className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer ${
                 activePillar === 'hair'
-                  ? 'bg-[#00F5D4] text-slate-950 shadow-[0_0_25px_rgba(0,245,212,0.4)]'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                  ? 'bg-teal-600 dark:bg-[#00F5D4] text-white dark:text-slate-950 shadow-md dark:shadow-[0_0_25px_rgba(0,245,212,0.4)]'
+                  : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 shadow-xs dark:shadow-none'
               }`}
             >
               <Activity className="h-4 w-4" />
@@ -1543,36 +1551,36 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="relative rounded-3xl p-8 sm:p-12 bg-gradient-to-br from-[#0e1628]/95 via-[#0a101d]/95 to-transparent border border-cyan-500/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
+                  className="relative rounded-3xl p-8 sm:p-12 bg-white dark:bg-gradient-to-br dark:from-[#0e1628]/95 dark:via-[#0a101d]/95 dark:to-transparent border border-slate-200 dark:border-cyan-500/30 backdrop-blur-2xl shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-4">
-                      <div className="h-14 w-14 rounded-2xl bg-teal-500/20 border border-teal-500/40 grid place-items-center text-[#00F5D4] shadow-[0_0_25px_rgba(0,245,212,0.3)]">
+                      <div className="h-14 w-14 rounded-2xl bg-teal-50 dark:bg-teal-500/20 border border-teal-200 dark:border-teal-500/40 grid place-items-center text-teal-600 dark:text-[#00F5D4] shadow-xs dark:shadow-[0_0_25px_rgba(0,245,212,0.3)]">
                         <Icon className="h-7 w-7" />
                       </div>
                       <div>
-                        <span className="text-[11px] font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-[#00F5D4]/25">
+                        <span className="text-[11px] font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase bg-teal-50 dark:bg-[#00F5D4]/10 px-3 py-1 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
                           {pillar.badge}
                         </span>
-                        <h3 className="text-xl sm:text-2xl font-black text-white mt-2">
+                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-2">
                           {pillar.title}
                         </h3>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+                  <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
                     {pillar.desc}
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-white/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/10">
                     {pillar.points.map((pt, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5"
+                        className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5"
                       >
-                        <CheckCircle2 className="h-5 w-5 text-[#00F5D4] shrink-0 mt-0.5" />
-                        <span className="text-sm font-bold text-slate-200 leading-snug">
+                        <CheckCircle2 className="h-5 w-5 text-teal-600 dark:text-[#00F5D4] shrink-0 mt-0.5" />
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-snug">
                           {pt}
                         </span>
                       </div>
@@ -1582,7 +1590,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                   <div className="mt-8 flex justify-end">
                     <button
                       onClick={() => onOpenBooking(pillar.title)}
-                      className="inline-flex items-center gap-2 rounded-full px-6 py-3 bg-[#00F5D4] text-slate-950 text-xs font-black hover:bg-[#20ffd9] shadow-[0_0_20px_rgba(0,245,212,0.3)] transition-all cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-full px-6 py-3 bg-teal-600 dark:bg-[#00F5D4] text-white dark:text-slate-950 text-xs font-black hover:bg-teal-700 dark:hover:bg-[#20ffd9] shadow-md dark:shadow-[0_0_20px_rgba(0,245,212,0.3)] transition-all cursor-pointer"
                     >
                       <CalendarDays className="h-4 w-4" />
                       <span>حجز استشارة لهذا التخصص</span>
@@ -1598,17 +1606,17 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 6: WHY ANDRODERMA? — CONTINUOUS BORDER-BEAM CARDS                 */}
       {/* ========================================================================= */}
-      <section className="relative py-24 sm:py-32 bg-gradient-to-b from-[#070b14] via-[#09101e] to-[#070b14] overflow-hidden">
+      <section className="relative py-24 sm:py-32 bg-slate-50 dark:bg-gradient-to-b dark:from-[#070b14] dark:via-[#09101e] dark:to-[#070b14] border-t border-slate-200 dark:border-white/5 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="gsap-reveal text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase mb-3">
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase mb-3 bg-teal-50 dark:bg-[#00F5D4]/10 px-3.5 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
               <ShieldCheck className="h-4 w-4" />
               <span>معايير الثقة والضمان الطبي</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white">
               لماذا يختلف اختيار Androderma؟
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base">
+            <p className="mt-4 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               خمسة مبادئ إكلينيكية تجعل تجربتك معنا الأكثر أماناً وموثوقية
             </p>
           </div>
@@ -1655,15 +1663,15 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
             />
 
             {/* Special 6th Card: Direct Quick Booking Trigger */}
-            <div className="relative rounded-3xl p-8 sm:p-9 bg-gradient-to-br from-[#00F5D4]/15 via-teal-900/20 to-[#0c1424] border border-[#00F5D4]/40 flex flex-col justify-between backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,245,212,0.15)] group hover:border-[#00F5D4] transition-all">
+            <div className="relative rounded-3xl p-8 sm:p-9 bg-gradient-to-br from-teal-50 via-teal-100/40 to-white dark:from-[#00F5D4]/15 dark:via-teal-900/20 dark:to-[#0c1424] border border-teal-300 dark:border-[#00F5D4]/40 flex flex-col justify-between backdrop-blur-2xl shadow-lg dark:shadow-[0_15px_40px_rgba(0,245,212,0.15)] group hover:border-teal-500 dark:hover:border-[#00F5D4] transition-all">
               <div>
-                <div className="h-12 w-12 rounded-2xl bg-[#00F5D4] text-slate-950 grid place-items-center shadow-[0_0_25px_rgba(0,245,212,0.5)]">
+                <div className="h-12 w-12 rounded-2xl bg-teal-600 dark:bg-[#00F5D4] text-white dark:text-slate-950 grid place-items-center shadow-md dark:shadow-[0_0_25px_rgba(0,245,212,0.5)]">
                   <CalendarDays className="h-6 w-6" />
                 </div>
-                <h3 className="text-2xl font-black text-white mt-6">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-6">
                   جاهز لتجربة طبية متكاملة؟
                 </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                   احجز موعد كشفك التخصصي الآن في أقرب فرع إليك، ودعنا نصمم لك خطة العلاج الأنسب لبشرتك.
                 </p>
               </div>
@@ -1671,7 +1679,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               <div className="mt-6">
                 <button
                   onClick={() => onOpenBooking()}
-                  className="w-full rounded-2xl bg-[#00F5D4] py-3.5 text-center text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:bg-[#20ffd9] transition-all cursor-pointer"
+                  className="w-full rounded-2xl bg-teal-600 dark:bg-[#00F5D4] py-3.5 text-center text-sm font-black text-white dark:text-slate-950 shadow-md dark:shadow-[0_0_20px_rgba(0,245,212,0.4)] hover:bg-teal-700 dark:hover:bg-[#20ffd9] transition-all cursor-pointer"
                 >
                   احجز موعدك الآن
                 </button>
@@ -1684,41 +1692,41 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 7: CINEMATIC FULL-BLEED QUOTE TRANSITION                         */}
       {/* ========================================================================= */}
-      <section className="gsap-quote-section relative py-28 sm:py-36 bg-[#060911] overflow-hidden border-t border-white/5">
+      <section className="gsap-quote-section relative py-28 sm:py-36 bg-slate-100 dark:bg-[#060911] overflow-hidden border-t border-slate-200 dark:border-white/5">
         {/* Giant Ambient Background Quotation Marks */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none opacity-5 text-[#00F5D4] font-serif text-[350px] leading-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none opacity-10 dark:opacity-5 text-teal-600 dark:text-[#00F5D4] font-serif text-[350px] leading-none">
           “
         </div>
 
         {/* Ethereal Floating Cyan Smoke Particles */}
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-[#00F5D4]/10 blur-[130px] pointer-events-none" />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-teal-500/10 dark:bg-[#00F5D4]/10 blur-[130px] pointer-events-none" />
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 rounded-full bg-teal-500/10 blur-[130px] pointer-events-none" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="gsap-cinematic-quote space-y-8">
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-[#00F5D4]/25">
-              <Sparkles className="h-3.5 w-3.5 text-[#00F5D4]" />
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase bg-teal-50 dark:bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
+              <Sparkles className="h-3.5 w-3.5 text-teal-600 dark:text-[#00F5D4]" />
               <span>الميثاق الإكلينيكي</span>
             </div>
 
-            <blockquote className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight sm:leading-snug max-w-4xl mx-auto">
+            <blockquote className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white leading-tight sm:leading-snug max-w-4xl mx-auto">
               "التجميل الحقيقي يبدأ من{' '}
-              <span className="bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+              <span className="bg-gradient-to-l from-teal-600 via-teal-500 to-cyan-600 dark:from-[#00F5D4] dark:via-teal-200 dark:to-white bg-clip-text text-transparent">
                 القرار الطبي الصحيح
               </span>
               ، وليس من كثرة الإجراءات."
             </blockquote>
 
             <div className="pt-4 flex flex-col items-center">
-              <div className="h-12 w-12 rounded-full p-0.5 bg-gradient-to-tr from-[#00F5D4] to-teal-400 mb-3 shadow-[0_0_20px_rgba(0,245,212,0.4)]">
+              <div className="h-12 w-12 rounded-full p-0.5 bg-gradient-to-tr from-teal-500 to-cyan-400 dark:from-[#00F5D4] dark:to-teal-400 mb-3 shadow-[0_0_20px_rgba(0,245,212,0.4)]">
                 <img
                   src={DOCTOR_PORTRAIT_URL}
                   alt="د. أحمد زغلول"
                   className="w-full h-full object-cover object-top rounded-full bg-slate-900"
                 />
               </div>
-              <div className="text-base font-black text-white">د. أحمد زغلول</div>
-              <div className="text-xs text-[#00F5D4] font-bold mt-0.5">
+              <div className="text-base font-black text-slate-900 dark:text-white">د. أحمد زغلول</div>
+              <div className="text-xs text-teal-700 dark:text-[#00F5D4] font-bold mt-0.5">
                 استشاري الأمراض الجلدية والليزر وتجميل البشرة
               </div>
             </div>
@@ -1729,29 +1737,29 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
       {/* ========================================================================= */}
       {/* SECTION 8: DYNAMIC CTA BANNER WITH LIVE SUPABASE BRANCH RESOLUTION       */}
       {/* ========================================================================= */}
-      <section className="relative py-20 sm:py-28 bg-[#070b14] overflow-hidden">
+      <section className="relative py-20 sm:py-28 bg-slate-50 dark:bg-[#070b14] overflow-hidden border-t border-slate-200 dark:border-white/5">
         <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl p-8 sm:p-14 lg:p-16 overflow-hidden bg-gradient-to-br from-[#0e1628]/95 via-[#0a101d]/95 to-[#070b14] border border-[#00F5D4]/40 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
+          <div className="relative rounded-3xl p-8 sm:p-14 lg:p-16 overflow-hidden bg-gradient-to-br from-teal-50/80 via-white to-teal-50/50 dark:from-[#0e1628]/95 dark:via-[#0a101d]/95 dark:to-[#070b14] border border-teal-200 dark:border-[#00F5D4]/40 shadow-xl dark:shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
             {/* Pulsating Cyan Aura */}
-            <div className="absolute top-0 right-1/2 translate-x-1/2 w-96 h-96 rounded-full bg-[#00F5D4]/20 blur-[120px] pointer-events-none animate-pulse" />
+            <div className="absolute top-0 right-1/2 translate-x-1/2 w-96 h-96 rounded-full bg-teal-500/10 dark:bg-[#00F5D4]/20 blur-[120px] pointer-events-none animate-pulse" />
 
             <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#00F5D4] tracking-widest uppercase bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-[#00F5D4]/25">
-                <CalendarDays className="h-3.5 w-3.5 text-[#00F5D4]" />
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-teal-700 dark:text-[#00F5D4] tracking-widest uppercase bg-teal-50 dark:bg-[#00F5D4]/10 px-4 py-1.5 rounded-full border border-teal-200 dark:border-[#00F5D4]/25">
+                <CalendarDays className="h-3.5 w-3.5 text-teal-600 dark:text-[#00F5D4]" />
                 <span>حجز موعد فحص استشاري</span>
               </div>
 
-              <h2 className="text-3xl sm:text-5xl font-black text-white leading-tight">
+              <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white leading-tight">
                 ابدأ رحلة العناية ببشرتك مع{' '}
-                <span className="bg-gradient-to-l from-[#00F5D4] via-teal-200 to-white bg-clip-text text-transparent">
+                <span className="bg-gradient-to-l from-teal-600 via-teal-500 to-cyan-600 dark:from-[#00F5D4] dark:via-teal-200 dark:to-white bg-clip-text text-transparent">
                   د. أحمد زغلول
                 </span>
               </h2>
 
-              <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
                 نستقبلكم في فروعنا المجهزة بأحدث التقنيات الطبية:
                 <br />
-                <span className="font-bold text-[#00F5D4] mt-1 inline-block">
+                <span className="font-bold text-teal-700 dark:text-[#00F5D4] mt-1 inline-block">
                   📍 {dynamicBranchString}
                 </span>
               </p>
@@ -1760,7 +1768,7 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
               <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
                 <MagneticButton
                   onClick={() => onOpenBooking()}
-                  className="rounded-full bg-[#00F5D4] px-9 py-4 text-base font-black text-slate-950 shadow-[0_0_30px_rgba(0,245,212,0.45)] hover:shadow-[0_0_45px_rgba(0,245,212,0.7)] hover:bg-[#20ffd9] transition-all"
+                  className="rounded-full bg-teal-600 dark:bg-[#00F5D4] px-9 py-4 text-base font-black text-white dark:text-slate-950 shadow-lg dark:shadow-[0_0_30px_rgba(0,245,212,0.45)] hover:bg-teal-700 dark:hover:bg-[#20ffd9] transition-all"
                 >
                   <span className="flex items-center gap-2">
                     <CalendarDays className="h-5 w-5" />
@@ -1771,9 +1779,9 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                 {directPhone && (
                   <a
                     href={`tel:${directPhone}`}
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 hover:border-teal-500 dark:hover:border-[#00F5D4]/40 shadow-xs backdrop-blur-xl transition-all"
                   >
-                    <PhoneCall className="h-4 w-4 text-[#00F5D4]" />
+                    <PhoneCall className="h-4 w-4 text-teal-600 dark:text-[#00F5D4]" />
                     <span>اتصال مباشر: {directPhone}</span>
                   </a>
                 )}
@@ -1783,9 +1791,9 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                     href={`https://wa.me/${activeWhatsApp.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-400 backdrop-blur-xl transition-all text-emerald-300"
+                    className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-emerald-800 dark:text-slate-200 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30 hover:border-emerald-500 dark:hover:border-emerald-400 backdrop-blur-xl transition-all dark:text-emerald-300"
                   >
-                    <MessageCircle className="h-4 w-4 text-emerald-400" />
+                    <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     <span>واتساب العيادة</span>
                   </a>
                 )}

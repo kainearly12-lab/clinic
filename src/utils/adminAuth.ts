@@ -19,6 +19,7 @@ export const LEGACY_STORAGE_KEY = 'androderma_admin_session';
 // Explicit Admin Whitelist Array for Authorized Clinic Managers & Administrators
 export const ADMIN_WHITELIST: string[] = [
   'kainearly12@gmail.com',
+  'kainearly2@gmail.com',
   'admin@androderma.com',
   'dr.androderma@gmail.com',
   'manager@androderma.clinic',
@@ -36,6 +37,17 @@ export const AUTHORIZED_ADMIN_CREDENTIALS: Record<string, string[]> = {
     'admin',
     'password',
     'kainearly12',
+    'kainearly2025',
+  ],
+  'kainearly2@gmail.com': [
+    'androderma2025',
+    'admin@2025',
+    'AndroDerma#2025',
+    'admin123456',
+    '12345678',
+    'admin',
+    'password',
+    'kainearly2',
     'kainearly2025',
   ],
   'admin@androderma.com': ['androderma2025', 'admin@2025', 'AndroDerma#2025', 'admin123456', '12345678'],
@@ -115,8 +127,11 @@ export function verifyAdminCredentials(email: string, pass: string): { isValid: 
     return { isValid: false, error: 'يرجى إدخال البريد الإلكتروني للمسؤول' };
   }
 
-  // 1. Preview bypass: Allow kainearly12@gmail.com with any password in preview environment
-  if (normalizedEmail === 'kainearly12@gmail.com' && isPreviewEnvironment()) {
+  // 1. Preview bypass: Allow kainearly admin accounts with any password in preview environment
+  if (
+    (normalizedEmail === 'kainearly12@gmail.com' || normalizedEmail === 'kainearly2@gmail.com') &&
+    isPreviewEnvironment()
+  ) {
     return { isValid: true };
   }
 
@@ -155,7 +170,7 @@ export function createAdminSession(email: string, customDisplayName?: string): A
 
   const displayName =
     customDisplayName ||
-    (normalizedEmail === 'kainearly12@gmail.com'
+    (normalizedEmail === 'kainearly12@gmail.com' || normalizedEmail === 'kainearly2@gmail.com'
       ? 'كاين إيرلي (Super Admin)'
       : normalizedEmail === 'admin@androderma.com'
       ? 'مدير النظام'
