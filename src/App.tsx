@@ -8,6 +8,8 @@ import {
   Star,
   ChevronDown,
   Stethoscope,
+  PhoneCall,
+  Phone,
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LuxuryFooter } from '@/components/LuxuryFooter';
@@ -34,8 +36,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { getValidAdminSession, clearAdminSession } from '@/utils/adminAuth';
 
 import { useLanguage } from '@/context/LanguageContext';
-
-const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface HeroProps {
   onBook: () => void;
@@ -44,6 +45,15 @@ interface HeroProps {
 
 function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
   const { language, t } = useLanguage();
+  const { contactPhone, phone: dynamicPhone, settings } = useSiteSettings();
+
+  const directPhone = (contactPhone && contactPhone.trim().length > 0)
+    ? contactPhone.trim()
+    : (dynamicPhone && dynamicPhone.trim().length > 0)
+    ? dynamicPhone.trim()
+    : (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.phone;
 
   const scrollToServices = () => {
     const el = document.getElementById('services');
@@ -129,6 +139,16 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
               {t('hero.cta.book')}
             </BookingButton>
 
+            {/* Direct Phone Call CTA */}
+            <a
+              href={`tel:${directPhone}`}
+              className="btn-secondary py-3.5 px-5 text-sm font-bold shadow-xs hover:shadow-md border-teal-600/30 hover:border-teal-600 cursor-pointer flex items-center gap-2"
+              title="اتصال مباشر"
+            >
+              <PhoneCall className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              <span dir="ltr">{directPhone}</span>
+            </a>
+
             {/* Secondary Discovery CTA */}
             <button
               type="button"
@@ -187,6 +207,21 @@ function Hero({ onBook, onOpenDiagnostic }: HeroProps) {
 
 function MobileBottomBar({ onBook }: { onBook: () => void }) {
   const { language } = useLanguage();
+  const { contactPhone, phone: dynamicPhone, settings } = useSiteSettings();
+
+  const directPhone = (contactPhone && contactPhone.trim().length > 0)
+    ? contactPhone.trim()
+    : (dynamicPhone && dynamicPhone.trim().length > 0)
+    ? dynamicPhone.trim()
+    : (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.phone;
+
+  const currentWa = (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.whatsapp;
+  const activeWaLink = `https://wa.me/${currentWa.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
+
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-white/90 dark:bg-[#12151b]/90 backdrop-blur-xl border-t border-slate-200/90 dark:border-teal-500/20 px-3.5 pt-2.5 pb-[calc(0.65rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_32px_rgba(0,0,0,0.15)]">
       <div className="flex items-center gap-2 max-w-md mx-auto">
@@ -198,7 +233,15 @@ function MobileBottomBar({ onBook }: { onBook: () => void }) {
           <span>{language === 'en' ? 'Book Your Consultation Now 📅' : 'احجز كشفك الآن 📅'}</span>
         </button>
         <a
-          href={waLink}
+          href={`tel:${directPhone}`}
+          className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-sm shrink-0 active:scale-95"
+          aria-label="Direct Call"
+          title="اتصال مباشر"
+        >
+          <Phone className="h-5 w-5" />
+        </a>
+        <a
+          href={activeWaLink}
           target="_blank"
           rel="noreferrer"
           className="grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm shrink-0 active:scale-95"

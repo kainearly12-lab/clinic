@@ -61,7 +61,8 @@ export function BookingPage({
   initialBranch = '',
   onNavigateHome,
 }: BookingPageProps) {
-  const { logoUrl, clinicName, phone: clinicPhone } = useSiteSettings();
+  const { logoUrl, clinicName, phone: clinicPhone, contactPhone } = useSiteSettings();
+  const effectiveClinicPhone = contactPhone || clinicPhone || '01154021247';
 
   // Multi-step State: 1 = Patient Info, 2 = Payment & Receipt, 3 = Confirmation
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -1231,11 +1232,11 @@ export function BookingPage({
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-slate-600 dark:text-slate-400">
                 <span>للاستفسار السريع عبر الهاتف:</span>
                 <a
-                  href={`tel:${currentBranch?.phones[0]?.number || clinicPhone}`}
+                  href={`tel:${currentBranch?.phones[0]?.number || effectiveClinicPhone}`}
                   className="font-bold text-teal-700 dark:text-teal-400"
                   dir="ltr"
                 >
-                  {currentBranch?.phones[0]?.display || clinicPhone}
+                  {currentBranch?.phones[0]?.display || effectiveClinicPhone}
                 </a>
               </div>
             </div>

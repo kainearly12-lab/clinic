@@ -9,11 +9,17 @@ interface LuxuryFooterProps {
 }
 
 export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
-  const { logoUrl, clinicName, phone: dynamicPhone, email: dynamicEmail, facebookUrl, instagramUrl, vezeetaUrl } = useSiteSettings();
+  const { logoUrl, clinicName, phone: dynamicPhone, contactPhone, email: dynamicEmail, facebookUrl, instagramUrl, vezeetaUrl, settings } = useSiteSettings();
   const { language, t, isRTL } = useLanguage();
   const ArrowIcon = isRTL ? ArrowUpLeft : ArrowUpRight;
 
-  const displayPhone = dynamicPhone || clinic.phoneDisplay;
+  const displayPhone = (contactPhone && contactPhone.trim().length > 0)
+    ? contactPhone.trim()
+    : (dynamicPhone && dynamicPhone.trim().length > 0)
+    ? dynamicPhone.trim()
+    : (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.phoneDisplay;
   const activeEmail = dynamicEmail || clinic.email;
 
   return (

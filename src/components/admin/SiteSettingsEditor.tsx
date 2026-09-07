@@ -27,6 +27,7 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   const [taglineAr, setTaglineAr] = useState<string>(settings.tagline || settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي');
   const [logoUrl, setLogoUrl] = useState<string>(settings.logo_url || CLINIC_LOGO);
   const [faviconUrl, setFaviconUrl] = useState<string>(settings.favicon_url || settings.logo_url || CLINIC_LOGO);
+  const [contactPhone, setContactPhone] = useState<string>(settings.contact_phone || settings.phone_number || settings.unified_hotline || '01154021247');
   const [whatsappNumber, setWhatsappNumber] = useState<string>(settings.unified_hotline || settings.whatsapp_number || '201154021247');
   const [emailContact, setEmailContact] = useState<string>(settings.official_email || settings.email_contact || 'info@androderma.com');
   const [emergencyNotice, setEmergencyNotice] = useState<string>(settings.emergency_alert || settings.emergency_notice_ar || '');
@@ -52,6 +53,9 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
       }
       if (settings.favicon_url) {
         setFaviconUrl(settings.favicon_url);
+      }
+      if (settings.contact_phone || settings.phone_number || settings.unified_hotline) {
+        setContactPhone(settings.contact_phone || settings.phone_number || settings.unified_hotline || '');
       }
       if (settings.unified_hotline || settings.whatsapp_number) {
         setWhatsappNumber(settings.unified_hotline || settings.whatsapp_number || '');
@@ -120,7 +124,7 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
         site_title: clinicNameAr.trim(),
         tagline: taglineAr.trim(),
         official_email: emailContact.trim(),
-        unified_hotline: whatsappNumber.trim(),
+        unified_hotline: contactPhone.trim() || whatsappNumber.trim(),
         emergency_alert: emergencyNotice.trim() || null,
         logo_url: activeLogo,
         favicon_url: activeFavicon,
@@ -128,7 +132,9 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
         secondary_color: secondaryColor,
         maintenance_mode: isMaintenanceMode,
 
-        // Backwards-compatible aliases
+        // Direct phone mapping & backwards-compatible aliases
+        contact_phone: contactPhone.trim(),
+        phone_number: contactPhone.trim(),
         clinic_name_ar: clinicNameAr.trim(),
         tagline_ar: taglineAr.trim(),
         email_contact: emailContact.trim(),
@@ -329,7 +335,22 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">رقم الاتصال المباشر</label>
+              <input
+                type="text"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="01154021247"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                dir="ltr"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                مربوط بـ contact_phone لأزرار الاتصال الهاتفي الفوري
+              </span>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">واتساب الإدارة الموحد</label>
               <input
@@ -340,6 +361,9 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
                 dir="ltr"
               />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                الرقم المخصص للمحادثات والاستشارات عبر واتساب
+              </span>
             </div>
 
             <div>
@@ -352,6 +376,9 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
                 dir="ltr"
               />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                بريد التواصل الرسمي واستقبال الاستفسارات
+              </span>
             </div>
           </div>
 

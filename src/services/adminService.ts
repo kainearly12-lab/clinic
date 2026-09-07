@@ -425,6 +425,7 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
     const siteTitle = data.site_title || data.clinic_name_ar || localSettings.site_title || 'عيادات Androderma';
     const tagline = data.tagline || data.tagline_ar || localSettings.tagline || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
     const officialEmail = data.official_email || data.email_contact || localSettings.official_email || 'info@androderma.com';
+    const contactPhone = data.contact_phone || data.phone_number || data.unified_hotline || localSettings.contact_phone || localSettings.unified_hotline || '01154021247';
     const unifiedHotline = data.unified_hotline || data.whatsapp_number || localSettings.unified_hotline || '201154021247';
     const emergencyAlert = data.emergency_alert !== undefined
       ? data.emergency_alert
@@ -459,6 +460,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
       vezeeta_url: vezeetaUrl,
 
       // UI and backwards-compatible aliases
+      contact_phone: contactPhone,
+      phone_number: contactPhone,
       clinic_name_ar: siteTitle,
       tagline_ar: tagline,
       email_contact: officialEmail,
@@ -502,7 +505,16 @@ export async function updateSiteSettings(
     const siteTitle = settings.site_title || settings.clinic_name_ar || localSettings.site_title || localSettings.clinic_name_ar || 'عيادات Androderma';
     const tagline = settings.tagline || settings.tagline_ar || localSettings.tagline || localSettings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
     const officialEmail = settings.official_email || settings.email_contact || localSettings.official_email || localSettings.email_contact || 'info@androderma.com';
-    const unifiedHotline = settings.unified_hotline || settings.whatsapp_number || localSettings.unified_hotline || localSettings.whatsapp_number || '201154021247';
+    const contactPhone =
+      settings.contact_phone !== undefined
+        ? settings.contact_phone
+        : settings.phone_number !== undefined
+        ? settings.phone_number
+        : settings.unified_hotline || localSettings.contact_phone || localSettings.unified_hotline || '01154021247';
+    const unifiedHotline =
+      (contactPhone && contactPhone.trim().length > 0)
+        ? contactPhone.trim()
+        : settings.whatsapp_number?.trim() || localSettings.unified_hotline || '201154021247';
     const emergencyAlert = settings.emergency_alert !== undefined
       ? settings.emergency_alert
       : (settings.emergency_notice_ar !== undefined ? settings.emergency_notice_ar : localSettings.emergency_alert);

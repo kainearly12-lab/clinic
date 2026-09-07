@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { clinic, branches as fallbackBranches } from '@/data/clinicData';
 import { useWeeklySchedule } from '@/hooks/useSchedule';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -746,6 +747,19 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
 
   // Dynamic Branches from Supabase schedule service
   const { branches: activeBranchesList } = useWeeklySchedule();
+  const { contactPhone, phone: sitePhone, settings } = useSiteSettings();
+
+  const directPhone = (contactPhone && contactPhone.trim().length > 0)
+    ? contactPhone.trim()
+    : (sitePhone && sitePhone.trim().length > 0)
+    ? sitePhone.trim()
+    : (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.phone;
+
+  const activeWhatsApp = (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.whatsapp;
 
   const dynamicBranchNames = useMemo(() => {
     if (activeBranchesList && activeBranchesList.length > 0) {
@@ -1754,19 +1768,19 @@ export function AboutPage({ onOpenBooking, onNavigateHome }: AboutPageProps) {
                   </span>
                 </MagneticButton>
 
-                {clinic.phone && (
+                {directPhone && (
                   <a
-                    href={`tel:${clinic.phone}`}
+                    href={`tel:${directPhone}`}
                     className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00F5D4]/40 backdrop-blur-xl transition-all"
                   >
                     <PhoneCall className="h-4 w-4 text-[#00F5D4]" />
-                    <span>اتصال مباشر: {clinic.phone}</span>
+                    <span>اتصال مباشر: {directPhone}</span>
                   </a>
                 )}
 
-                {clinic.whatsapp && (
+                {activeWhatsApp && (
                   <a
-                    href={`https://wa.me/${clinic.whatsapp.replace(/[^0-9]/g, '')}`}
+                    href={`https://wa.me/${activeWhatsApp.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full px-6 py-4 text-sm font-bold text-slate-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-400 backdrop-blur-xl transition-all text-emerald-300"

@@ -24,6 +24,8 @@ export interface SiteSettingsRecord {
   instagram_url?: string;
   vezeeta_url?: string;
   // Compatibility & UI aliases
+  contact_phone?: string;
+  phone_number?: string;
   clinic_name_ar?: string;
   tagline_ar?: string;
   whatsapp_number?: string;

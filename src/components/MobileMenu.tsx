@@ -32,10 +32,22 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ open, onClose, active, onSelectTab, onOpenBooking }: MobileMenuProps) {
-  const waLink = `https://wa.me/${clinic.whatsapp}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
   const { theme, toggleTheme } = useTheme();
-  const { logoUrl, clinicName } = useSiteSettings();
+  const { logoUrl, clinicName, contactPhone, phone: dynamicPhone, email: dynamicEmail, settings } = useSiteSettings();
   const { t, isRTL, language } = useLanguage();
+
+  const directPhone = (contactPhone && contactPhone.trim().length > 0)
+    ? contactPhone.trim()
+    : (dynamicPhone && dynamicPhone.trim().length > 0)
+    ? dynamicPhone.trim()
+    : (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.phone;
+  const activeWa = (settings.whatsapp_number && settings.whatsapp_number.trim().length > 0)
+    ? settings.whatsapp_number.trim()
+    : clinic.whatsapp;
+  const activeEmail = dynamicEmail || settings.official_email || clinic.email;
+  const waLink = `https://wa.me/${activeWa.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(clinic.whatsappMessage)}`;
 
   const getSectionIcon = (id: string) => {
     switch (id) {
@@ -238,14 +250,14 @@ export function MobileMenu({ open, onClose, active, onSelectTab, onOpenBooking }
           {/* Direct Phone & Email Bar */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <a
-              href={`tel:${clinic.phone}`}
+              href={`tel:${directPhone}`}
               className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800/70 p-2 text-[11px] font-medium text-slate-800 dark:text-gray-200 transition hover:border-teal-400"
             >
               <Phone className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span dir="ltr">{clinic.phoneDisplay}</span>
+              <span dir="ltr">{directPhone}</span>
             </a>
             <a
-              href={`mailto:${clinic.email}`}
+              href={`mailto:${activeEmail}`}
               className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800/70 p-2 text-[11px] font-medium text-slate-800 dark:text-gray-200 transition hover:border-teal-400 truncate"
             >
               <Mail className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />

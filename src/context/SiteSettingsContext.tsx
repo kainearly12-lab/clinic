@@ -11,6 +11,7 @@ interface SiteSettingsContextType {
   clinicName: string;
   tagline: string;
   phone: string;
+  contactPhone: string;
   email: string;
   facebookUrl: string;
   instagramUrl: string;
@@ -25,7 +26,9 @@ const defaultSettings: SiteSettingsRecord = {
   site_title: 'عيادات Androderma',
   tagline: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
   official_email: 'info@androderma.com',
-  unified_hotline: '201154021247',
+  unified_hotline: '01154021247',
+  contact_phone: '01154021247',
+  phone_number: '01154021247',
   emergency_alert: null,
   logo_url: CLINIC_LOGO,
   favicon_url: CLINIC_LOGO,
@@ -52,6 +55,7 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
   clinicName: 'عيادات Androderma',
   tagline: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
   phone: '01154021247',
+  contactPhone: '01154021247',
   email: 'info@androderma.com',
   facebookUrl: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
   instagramUrl: 'https://www.instagram.com/androdermaclinic/?hl=ar',
@@ -131,7 +135,15 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
 
   const clinicName = settings.site_title || settings.clinic_name_ar || 'عيادات Androderma';
   const tagline = settings.tagline || settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
-  const phone = settings.unified_hotline || settings.whatsapp_number || '01154021247';
+
+  // Dynamic Contact Phone with fallback to main WhatsApp number if empty
+  const fallbackWhatsApp = settings.whatsapp_number || settings.unified_hotline || '201154021247';
+  const rawContactPhone = settings.contact_phone || settings.phone_number || settings.unified_hotline;
+  const contactPhone = (rawContactPhone && rawContactPhone.trim().length > 0)
+    ? rawContactPhone.trim()
+    : fallbackWhatsApp;
+
+  const phone = contactPhone;
   const email = settings.official_email || settings.email_contact || 'info@androderma.com';
   const facebookUrl = settings.facebook_url || 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#';
   const instagramUrl = settings.instagram_url || 'https://www.instagram.com/androdermaclinic/?hl=ar';
@@ -145,6 +157,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         clinicName,
         tagline,
         phone,
+        contactPhone,
         email,
         facebookUrl,
         instagramUrl,
