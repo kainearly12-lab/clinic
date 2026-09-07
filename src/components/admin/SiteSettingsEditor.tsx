@@ -34,6 +34,8 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(Boolean(settings.maintenance_mode !== undefined ? settings.maintenance_mode : settings.is_maintenance_mode));
   const [primaryColor, setPrimaryColor] = useState<string>(settings.primary_color || '#00B8A9');
   const [secondaryColor, setSecondaryColor] = useState<string>(settings.secondary_color || settings.accent_color || '#0F766E');
+  const [tiktokUrl, setTiktokUrl] = useState<string>(settings.tiktok_url || '');
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(settings.youtube_url || '');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [faviconSynced, setFaviconSynced] = useState<boolean>(false);
 
@@ -74,6 +76,12 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
       }
       if (settings.secondary_color || settings.accent_color) {
         setSecondaryColor(settings.secondary_color || settings.accent_color || '#0F766E');
+      }
+      if (settings.tiktok_url !== undefined) {
+        setTiktokUrl(settings.tiktok_url || '');
+      }
+      if (settings.youtube_url !== undefined) {
+        setYoutubeUrl(settings.youtube_url || '');
       }
     }
   }, [settings]);
@@ -131,6 +139,8 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
         primary_color: primaryColor,
         secondary_color: secondaryColor,
         maintenance_mode: isMaintenanceMode,
+        tiktok_url: tiktokUrl.trim(),
+        youtube_url: youtubeUrl.trim(),
 
         // Direct phone mapping & backwards-compatible aliases
         contact_phone: contactPhone.trim(),
@@ -391,6 +401,46 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
               placeholder="مثال: يرجى العلم بأنه تم نقل عيادة ليزر المعادي للدور الأول مؤقتاً..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
             />
+          </div>
+
+          {/* Social Media Links: TikTok & YouTube */}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <h4 className="text-xs font-black text-slate-200">روابط منصات التواصل الاجتماعي (Social Media Links)</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  TikTok URL (رابط تيك توك)
+                </label>
+                <input
+                  type="url"
+                  value={tiktokUrl}
+                  onChange={(e) => setTiktokUrl(e.target.value)}
+                  placeholder="https://www.tiktok.com/@clinic"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                  dir="ltr"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  يتم إظهار أيقونة تيك توك تلقائياً في فوتر الموقع عند حفظ الرابط
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  YouTube URL (رابط يوتيوب)
+                </label>
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/@clinic"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                  dir="ltr"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  يتم إظهار أيقونة يوتيوب تلقائياً في فوتر الموقع عند حفظ الرابط
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

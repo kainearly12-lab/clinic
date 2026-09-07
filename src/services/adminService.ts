@@ -441,6 +441,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
     );
     const facebookUrl = data.facebook_url || data.facebook || localSettings.facebook_url;
     const instagramUrl = data.instagram_url || data.instagram || localSettings.instagram_url;
+    const tiktokUrl = data.tiktok_url !== undefined ? data.tiktok_url : (localSettings.tiktok_url || '');
+    const youtubeUrl = data.youtube_url !== undefined ? data.youtube_url : (localSettings.youtube_url || '');
     const vezeetaUrl = data.vezeeta_url || data.vezeeta || localSettings.vezeeta_url;
 
     const record: SiteSettingsRecord = {
@@ -457,6 +459,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
       maintenance_mode: maintenanceMode,
       facebook_url: facebookUrl,
       instagram_url: instagramUrl,
+      tiktok_url: tiktokUrl,
+      youtube_url: youtubeUrl,
       vezeeta_url: vezeetaUrl,
 
       // UI and backwards-compatible aliases
@@ -528,7 +532,7 @@ export async function updateSiteSettings(
         : (settings.is_maintenance_mode !== undefined ? settings.is_maintenance_mode : localSettings.maintenance_mode)
     );
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       site_title: siteTitle,
       tagline: tagline,
       official_email: officialEmail,
@@ -540,6 +544,13 @@ export async function updateSiteSettings(
       secondary_color: secondaryColor,
       maintenance_mode: maintenanceMode,
     };
+
+    if (settings.tiktok_url !== undefined) {
+      payload.tiktok_url = settings.tiktok_url.trim();
+    }
+    if (settings.youtube_url !== undefined) {
+      payload.youtube_url = settings.youtube_url.trim();
+    }
 
     const targetId = localSettings.id && !isNaN(Number(localSettings.id)) ? Number(localSettings.id) : 1;
     const { error } = await supabase.from('site_settings').upsert([{ id: targetId, ...payload }]);

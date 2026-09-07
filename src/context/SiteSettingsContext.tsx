@@ -15,6 +15,8 @@ interface SiteSettingsContextType {
   email: string;
   facebookUrl: string;
   instagramUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
   vezeetaUrl: string;
   isLoading: boolean;
   updateSettings: (newSettings: Partial<SiteSettingsRecord>) => Promise<{ success: boolean; error?: string }>;
@@ -37,6 +39,8 @@ const defaultSettings: SiteSettingsRecord = {
   maintenance_mode: false,
   facebook_url: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
   instagram_url: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  tiktok_url: '',
+  youtube_url: '',
   vezeeta_url: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
 
   // Compatibility aliases
@@ -59,6 +63,8 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
   email: 'info@androderma.com',
   facebookUrl: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
   instagramUrl: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  tiktokUrl: '',
+  youtubeUrl: '',
   vezeetaUrl: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
   isLoading: false,
   updateSettings: async () => ({ success: true }),
@@ -147,6 +153,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   const email = settings.official_email || settings.email_contact || 'info@androderma.com';
   const facebookUrl = settings.facebook_url || 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#';
   const instagramUrl = settings.instagram_url || 'https://www.instagram.com/androdermaclinic/?hl=ar';
+  const tiktokUrl = settings.tiktok_url || '';
+  const youtubeUrl = settings.youtube_url || '';
   const vezeetaUrl = settings.vezeeta_url || 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology';
 
   return (
@@ -161,6 +169,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         email,
         facebookUrl,
         instagramUrl,
+        tiktokUrl,
+        youtubeUrl,
         vezeetaUrl,
         isLoading,
         updateSettings: handleUpdateSettings,

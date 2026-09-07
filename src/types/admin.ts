@@ -22,6 +22,8 @@ export interface SiteSettingsRecord {
   maintenance_mode?: boolean;
   facebook_url?: string;
   instagram_url?: string;
+  tiktok_url?: string;
+  youtube_url?: string;
   vezeeta_url?: string;
   // Compatibility & UI aliases
   contact_phone?: string;

@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Instagram, Facebook, ArrowUpLeft, ArrowUpRight, Lock } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ArrowUpLeft, ArrowUpRight, Lock } from 'lucide-react';
 import { clinic, branches, navLinks } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -9,7 +9,7 @@ interface LuxuryFooterProps {
 }
 
 export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
-  const { logoUrl, clinicName, phone: dynamicPhone, contactPhone, email: dynamicEmail, facebookUrl, instagramUrl, vezeetaUrl, settings } = useSiteSettings();
+  const { logoUrl, clinicName, phone: dynamicPhone, contactPhone, email: dynamicEmail, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl, vezeetaUrl, settings } = useSiteSettings();
   const { language, t, isRTL } = useLanguage();
   const ArrowIcon = isRTL ? ArrowUpLeft : ArrowUpRight;
 
@@ -82,6 +82,30 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                     className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
                   >
                     <Facebook className="h-4 w-4" />
+                  </a>
+                )}
+                {tiktokUrl && (
+                  <a
+                    href={tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="TikTok"
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
+                  >
+                    <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.88-4.49v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-.88-.09z"/>
+                    </svg>
+                  </a>
+                )}
+                {youtubeUrl && (
+                  <a
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube"
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
+                  >
+                    <Youtube className="h-4 w-4" />
                   </a>
                 )}
               </div>
