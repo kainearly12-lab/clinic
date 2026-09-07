@@ -72,6 +72,8 @@ let localSettings: SiteSettingsRecord = {
   maintenance_mode: false,
   facebook_url: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
   instagram_url: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  tiktok_url: '',
+  youtube_url: '',
   vezeeta_url: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
 
   // Aliases for compatibility
@@ -439,10 +441,18 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
         ? data.maintenance_mode
         : (data.is_maintenance_mode !== undefined ? data.is_maintenance_mode : localSettings.maintenance_mode)
     );
-    const facebookUrl = data.facebook_url || data.facebook || localSettings.facebook_url;
-    const instagramUrl = data.instagram_url || data.instagram || localSettings.instagram_url;
-    const tiktokUrl = data.tiktok_url !== undefined ? data.tiktok_url : (localSettings.tiktok_url || '');
-    const youtubeUrl = data.youtube_url !== undefined ? data.youtube_url : (localSettings.youtube_url || '');
+    const facebookUrl = data.facebook_url !== undefined
+      ? (data.facebook_url !== null ? String(data.facebook_url).trim() : '')
+      : (data.facebook !== undefined ? (data.facebook !== null ? String(data.facebook).trim() : '') : (localSettings.facebook_url || ''));
+    const instagramUrl = data.instagram_url !== undefined
+      ? (data.instagram_url !== null ? String(data.instagram_url).trim() : '')
+      : (data.instagram !== undefined ? (data.instagram !== null ? String(data.instagram).trim() : '') : (localSettings.instagram_url || ''));
+    const tiktokUrl = data.tiktok_url !== undefined
+      ? (data.tiktok_url !== null ? String(data.tiktok_url).trim() : '')
+      : (localSettings.tiktok_url || '');
+    const youtubeUrl = data.youtube_url !== undefined
+      ? (data.youtube_url !== null ? String(data.youtube_url).trim() : '')
+      : (localSettings.youtube_url || '');
     const vezeetaUrl = data.vezeeta_url || data.vezeeta || localSettings.vezeeta_url;
 
     const record: SiteSettingsRecord = {
@@ -545,11 +555,20 @@ export async function updateSiteSettings(
       maintenance_mode: maintenanceMode,
     };
 
+    if (settings.facebook_url !== undefined) {
+      payload.facebook_url = settings.facebook_url.trim();
+    }
+    if (settings.instagram_url !== undefined) {
+      payload.instagram_url = settings.instagram_url.trim();
+    }
     if (settings.tiktok_url !== undefined) {
       payload.tiktok_url = settings.tiktok_url.trim();
     }
     if (settings.youtube_url !== undefined) {
       payload.youtube_url = settings.youtube_url.trim();
+    }
+    if (settings.vezeeta_url !== undefined) {
+      payload.vezeeta_url = settings.vezeeta_url.trim();
     }
 
     const targetId = localSettings.id && !isNaN(Number(localSettings.id)) ? Number(localSettings.id) : 1;

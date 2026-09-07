@@ -63,20 +63,9 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
             {/* Social Media & Contact Shortcuts */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
               <div className="flex items-center gap-2.5">
-                {instagramUrl && (
+                {Boolean(facebookUrl && facebookUrl.trim()) && (
                   <a
-                    href={instagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                )}
-                {facebookUrl && (
-                  <a
-                    href={facebookUrl}
+                    href={facebookUrl.trim()}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
@@ -85,9 +74,20 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                     <Facebook className="h-4 w-4" />
                   </a>
                 )}
-                {tiktokUrl && (
+                {Boolean(instagramUrl && instagramUrl.trim()) && (
                   <a
-                    href={tiktokUrl}
+                    href={instagramUrl.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
+                  >
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                )}
+                {Boolean(tiktokUrl && tiktokUrl.trim()) && (
+                  <a
+                    href={tiktokUrl.trim()}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="TikTok"
@@ -98,9 +98,9 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                     </svg>
                   </a>
                 )}
-                {youtubeUrl && (
+                {Boolean(youtubeUrl && youtubeUrl.trim()) && (
                   <a
-                    href={youtubeUrl}
+                    href={youtubeUrl.trim()}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="YouTube"

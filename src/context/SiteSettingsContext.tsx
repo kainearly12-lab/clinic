@@ -151,10 +151,10 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
 
   const phone = contactPhone;
   const email = settings.official_email || settings.email_contact || 'info@androderma.com';
-  const facebookUrl = settings.facebook_url || 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#';
-  const instagramUrl = settings.instagram_url || 'https://www.instagram.com/androdermaclinic/?hl=ar';
-  const tiktokUrl = settings.tiktok_url || '';
-  const youtubeUrl = settings.youtube_url || '';
+  const facebookUrl = settings.facebook_url !== undefined ? settings.facebook_url.trim() : '';
+  const instagramUrl = settings.instagram_url !== undefined ? settings.instagram_url.trim() : '';
+  const tiktokUrl = settings.tiktok_url !== undefined ? settings.tiktok_url.trim() : '';
+  const youtubeUrl = settings.youtube_url !== undefined ? settings.youtube_url.trim() : '';
   const vezeetaUrl = settings.vezeeta_url || 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology';
 
   return (

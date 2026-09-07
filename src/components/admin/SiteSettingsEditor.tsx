@@ -8,6 +8,8 @@ import {
   Sparkles,
   CheckCircle2,
   RefreshCw,
+  Facebook,
+  Instagram,
 } from 'lucide-react';
 import { SiteSettingsRecord } from '@/types/admin';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
@@ -34,6 +36,8 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(Boolean(settings.maintenance_mode !== undefined ? settings.maintenance_mode : settings.is_maintenance_mode));
   const [primaryColor, setPrimaryColor] = useState<string>(settings.primary_color || '#00B8A9');
   const [secondaryColor, setSecondaryColor] = useState<string>(settings.secondary_color || settings.accent_color || '#0F766E');
+  const [facebookUrl, setFacebookUrl] = useState<string>(settings.facebook_url || '');
+  const [instagramUrl, setInstagramUrl] = useState<string>(settings.instagram_url || '');
   const [tiktokUrl, setTiktokUrl] = useState<string>(settings.tiktok_url || '');
   const [youtubeUrl, setYoutubeUrl] = useState<string>(settings.youtube_url || '');
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -76,6 +80,12 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
       }
       if (settings.secondary_color || settings.accent_color) {
         setSecondaryColor(settings.secondary_color || settings.accent_color || '#0F766E');
+      }
+      if (settings.facebook_url !== undefined) {
+        setFacebookUrl(settings.facebook_url || '');
+      }
+      if (settings.instagram_url !== undefined) {
+        setInstagramUrl(settings.instagram_url || '');
       }
       if (settings.tiktok_url !== undefined) {
         setTiktokUrl(settings.tiktok_url || '');
@@ -139,6 +149,8 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
         primary_color: primaryColor,
         secondary_color: secondaryColor,
         maintenance_mode: isMaintenanceMode,
+        facebook_url: facebookUrl.trim(),
+        instagram_url: instagramUrl.trim(),
         tiktok_url: tiktokUrl.trim(),
         youtube_url: youtubeUrl.trim(),
 
@@ -403,10 +415,46 @@ export const SiteSettingsEditor = React.memo(function SiteSettingsEditor({
             />
           </div>
 
-          {/* Social Media Links: TikTok & YouTube */}
+          {/* Social Media Links: Facebook, Instagram, TikTok & YouTube */}
           <div className="pt-4 border-t border-white/10 space-y-3">
             <h4 className="text-xs font-black text-slate-200">روابط منصات التواصل الاجتماعي (Social Media Links)</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 mb-1.5">
+                  <Facebook className="w-3.5 h-3.5 text-[#00B8A9]" />
+                  <span>Facebook URL (رابط صفحة الفيسبوك)</span>
+                </label>
+                <input
+                  type="url"
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  placeholder="https://www.facebook.com/clinic"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                  dir="ltr"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  يتم إظهار أيقونة فيسبوك تلقائياً في فوتر الموقع عند حفظ الرابط
+                </span>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 mb-1.5">
+                  <Instagram className="w-3.5 h-3.5 text-[#00B8A9]" />
+                  <span>Instagram URL (رابط حساب الإنستجرام)</span>
+                </label>
+                <input
+                  type="url"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://www.instagram.com/clinic"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                  dir="ltr"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  يتم إظهار أيقونة إنستجرام تلقائياً في فوتر الموقع عند حفظ الرابط
+                </span>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
                   TikTok URL (رابط تيك توك)
