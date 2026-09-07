@@ -13,7 +13,6 @@ import {
   CreditCard,
   FileDown,
   Stethoscope,
-  Megaphone,
   MessageCircle,
   Tag,
   Image as ImageIcon,
@@ -39,7 +38,6 @@ import { exportAppointmentsPdfReport } from '@/services/pdfReportService';
 import { branches as defaultBranches } from '@/data/clinicData';
 import { QuickMedicalNotesModal } from '@/components/admin/QuickMedicalNotesModal';
 import { WhatsAppTemplateModal } from '@/components/admin/WhatsAppTemplateModal';
-import { EmergencyBroadcastModal } from '@/components/admin/EmergencyBroadcastModal';
 
 interface BookingsManagerProps {
   onNotify: (type: 'success' | 'error' | 'info', message: string) => void;
@@ -89,10 +87,9 @@ export const BookingsManager = React.memo(function BookingsManager({
     payment_status: PaymentStatus;
   } | null>(null);
 
-  // New Medical Notes, WhatsApp and Broadcast Modal States
+  // Medical Notes and WhatsApp Modal States
   const [quickNotesAppointment, setQuickNotesAppointment] = useState<AppointmentRecord | null>(null);
   const [whatsAppModalAppointment, setWhatsAppModalAppointment] = useState<AppointmentRecord | null>(null);
-  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
   const [screenshotModalApt, setScreenshotModalApt] = useState<AppointmentRecord | null>(null);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState<boolean>(false);
   const [isClearing, setIsClearing] = useState<boolean>(false);
@@ -731,7 +728,7 @@ export const BookingsManager = React.memo(function BookingsManager({
         <div className="animate-item flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-white/10 bg-slate-900/60 p-3.5 backdrop-blur-xl shadow-lg">
           <div className="space-y-0.5">
             <p className="text-xs font-bold text-white">إجراءات الحجوزات والتواصل</p>
-            <p className="text-[10px] text-slate-400">إشعارات طوارئ جماعية وتقارير PDF</p>
+            <p className="text-[10px] text-slate-400">تقارير PDF وإدارة الحجوزات</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 w-full justify-end">
             <button
@@ -741,15 +738,6 @@ export const BookingsManager = React.memo(function BookingsManager({
             >
               <RotateCcw className="h-3.5 w-3.5 text-red-400" />
               <span>تصفية الحجوزات</span>
-            </button>
-
-            <button
-              onClick={() => setIsBroadcastModalOpen(true)}
-              title="أداة إرسال إشعارات الطوارئ ورسائل الواتساب الجماعية"
-              className="flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/20 px-3 py-2 text-xs font-black text-teal-300 transition hover:bg-teal-500/30 hover:border-teal-300 shadow-sm"
-            >
-              <Megaphone className="h-3.5 w-3.5 text-[#00B8A9]" />
-              <span>إشعار جماعي / طوارئ</span>
             </button>
 
             <button
@@ -1505,14 +1493,6 @@ export const BookingsManager = React.memo(function BookingsManager({
       <WhatsAppTemplateModal
         appointment={whatsAppModalAppointment}
         onClose={() => setWhatsAppModalAppointment(null)}
-        onNotify={onNotify}
-      />
-
-      {/* Bulk Emergency Broadcast / Notification Tool */}
-      <EmergencyBroadcastModal
-        isOpen={isBroadcastModalOpen}
-        onClose={() => setIsBroadcastModalOpen(false)}
-        appointments={appointments}
         onNotify={onNotify}
       />
 
