@@ -569,7 +569,7 @@ export async function updateWeeklyScheduleDay(
     if (targetItem) {
       await logAdminActivity(
         'schedule_updated',
-        `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بفرع ${targetItem.branchNameAr || targetItem.branchId}`,
+        `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بفرع ${resolveBranchName(targetItem.branchId)}`,
         'schedule',
         String(dayIndex)
       );
@@ -635,7 +635,7 @@ export async function updateWeeklyScheduleDay(
 
     await logAdminActivity(
       'schedule_updated',
-      `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بـ ${targetItem.branchNameAr || targetItem.branchId}`,
+      `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بـ ${resolveBranchName(targetItem.branchId)}`,
       'schedule',
       String(dayIndex)
     );
@@ -1057,7 +1057,7 @@ export async function saveDailyBranchOverride(payload: {
 
     await logAdminActivity(
       'branch_swapped',
-      `تم تغيير فرع يوم ${overrideRecord.override_date} إلى ${overrideRecord.branch_name_ar || overrideRecord.override_branch_id}`,
+      `تم تغيير فرع يوم ${overrideRecord.override_date} إلى ${overrideRecord.branch_name || overrideRecord.branch_name_ar || resolveBranchName(overrideRecord.branch_id)}`,
       'daily_override',
       overrideRecord.override_date
     );

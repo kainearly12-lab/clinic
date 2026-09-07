@@ -131,7 +131,7 @@ export async function exportAppointmentsPdfReport({
   };
 
   const safeAmount = (a: AppointmentRecord) => {
-    const raw = a.amount ?? (a as Record<string, unknown>).amount_paid;
+    const raw = a.amount ?? a.amount_paid;
     return typeof raw === 'string'
       ? parseFloat(raw.replace(/[^0-9.]/g, '')) || 0
       : Number(raw) || Number(a.amount) || 0;

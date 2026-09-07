@@ -55,6 +55,8 @@ export interface DailyBranchOverrideRecord {
   override_date: string; // ISO date 'YYYY-MM-DD'
   branch_id: string; // The branch active on this day
   branch_name?: string; // Arabic branch name stored in daily_branch_overrides table
+  branch_name_ar?: string; // Arabic branch name alias
+  override_branch_id?: string; // Branch ID alias
   original_branch_id?: string | null;
   reason?: string | null;
   reason_ar?: string | null;

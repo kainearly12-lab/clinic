@@ -544,7 +544,7 @@ export const BookingsManager = React.memo(function BookingsManager({
       await loadData();
       onNotify('error', 'فشل تغيير الحالة');
     }
-  }, [getStatusLabel, loadData, onNotify]);
+  }, [getStatusLabel, loadData, onNotify, triggerWhatsAppConfirmation]);
 
   // Quick Payment Toggle
   const handleTogglePayment = useCallback((apt: AppointmentRecord) => {

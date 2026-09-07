@@ -10,6 +10,11 @@ interface SiteSettingsContextType {
   logoUrl: string;
   clinicName: string;
   tagline: string;
+  phone: string;
+  email: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  vezeetaUrl: string;
   isLoading: boolean;
   updateSettings: (newSettings: Partial<SiteSettingsRecord>) => Promise<{ success: boolean; error?: string }>;
   refreshSettings: () => Promise<void>;
@@ -27,6 +32,9 @@ const defaultSettings: SiteSettingsRecord = {
   primary_color: '#00B8A9',
   secondary_color: '#0F766E',
   maintenance_mode: false,
+  facebook_url: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
+  instagram_url: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  vezeeta_url: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
 
   // Compatibility aliases
   clinic_name_ar: 'عيادات Androderma',
@@ -43,6 +51,11 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
   logoUrl: CLINIC_LOGO,
   clinicName: 'عيادات Androderma',
   tagline: 'عناية متقدمة بالجلدية والليزر والتجميل الطبي',
+  phone: '01154021247',
+  email: 'info@androderma.com',
+  facebookUrl: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
+  instagramUrl: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  vezeetaUrl: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
   isLoading: false,
   updateSettings: async () => ({ success: true }),
   refreshSettings: async () => {},
@@ -118,6 +131,11 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
 
   const clinicName = settings.site_title || settings.clinic_name_ar || 'عيادات Androderma';
   const tagline = settings.tagline || settings.tagline_ar || 'عناية متقدمة بالجلدية والليزر والتجميل الطبي';
+  const phone = settings.unified_hotline || settings.whatsapp_number || '01154021247';
+  const email = settings.official_email || settings.email_contact || 'info@androderma.com';
+  const facebookUrl = settings.facebook_url || 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#';
+  const instagramUrl = settings.instagram_url || 'https://www.instagram.com/androdermaclinic/?hl=ar';
+  const vezeetaUrl = settings.vezeeta_url || 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology';
 
   return (
     <SiteSettingsContext.Provider
@@ -126,6 +144,11 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         logoUrl: currentLogo,
         clinicName,
         tagline,
+        phone,
+        email,
+        facebookUrl,
+        instagramUrl,
+        vezeetaUrl,
         isLoading,
         updateSettings: handleUpdateSettings,
         refreshSettings: loadSettings,

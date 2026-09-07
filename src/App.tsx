@@ -27,6 +27,7 @@ import { BentoFAQAccordion } from '@/components/BentoFAQAccordion';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { AdminAuthModal } from '@/components/admin/AdminAuthModal';
 import { AboutPage } from '@/pages/AboutPage';
+import { BookingPage } from '@/pages/BookingPage';
 import { clinic } from '@/data/clinicData';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -220,9 +221,20 @@ function App() {
     window.location.pathname.startsWith('/about') ||
     window.location.hash === '#about'
   );
+  const isInitialBookPath = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/book') ||
+    window.location.pathname.startsWith('/checkout') ||
+    window.location.hash === '#book'
+  );
 
-  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin' | 'about'>(
-    isInitialAdminPath ? 'admin' : isInitialAboutPath ? 'about' : 'home'
+  const [activeTab, setActiveTab] = useState<'home' | 'diagnostic' | 'admin' | 'about' | 'book'>(
+    isInitialAdminPath
+      ? 'admin'
+      : isInitialAboutPath
+      ? 'about'
+      : isInitialBookPath
+      ? 'book'
+      : 'home'
   );
   const [bookingOpen, setBookingOpen] = useState(false);
   const [initialService, setInitialService] = useState('');
@@ -296,6 +308,10 @@ function App() {
         setActiveTab('about');
         setIsAdminAuthModalOpen(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (path.startsWith('/book') || path.startsWith('/checkout') || hash === '#book') {
+        setActiveTab('book');
+        setIsAdminAuthModalOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (hash === '#diagnostic-quiz') {
         setActiveTab('diagnostic');
         setIsAdminAuthModalOpen(false);
@@ -352,19 +368,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => {
+  const handleSelectTab = (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book', targetAnchor?: string) => {
     if (tab === 'admin') {
       handleTriggerAdminAccess();
       return;
     }
 
-    const targetPath = tab === 'about' ? '/about' : '/';
+    const targetPath = tab === 'about' ? '/about' : tab === 'book' ? '/book' : '/';
     if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
 
     setActiveTab(tab);
-    if (tab === 'diagnostic' || tab === 'about') {
+    if (tab === 'diagnostic' || tab === 'about' || tab === 'book') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (targetAnchor) {
       setTimeout(() => {
@@ -383,7 +399,12 @@ function App() {
   const handleOpenBooking = (serviceName = '', branchId = '') => {
     setInitialService(serviceName);
     setInitialBranch(branchId);
-    setBookingOpen(true);
+    if (typeof window !== 'undefined' && window.location.pathname !== '/book') {
+      window.history.pushState(null, '', '/book');
+    }
+    setActiveTab('book');
+    setBookingOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Dedicated Route: `/admin` authenticated view
@@ -393,6 +414,17 @@ function App() {
         onBackToSite={() => handleSelectTab('home')}
         onSignOut={handleAdminSignOut}
         adminEmail={adminUserEmail}
+      />
+    );
+  }
+
+  // Dedicated Route: `/book` standalone high-converting booking page
+  if (activeTab === 'book') {
+    return (
+      <BookingPage
+        initialService={initialService}
+        initialBranch={initialBranch}
+        onNavigateHome={(anchor) => handleSelectTab('home', anchor)}
       />
     );
   }

@@ -20,6 +20,9 @@ export interface SiteSettingsRecord {
   primary_color?: string;
   secondary_color?: string;
   maintenance_mode?: boolean;
+  facebook_url?: string;
+  instagram_url?: string;
+  vezeeta_url?: string;
   // Compatibility & UI aliases
   clinic_name_ar?: string;
   tagline_ar?: string;
@@ -60,7 +63,9 @@ export interface AppointmentRecord {
   appointment_time: string; // e.g. '05:30 PM' or '17:30'
   status: AppointmentStatus;
   payment_status: PaymentStatus;
-  amount: number; // in EGP
+  amount: number | string; // in EGP
+  amount_paid?: number | string;
+  price?: number | string;
   payment_screenshot_url?: string | null;
   payment_method?: 'vodafone_cash' | 'instapay' | 'cash' | string;
   notes?: string | null;

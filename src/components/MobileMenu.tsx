@@ -27,7 +27,7 @@ interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
   active: string;
-  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => void;
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
 }
 

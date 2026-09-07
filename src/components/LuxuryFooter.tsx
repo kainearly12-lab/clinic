@@ -9,9 +9,12 @@ interface LuxuryFooterProps {
 }
 
 export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
-  const { logoUrl, clinicName } = useSiteSettings();
+  const { logoUrl, clinicName, phone: dynamicPhone, email: dynamicEmail, facebookUrl, instagramUrl, vezeetaUrl } = useSiteSettings();
   const { language, t, isRTL } = useLanguage();
   const ArrowIcon = isRTL ? ArrowUpLeft : ArrowUpRight;
+
+  const displayPhone = dynamicPhone || clinic.phoneDisplay;
+  const activeEmail = dynamicEmail || clinic.email;
 
   return (
     <footer className="relative bg-[#121417] text-white overflow-hidden pt-16 sm:pt-20 pb-28 sm:pb-12 border-t border-charcoal-800">
@@ -53,41 +56,45 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
             {/* Social Media & Contact Shortcuts */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
               <div className="flex items-center gap-2.5">
-                <a
-                  href="https://www.instagram.com/androdermaclinic/?hl=ar"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
-                >
-                  <Instagram className="h-4 w-4" />
-                </a>
-                <a
-                  href="https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
-                >
-                  <Facebook className="h-4 w-4" />
-                </a>
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
+                  >
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                )}
+                {facebookUrl && (
+                  <a
+                    href={facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all duration-300 hover:scale-110 hover:bg-teal-600 hover:text-white hover:border-teal-500 shadow-sm"
+                  >
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                )}
               </div>
 
               <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
                 <a
-                  href={`tel:${clinic.phone}`}
+                  href={`tel:${displayPhone}`}
                   className="inline-flex items-center gap-1.5 hover:text-teal-300 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5 text-teal-400" />
-                  <span dir="ltr">{clinic.phoneDisplay}</span>
+                  <span dir="ltr">{displayPhone}</span>
                 </a>
                 <span className="text-white/20">•</span>
                 <a
-                  href={`mailto:${clinic.email}`}
+                  href={`mailto:${activeEmail}`}
                   className="inline-flex items-center gap-1.5 hover:text-teal-300 transition-colors"
                 >
                   <Mail className="h-3.5 w-3.5 text-teal-400" />
-                  {clinic.email}
+                  {activeEmail}
                 </a>
               </div>
             </div>
@@ -98,7 +105,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                 {language === 'en' ? 'Official Booking Channels & Medical Directories:' : 'قنوات الحجز المعتمدة عبر المنصات الطبية:'}
               </span>
               <a
-                href="https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology"
+                href={vezeetaUrl || "https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group inline-flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-[#0070CD]/15 border border-white/15 hover:border-[#0070CD]/50 transition-all duration-300 shadow-sm hover:shadow-[0_0_20px_rgba(0,112,205,0.2)]"

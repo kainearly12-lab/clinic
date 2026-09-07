@@ -70,6 +70,9 @@ let localSettings: SiteSettingsRecord = {
   primary_color: '#00B8A9',
   secondary_color: '#0F766E',
   maintenance_mode: false,
+  facebook_url: 'https://web.facebook.com/androdermaclinic/?locale=ar_AR&_rdc=1&_rdr#',
+  instagram_url: 'https://www.instagram.com/androdermaclinic/?hl=ar',
+  vezeeta_url: 'https://www.vezeeta.com/en/dr/Clinic-Androderma-Laser-Clinic-Androderma-Laser-Clinic-Dermatology',
 
   // Aliases for compatibility
   clinic_name_ar: 'عيادات Androderma',
@@ -435,6 +438,9 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
         ? data.maintenance_mode
         : (data.is_maintenance_mode !== undefined ? data.is_maintenance_mode : localSettings.maintenance_mode)
     );
+    const facebookUrl = data.facebook_url || data.facebook || localSettings.facebook_url;
+    const instagramUrl = data.instagram_url || data.instagram || localSettings.instagram_url;
+    const vezeetaUrl = data.vezeeta_url || data.vezeeta || localSettings.vezeeta_url;
 
     const record: SiteSettingsRecord = {
       id: String(data.id || '1'),
@@ -448,6 +454,9 @@ export async function fetchSiteSettings(): Promise<SiteSettingsRecord> {
       primary_color: primaryColor,
       secondary_color: secondaryColor,
       maintenance_mode: maintenanceMode,
+      facebook_url: facebookUrl,
+      instagram_url: instagramUrl,
+      vezeeta_url: vezeetaUrl,
 
       // UI and backwards-compatible aliases
       clinic_name_ar: siteTitle,

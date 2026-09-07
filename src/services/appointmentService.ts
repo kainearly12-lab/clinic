@@ -714,7 +714,7 @@ export function computeAnalytics(appointments: AppointmentRecord[]): AnalyticsSu
     }
 
     // Safely parse monetary amount field (e.g. Number(item.amount) || 0)
-    const rawAmt = apt.amount ?? (apt as Record<string, unknown>).amount_paid ?? (apt as Record<string, unknown>).price;
+    const rawAmt = apt.amount ?? apt.amount_paid ?? apt.price;
     const amt = typeof rawAmt === 'string'
       ? parseFloat(rawAmt.replace(/[^0-9.]/g, '')) || 0
       : Number(rawAmt) || Number(apt.amount) || 0;
@@ -819,3 +819,59 @@ export function computeAnalytics(appointments: AppointmentRecord[]): AnalyticsSu
     serviceBreakdown,
   };
 }
+
+/**
+ * Returns the count of confirmed appointments for a specific branch on today's date.
+ * Strictly excludes pending, cancelled, or other statuses.
+ */
+export async function getTodayConfirmedQueueCount(
+  branchId: string,
+  dateStr?: string
+): Promise<number> {
+  const targetDate = dateStr || new Date().toISOString().split('T')[0];
+  const supabase = getSupabaseClient();
+  const targetBranchUUID = resolveBranchUuid(branchId);
+
+  if (!supabase) {
+    return localAppointments.filter(
+      (a) =>
+        a.appointment_date === targetDate &&
+        (a.branch_id === branchId || a.branch_id === targetBranchUUID) &&
+        a.status === 'confirmed'
+    ).length;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('id, branch_id, status, appointment_date')
+      .eq('appointment_date', targetDate)
+      .eq('status', 'confirmed');
+
+    if (error || !data) {
+      // Fallback to local filtering
+      return localAppointments.filter(
+        (a) =>
+          a.appointment_date === targetDate &&
+          (a.branch_id === branchId || a.branch_id === targetBranchUUID) &&
+          a.status === 'confirmed'
+      ).length;
+    }
+
+    return data.filter(
+      (a) =>
+        a.branch_id === branchId ||
+        a.branch_id === targetBranchUUID ||
+        (targetBranchUUID && a.branch_id?.toLowerCase() === targetBranchUUID.toLowerCase())
+    ).length;
+  } catch (err) {
+    console.warn('Error fetching confirmed queue count:', err);
+    return localAppointments.filter(
+      (a) =>
+        a.appointment_date === targetDate &&
+        (a.branch_id === branchId || a.branch_id === targetBranchUUID) &&
+        a.status === 'confirmed'
+    ).length;
+  }
+}
+

@@ -12,8 +12,8 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface HeaderProps {
-  activeTab?: 'home' | 'diagnostic' | 'admin' | 'about';
-  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about', targetAnchor?: string) => void;
+  activeTab?: 'home' | 'diagnostic' | 'admin' | 'about' | 'book';
+  onSelectTab?: (tab: 'home' | 'diagnostic' | 'admin' | 'about' | 'book', targetAnchor?: string) => void;
   onOpenBooking?: () => void;
 }
 
@@ -90,8 +90,9 @@ export function Header({ activeTab = 'home', onSelectTab, onOpenBooking }: Heade
   const handleOpenBookingModal = () => {
     if (onOpenBooking) {
       onOpenBooking();
-    } else {
-      setBookingOpen(true);
+    } else if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/book');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
 
