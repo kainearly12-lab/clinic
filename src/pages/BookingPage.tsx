@@ -89,6 +89,7 @@ export function BookingPage({
   // Payment Settings (Step 2)
   const [paymentSettings, setPaymentSettings] = useState<ClinicPaymentSettings | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'instapay' | 'vodafone_cash'>('instapay');
+  const [senderAccount, setSenderAccount] = useState<string>('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Receipt File & Upload
@@ -137,6 +138,7 @@ export function BookingPage({
 
   const consultationPrice = paymentSettings?.consultation_price || 1200;
   const currency = paymentSettings?.currency || 'ج.م';
+  const walletMethodName = paymentSettings?.wallet_method_name || 'فودافون كاش';
 
   // Active Payment Accounts
   const vodafoneAccounts =
@@ -280,6 +282,8 @@ export function BookingPage({
         amount: consultationPrice,
         payment_screenshot_url: uploadedScreenshotUrl,
         payment_method: paymentMethod,
+        sender_account: senderAccount.trim() ? senderAccount.trim() : null,
+        payment_notes: senderAccount.trim() ? `المحوّل منه: ${senderAccount.trim()}` : null,
         notes: notes.trim() ? notes.trim() : null,
       };
 
@@ -291,7 +295,12 @@ export function BookingPage({
 
       // 4. Query confirmed queue count for today and calculate position
       // Position = confirmed count + 1 (excluding pending/cancelled)
-      const confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, todayIso);
+      let confirmedCount = 0;
+      try {
+        confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, todayIso);
+      } catch (countErr) {
+        console.warn('Queue count lookup fallback:', countErr);
+      }
       const calculatedQueuePosition = confirmedCount + 1;
       setConfirmedQueuePosition(calculatedQueuePosition);
 
@@ -315,7 +324,8 @@ export function BookingPage({
 
   // WhatsApp Link for Confirmation
   const generateWhatsAppMessage = () => {
-    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}. رقمي في قائمة الحجز المؤكد اليوم: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
+    const senderInfo = senderAccount.trim() ? ` [محوّل من: ${senderAccount.trim()}]` : '';
+    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز المؤكد اليوم: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
     const targetPhone = currentBranch?.phones[0]?.number || clinicPhone || '201154021247';
     const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.startsWith('0') ? `2${cleanPhone}` : cleanPhone;
@@ -652,7 +662,7 @@ export function BookingPage({
                       <ChevronLeft className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-1" />
                     </button>
                     <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-2.5">
-                      سيتم الانتقال للخطوة التالية لاختيار وسيلة السداد (إنستاباي أو فودافون كاش)
+                      سيتم الانتقال للخطوة التالية لاختيار وسيلة السداد (إنستاباي أو {walletMethodName})
                     </p>
                   </div>
                 </motion.div>
@@ -681,7 +691,7 @@ export function BookingPage({
                       سداد رسوم الكشف وتأكيد الموعد
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                      يرجى تحويل رسوم الكشف الطبي عبر تطبيق إنستاباي أو فودافون كاش وإرفاق صورة الإيصال.
+                      يرجى تحويل رسوم الكشف الطبي عبر تطبيق إنستاباي أو {walletMethodName} وإرفاق صورة الإيصال.
                     </p>
                   </div>
 
@@ -747,14 +757,14 @@ export function BookingPage({
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base">
-                            فودافون كاش (Vodafone)
+                            {walletMethodName}
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
                             محافظ إلكترونية
                           </span>
                         </div>
                         <span className="text-xs text-slate-600 dark:text-slate-400">
-                          تحويل إلى رقم محفظة الكاش المعتمدة للعيادة
+                          تحويل إلى رقم {walletMethodName} المعتمد للعيادة
                         </span>
                       </button>
                     </div>
@@ -764,7 +774,7 @@ export function BookingPage({
                   <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black tracking-wider uppercase text-slate-500 dark:text-slate-400">
-                        {paymentMethod === 'instapay' ? 'بيانات حساب إنستاباي' : 'أرقام محافظ فودافون كاش المتاحة'}
+                        {paymentMethod === 'instapay' ? 'بيانات حساب إنستاباي' : `أرقام ${walletMethodName} المتاحة`}
                       </span>
                       <span className="text-xs text-teal-600 dark:text-teal-400 font-semibold">
                         اضغط لنسخ الرقم فوراً
@@ -861,6 +871,30 @@ export function BookingPage({
                         <li>ارفق صورة الإيصال بالأسفل واضغط تأكيد الحجز.</li>
                       </ol>
                     </div>
+                  </div>
+
+                  {/* Sender Account Input Field */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Smartphone className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                        رقم المحفظة أو عنوان InstaPay المحوّل منه
+                      </span>
+                      <span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+                        لتسهيل وتأكيد مطابقة الإيصال
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={senderAccount}
+                      onChange={(e) => setSenderAccount(e.target.value)}
+                      placeholder="أدخل الرقم أو الـ IPA الذي قمت بالتحويل منه (مثال: 01012345678 أو name@instapay)"
+                      dir="ltr"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-sans placeholder:text-xs transition"
+                    />
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      يساعد هذا الرقم موظف الاستقبال على سرعة مطابقة إشعار التحويل البنكي أو المحفظة مع موعدك وتأكيده فوراً.
+                    </p>
                   </div>
 
                   {/* Receipt Upload Dropzone */}
@@ -1050,9 +1084,17 @@ export function BookingPage({
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600 dark:text-slate-400">وسيلة الدفع:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        {paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : 'فودافون كاش (Vodafone Cash)'}
+                        {paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : `${walletMethodName} (المحفظة الإلكترونية)`}
                       </span>
                     </div>
+                    {senderAccount && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">الحساب المحوّل منه:</span>
+                        <span className="font-mono font-bold text-teal-700 dark:text-teal-400" dir="ltr">
+                          {senderAccount}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600 dark:text-slate-400">رسوم الكشف:</span>
                       <span className="font-black text-teal-700 dark:text-teal-400">

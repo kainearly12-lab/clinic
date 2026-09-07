@@ -1056,27 +1056,38 @@ export const BookingsManager = React.memo(function BookingsManager({
                         </button>
 
                         {/* Payment Method and Receipt Button */}
-                        <div className="flex items-center gap-1.5 text-[10px]">
-                          {apt.payment_method && (
-                            <span className="text-slate-400 font-medium">
-                              {apt.payment_method === 'vodafone_cash'
-                                ? '🔴 فودافون كاش'
-                                : apt.payment_method === 'instapay'
-                                ? '🟣 إنستاباي'
-                                : apt.payment_method}
-                            </span>
-                          )}
+                        <div className="flex flex-col gap-0.5 text-[10px]">
+                          <div className="flex items-center gap-1.5">
+                            {apt.payment_method && (
+                              <span className="text-slate-400 font-medium">
+                                {apt.payment_method === 'vodafone_cash'
+                                  ? '🔴 محفظة إلكترونية'
+                                  : apt.payment_method === 'instapay'
+                                  ? '🟣 إنستاباي'
+                                  : apt.payment_method}
+                              </span>
+                            )}
 
-                          {apt.payment_screenshot_url && (
-                            <button
-                              type="button"
-                              onClick={() => setScreenshotModalApt(apt)}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition font-bold"
-                              title="معاينة إيصال التحويل المرفق"
+                            {apt.payment_screenshot_url && (
+                              <button
+                                type="button"
+                                onClick={() => setScreenshotModalApt(apt)}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 hover:bg-teal-500/30 transition font-bold"
+                                title="معاينة إيصال التحويل المرفق"
+                              >
+                                <ImageIcon className="w-3 h-3" />
+                                <span>الإيصال</span>
+                              </button>
+                            )}
+                          </div>
+                          {apt.sender_account && (
+                            <span
+                              className="text-[10px] font-mono text-teal-300/90 truncate max-w-[130px] block"
+                              title={`الحساب المحوّل منه: ${apt.sender_account}`}
+                              dir="ltr"
                             >
-                              <ImageIcon className="w-3 h-3" />
-                              <span>الإيصال</span>
-                            </button>
+                              من: {apt.sender_account}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1530,6 +1541,15 @@ export const BookingsManager = React.memo(function BookingsManager({
                 <p className="text-xs text-slate-400">لا توجد صورة إيصال مرفقة</p>
               )}
             </div>
+
+            {screenshotModalApt.sender_account && (
+              <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/30 flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold">الحساب أو المحفظة المحوّل منها:</span>
+                <span className="font-mono font-black text-teal-300" dir="ltr">
+                  {screenshotModalApt.sender_account}
+                </span>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center justify-between gap-3 pt-2">

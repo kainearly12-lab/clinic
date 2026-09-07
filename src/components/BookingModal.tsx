@@ -137,6 +137,7 @@ export function BookingModal({
   const [paymentSettings, setPaymentSettings] = useState<ClinicPaymentSettings>({
     consultation_price: 1200,
     currency: 'ج.م',
+    wallet_method_name: 'فودافون كاش',
     vodafone_cash_number: '01154021247',
     instapay_address: 'androderma@instapay',
     instapay_number: '01154021247',
@@ -1057,8 +1058,12 @@ export function BookingModal({
                         <Smartphone className="w-4 h-4" />
                       </div>
                       <div className="overflow-hidden">
-                        <span className="text-xs font-black block">فودافون كاش</span>
-                        <span className="text-[10px] text-slate-400 block truncate">Vodafone Cash</span>
+                        <span className="text-xs font-black block">
+                          {paymentSettings.wallet_method_name || 'فودافون كاش'}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          {paymentSettings.wallet_method_name || 'Vodafone Cash'}
+                        </span>
                       </div>
                     </button>
 
@@ -1090,7 +1095,9 @@ export function BookingModal({
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
                           <Smartphone className="w-3.5 h-3.5 text-red-400" />
-                          <span>محافظ فودافون كاش المعتمدة للتحويل ({paymentSettings.vodafone_cash_accounts?.filter((a) => a.isActive).length || 1}):</span>
+                          <span>
+                            حسابات {paymentSettings.wallet_method_name || 'المحافظ الإلكترونية'} المعتمدة ({paymentSettings.vodafone_cash_accounts?.filter((a) => a.isActive).length || 1}):
+                          </span>
                         </span>
                         <span className="text-[10px] text-slate-400">اختر أي رقم وقم بالتحويل إليه</span>
                       </div>

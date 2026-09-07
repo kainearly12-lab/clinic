@@ -13,6 +13,7 @@ export interface ClinicPaymentSettings {
   id?: string | number;
   consultation_price: number;
   currency: string;
+  wallet_method_name?: string; // e.g. 'فودافون كاش' | 'إتصالات كاش' | 'أورنج كاش' | 'المحافظ الإلكترونية'
   vodafone_cash_number: string;
   instapay_address: string;
   instapay_number: string;
@@ -62,6 +63,7 @@ const DEFAULT_PAYMENT_SETTINGS: ClinicPaymentSettings = {
   id: 1,
   consultation_price: 1200,
   currency: 'ج.م',
+  wallet_method_name: 'فودافون كاش',
   vodafone_cash_number: '01154021247',
   instapay_address: 'androderma@instapay',
   instapay_number: '01154021247',
@@ -268,10 +270,22 @@ export async function fetchClinicPaymentSettings(): Promise<ClinicPaymentSetting
       rawInstaSingle ||
       DEFAULT_PAYMENT_SETTINGS.instapay_address;
 
+    const dbWalletMethodName =
+      data.wallet_method_name ||
+      data.wallet_name ||
+      (data.vodafone_cash_numbers &&
+      typeof data.vodafone_cash_numbers === 'object' &&
+      !Array.isArray(data.vodafone_cash_numbers)
+        ? data.vodafone_cash_numbers.wallet_method_name || data.vodafone_cash_numbers.wallet_name
+        : null) ||
+      DEFAULT_PAYMENT_SETTINGS.wallet_method_name ||
+      'فودافون كاش';
+
     const resolved: ClinicPaymentSettings = {
       id: data.id || 1,
       consultation_price: dbPrice,
       currency: dbCurrency,
+      wallet_method_name: dbWalletMethodName,
       vodafone_cash_number: primaryVodafone,
       instapay_address: primaryInstapay,
       instapay_number: primaryVodafone,
@@ -336,10 +350,16 @@ export async function updateClinicPaymentSettings(
       : Number(cachedSettings.consultation_price) || 1200;
 
   const nextCurrency = (updates.currency || cachedSettings.currency || 'ج.م').trim();
+  const nextWalletMethodName = (
+    updates.wallet_method_name ||
+    cachedSettings.wallet_method_name ||
+    'فودافون كاش'
+  ).trim();
 
   const nextSettings: ClinicPaymentSettings = {
     ...cachedSettings,
     ...updates,
+    wallet_method_name: nextWalletMethodName,
     consultation_price: nextConsultationPrice,
     currency: nextCurrency,
     vodafone_cash_number: firstActiveVodafone,
@@ -361,7 +381,7 @@ export async function updateClinicPaymentSettings(
 
   await logAdminActivity(
     'settings_updated',
-    `تم تحديث إعدادات الدفع وقيمة الكشف (${nextSettings.consultation_price} ${nextSettings.currency}) وإدارة حسابات فودافون كاش (${nextSettings.vodafone_cash_accounts.length}) وإنستاباي (${nextSettings.instapay_accounts.length})`,
+    `تم تحديث إعدادات الدفع (طريقة المحافظ: ${nextWalletMethodName}) وقيمة الكشف (${nextSettings.consultation_price} ${nextSettings.currency}) وإدارة حسابات ${nextWalletMethodName} (${nextSettings.vodafone_cash_accounts.length}) وإنستاباي (${nextSettings.instapay_accounts.length})`,
     'payment_settings',
     'clinic_payment_settings'
   );
@@ -374,24 +394,38 @@ export async function updateClinicPaymentSettings(
     const targetId = cachedSettings.id && !isNaN(Number(cachedSettings.id)) ? Number(cachedSettings.id) : 1;
 
     // Send payload matching the exact clinic_payment_settings table columns
-    const payload = {
+    const payload: Record<string, unknown> = {
       id: targetId,
       consultation_price: nextConsultationPrice,
       currency: nextCurrency,
+      wallet_method_name: nextWalletMethodName,
       vodafone_cash_number: firstActiveVodafone.slice(0, 50),
       instapay_account: firstActiveInstapay.slice(0, 50),
       vodafone_cash_numbers: {
         vodafone: nextVodafoneAccounts,
         instapay: nextInstapayAccounts,
+        wallet_method_name: nextWalletMethodName,
       },
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('clinic_payment_settings')
       .upsert([payload])
       .select()
       .maybeSingle();
+
+    if (error && (error.message?.includes('wallet_method_name') || error.code === '42703')) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.wallet_method_name;
+      const retry = await supabase
+        .from('clinic_payment_settings')
+        .upsert([fallbackPayload])
+        .select()
+        .maybeSingle();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.warn('Supabase direct upsert clinic_payment_settings error:', error);

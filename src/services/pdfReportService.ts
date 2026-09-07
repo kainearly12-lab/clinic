@@ -119,29 +119,7 @@ export async function exportAppointmentsPdfReport({
     (a.status as string) === 'مؤكد' ||
     (a.status as string) === 'مكتمل';
 
-  const isPaid = (a: AppointmentRecord) => {
-    const ps = String(a.payment_status || '').toLowerCase().trim();
-    return (
-      ps === 'paid' ||
-      ps === 'مدفوع' ||
-      ps === 'تم الدفع' ||
-      ps === 'مكتمل' ||
-      isConfirmed(a)
-    );
-  };
-
-  const safeAmount = (a: AppointmentRecord) => {
-    const raw = a.amount ?? a.amount_paid;
-    return typeof raw === 'string'
-      ? parseFloat(raw.replace(/[^0-9.]/g, '')) || 0
-      : Number(raw) || Number(a.amount) || 0;
-  };
-
   const confirmedCount = reportAppointments.filter(isConfirmed).length;
-  const paidAppointments = reportAppointments.filter(isPaid);
-  const paidRevenue = paidAppointments.reduce((sum, a) => sum + safeAmount(a), 0);
-  const unpaidAppointments = reportAppointments.filter((a) => !isPaid(a));
-  const pendingRevenue = unpaidAppointments.reduce((sum, a) => sum + safeAmount(a), 0);
 
   const displayBranchName = resolveBranchName(branchId, branchName);
   const now = new Date();
@@ -185,38 +163,36 @@ export async function exportAppointmentsPdfReport({
             const statusInfo = getArabicStatus(apt.status);
             const paymentInfo = getArabicPaymentStatus(apt.payment_status);
             const branchLabel = resolveBranchName(apt.branch_id, apt.branch_name_ar);
-            const feeFormatted = Number(apt.amount || 0).toLocaleString('ar-EG');
             const paymentMethodLabel = getArabicPaymentMethod(apt.payment_method);
             const notesText = apt.notes || apt.medical_notes || '-';
             const rowBg = index % 2 === 1 ? '#f8fafc' : '#ffffff';
 
             return `
               <tr style="background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0; font-size: 11px; letter-spacing: 0px !important;">
-                <td style="padding: 10px 8px; text-align: center; font-weight: 700; color: #475569; width: 32px;">${index + 1}</td>
-                <td style="padding: 10px 8px; font-weight: 800; color: #0f172a; width: 140px;">${apt.patient_name || 'غير محدد'}</td>
-                <td style="padding: 10px 8px; font-family: sans-serif !important; direction: ltr; text-align: right; color: #334155; font-weight: 600; width: 110px;">${apt.patient_phone || '-'}</td>
-                <td style="padding: 10px 8px; color: #1e293b; font-weight: 600; width: 150px;">
+                <td style="padding: 10px 8px; text-align: center; font-weight: 800; color: #008779; width: 38px; font-size: 12px;" class="latin-font">${index + 1}</td>
+                <td style="padding: 10px 8px; font-weight: 800; color: #0f172a; width: 155px;">${apt.patient_name || 'غير محدد'}</td>
+                <td style="padding: 10px 8px; font-family: sans-serif !important; direction: ltr; text-align: right; color: #334155; font-weight: 600; width: 115px;">${apt.patient_phone || '-'}</td>
+                <td style="padding: 10px 8px; color: #1e293b; font-weight: 600; width: 165px;">
                   <div>${apt.service_name || 'كشف واستشارة جلدية'}</div>
                   ${apt.visit_type ? `<div style="font-size: 9.5px; color: #008779; font-weight: 700; margin-top: 2px;">${apt.visit_type}</div>` : ''}
                 </td>
-                <td style="padding: 10px 8px; color: #475569; font-weight: 600; width: 120px;">${branchLabel}</td>
-                <td style="padding: 10px 8px; color: #334155; width: 130px;">
+                <td style="padding: 10px 8px; color: #475569; font-weight: 600; width: 135px;">${branchLabel}</td>
+                <td style="padding: 10px 8px; color: #334155; width: 140px;">
                   <div style="font-weight: 700;">${apt.appointment_date}</div>
                   <div style="font-size: 10px; color: #64748b; margin-top: 1px;">${apt.appointment_time || ''}</div>
                 </td>
-                <td style="padding: 10px 8px; text-align: center; font-weight: 800; color: #0f172a; width: 95px; font-family: sans-serif !important;">${feeFormatted} ج.م</td>
-                <td style="padding: 10px 6px; text-align: center; width: 90px;">
+                <td style="padding: 10px 6px; text-align: center; width: 95px;">
                   <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; background-color: ${statusInfo.bg}; color: ${statusInfo.color}; border: 1px solid ${statusInfo.border};">
                     ${statusInfo.label}
                   </span>
                 </td>
-                <td style="padding: 10px 6px; text-align: center; width: 95px;">
+                <td style="padding: 10px 6px; text-align: center; width: 100px;">
                   <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; background-color: ${paymentInfo.bg}; color: ${paymentInfo.color}; border: 1px solid ${paymentInfo.border};">
                     ${paymentInfo.label}
                   </span>
                   <div style="font-size: 9px; color: #64748b; margin-top: 2px;">${paymentMethodLabel}</div>
                 </td>
-                <td style="padding: 10px 8px; color: #64748b; font-size: 10px; line-height: 1.4; max-width: 140px; word-break: break-word;">
+                <td style="padding: 10px 8px; color: #64748b; font-size: 10px; line-height: 1.4; max-width: 160px; word-break: break-word;">
                   ${notesText}
                 </td>
               </tr>
@@ -225,7 +201,7 @@ export async function exportAppointmentsPdfReport({
           .join('')
       : `
         <tr>
-          <td colspan="10" style="padding: 32px 16px; text-align: center; color: #64748b; font-size: 13px; font-weight: 700; background-color: #f8fafc; letter-spacing: 0px !important;">
+          <td colspan="9" style="padding: 32px 16px; text-align: center; color: #64748b; font-size: 13px; font-weight: 700; background-color: #f8fafc; letter-spacing: 0px !important;">
             لا توجد سجلات حجوزات مطابقة لنطاق الفلتر المحدد
           </td>
         </tr>
@@ -262,7 +238,7 @@ export async function exportAppointmentsPdfReport({
               </h1>
             </div>
             <p style="margin: 0 0 8px 0; font-size: 12.5px; color: #00B8A9; font-weight: 700; letter-spacing: 0px !important;">
-              بيان الحجوزات والإيرادات الإدارية الرسمية
+              جدول أدوار وحجوزات العيادة اليومية
             </p>
             <div style="display: flex; align-items: center; gap: 16px; font-size: 11px; color: #cbd5e1; letter-spacing: 0px !important;">
               <span><strong>الفرع المستهدف:</strong> ${displayBranchName}</span>
@@ -281,34 +257,20 @@ export async function exportAppointmentsPdfReport({
         </div>
       </div>
 
-      <!-- 4 EXECUTIVE SUMMARY KPI CARDS -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px;">
+      <!-- 2 OPERATIONAL QUEUE SUMMARY CARDS -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 22px;">
         <!-- Card 1: Total Bookings -->
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; text-align: center;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px;">إجمالي الحجوزات</div>
-          <div style="font-size: 20px; font-weight: 900; color: #0f172a;" class="latin-font">${totalCount}</div>
-          <div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px;">سجل حجز مسجل</div>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; text-align: center;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">إجمالي الحجوزات</div>
+          <div style="font-size: 24px; font-weight: 900; color: #0f172a;" class="latin-font">${totalCount}</div>
+          <div style="font-size: 10px; color: #94a3b8; margin-top: 3px;">إجمالي حالات وقائمة الانتظار المسجلة</div>
         </div>
 
         <!-- Card 2: Confirmed Bookings -->
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; text-align: center;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px;">المؤكدة</div>
-          <div style="font-size: 20px; font-weight: 900; color: #059669;" class="latin-font">${confirmedCount}</div>
-          <div style="font-size: 9.5px; color: #059669; margin-top: 2px;">حجز معتمد ومكتمل</div>
-        </div>
-
-        <!-- Card 3: Collected Revenue -->
-        <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px 16px; text-align: center;">
-          <div style="font-size: 11px; font-weight: 700; color: #065f46; margin-bottom: 4px;">المبالغ المحصلة (ج.م)</div>
-          <div style="font-size: 19px; font-weight: 900; color: #047857;" class="latin-font">${paidRevenue.toLocaleString('ar-EG')} ج.م</div>
-          <div style="font-size: 9.5px; color: #065f46; margin-top: 2px;">${paidAppointments.length} عملية سداد ناجحة</div>
-        </div>
-
-        <!-- Card 4: Pending Revenue -->
-        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px 16px; text-align: center;">
-          <div style="font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 4px;">المبالغ المعلقة</div>
-          <div style="font-size: 19px; font-weight: 900; color: #b45309;" class="latin-font">${pendingRevenue.toLocaleString('ar-EG')} ج.م</div>
-          <div style="font-size: 9.5px; color: #92400e; margin-top: 2px;">${unpaidAppointments.length} حجز بانتظار التحصيل</div>
+        <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; text-align: center;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #065f46; margin-bottom: 4px;">الحجوزات المؤكدة</div>
+          <div style="font-size: 24px; font-weight: 900; color: #059669;" class="latin-font">${confirmedCount}</div>
+          <div style="font-size: 10px; color: #059669; margin-top: 3px;">حالات مؤكدة بقائمة الحضور والدور</div>
         </div>
       </div>
 
@@ -317,16 +279,15 @@ export async function exportAppointmentsPdfReport({
         <table style="width: 100%; border-collapse: collapse; text-align: right; background-color: #ffffff;">
           <thead>
             <tr style="background-color: #0f172a; color: #ffffff; font-size: 11.5px; font-weight: 800; letter-spacing: 0px !important;">
-              <th style="padding: 12px 8px; text-align: center; width: 32px; border-bottom: 2px solid #00B8A9;">#</th>
-              <th style="padding: 12px 8px; width: 140px; border-bottom: 2px solid #00B8A9;">اسم المريض</th>
-              <th style="padding: 12px 8px; width: 110px; border-bottom: 2px solid #00B8A9;">رقم الهاتف</th>
-              <th style="padding: 12px 8px; width: 150px; border-bottom: 2px solid #00B8A9;">الخدمة / العلاج</th>
-              <th style="padding: 12px 8px; width: 120px; border-bottom: 2px solid #00B8A9;">الفرع</th>
-              <th style="padding: 12px 8px; width: 130px; border-bottom: 2px solid #00B8A9;">التاريخ والوقت</th>
-              <th style="padding: 12px 8px; text-align: center; width: 95px; border-bottom: 2px solid #00B8A9;">الكشف (ج.م)</th>
-              <th style="padding: 12px 8px; text-align: center; width: 90px; border-bottom: 2px solid #00B8A9;">حالة الحجز</th>
-              <th style="padding: 12px 8px; text-align: center; width: 95px; border-bottom: 2px solid #00B8A9;">طريقة الدفع</th>
-              <th style="padding: 12px 8px; width: 140px; border-bottom: 2px solid #00B8A9;">الملاحظات</th>
+              <th style="padding: 12px 8px; text-align: center; width: 38px; border-bottom: 2px solid #00B8A9;" title="رقم الدور">#</th>
+              <th style="padding: 12px 8px; width: 155px; border-bottom: 2px solid #00B8A9;">اسم المريض</th>
+              <th style="padding: 12px 8px; width: 115px; border-bottom: 2px solid #00B8A9;">رقم الهاتف</th>
+              <th style="padding: 12px 8px; width: 165px; border-bottom: 2px solid #00B8A9;">الخدمة / العلاج</th>
+              <th style="padding: 12px 8px; width: 135px; border-bottom: 2px solid #00B8A9;">الفرع</th>
+              <th style="padding: 12px 8px; width: 140px; border-bottom: 2px solid #00B8A9;">التاريخ والوقت</th>
+              <th style="padding: 12px 8px; text-align: center; width: 95px; border-bottom: 2px solid #00B8A9;">حالة الحجز</th>
+              <th style="padding: 12px 8px; text-align: center; width: 100px; border-bottom: 2px solid #00B8A9;">طريقة الدفع</th>
+              <th style="padding: 12px 8px; width: 160px; border-bottom: 2px solid #00B8A9;">الملاحظات</th>
             </tr>
           </thead>
           <tbody>

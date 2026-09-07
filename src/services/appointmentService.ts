@@ -2,6 +2,9 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { AppointmentRecord, PaymentStatus, AppointmentStatus } from '@/types/admin';
 import { logAdminActivity } from './adminService';
 import { branches as defaultBranches } from '@/data/clinicData';
+import { resolveBranchUuid } from './scheduleService';
+
+export { resolveBranchUuid } from './scheduleService';
 
 // Real-time cache
 let localAppointments: AppointmentRecord[] = [];
@@ -90,6 +93,8 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
       let parsedMedicalNotes = item.medical_notes || null;
       let parsedScreenshotUrl = item.payment_screenshot_url || item.screenshot_url || null;
       let parsedPaymentMethod = item.payment_method || null;
+      let parsedSenderAccount = item.sender_account || null;
+      const parsedPaymentNotes = item.payment_notes || null;
       const rawNotes = item.notes || '';
 
       if (rawNotes.includes('[خدمة:')) {
@@ -107,6 +112,9 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
       if (rawNotes.includes('[وسيلة:')) {
         parsedPaymentMethod = rawNotes.split('[وسيلة:')[1]?.split(']')[0]?.trim() || parsedPaymentMethod;
       }
+      if (rawNotes.includes('[محوّل منه:')) {
+        parsedSenderAccount = rawNotes.split('[محوّل منه:')[1]?.split(']')[0]?.trim() || parsedSenderAccount;
+      }
 
       // Clean raw notes from tags for display
       const displayNotes = rawNotes
@@ -115,6 +123,7 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         .replace(/\[تشخيص:[^\]]*\]/g, '')
         .replace(/\[إيصال:[^\]]*\]/g, '')
         .replace(/\[وسيلة:[^\]]*\]/g, '')
+        .replace(/\[محوّل منه:[^\]]*\]/g, '')
         .trim();
 
       // Normalize payment status safely
@@ -165,6 +174,8 @@ export async function fetchAppointments(): Promise<AppointmentRecord[]> {
         amount: parsedAmount,
         payment_screenshot_url: parsedScreenshotUrl,
         payment_method: parsedPaymentMethod,
+        sender_account: parsedSenderAccount || null,
+        payment_notes: parsedPaymentNotes || (parsedSenderAccount ? `المحوّل منه: ${parsedSenderAccount}` : null),
         notes: displayNotes || null,
         medical_notes: parsedMedicalNotes,
         created_at: item.created_at || new Date().toISOString(),
@@ -203,6 +214,8 @@ export async function createAppointment(
     amount: Number(payload.amount) || 0,
     payment_screenshot_url: payload.payment_screenshot_url || null,
     payment_method: payload.payment_method || 'vodafone_cash',
+    sender_account: payload.sender_account || null,
+    payment_notes: payload.payment_notes || (payload.sender_account ? `المحوّل منه: ${payload.sender_account}` : null),
     notes: payload.notes || null,
     medical_notes: payload.medical_notes || null,
     created_at: new Date().toISOString(),
@@ -242,6 +255,7 @@ export async function createAppointment(
     if (payload.medical_notes) tags.push(`[تشخيص: ${payload.medical_notes}]`);
     if (payload.payment_screenshot_url) tags.push(`[إيصال: ${payload.payment_screenshot_url}]`);
     if (payload.payment_method) tags.push(`[وسيلة: ${payload.payment_method}]`);
+    if (payload.sender_account) tags.push(`[محوّل منه: ${payload.sender_account}]`);
     const plainNotes = payload.notes ? payload.notes.trim() : '';
     const notePayload = [...tags, plainNotes].filter(Boolean).join(' ').trim() || null;
 
@@ -260,6 +274,9 @@ export async function createAppointment(
     if (payload.payment_screenshot_url) {
       dbInsert.payment_screenshot_url = payload.payment_screenshot_url;
     }
+    if (payload.sender_account) {
+      dbInsert.sender_account = payload.sender_account;
+    }
 
     const { data, error } = await supabase
       .from('appointments')
@@ -268,8 +285,9 @@ export async function createAppointment(
       .single();
 
     if (error) {
-      // If payment_screenshot_url column is not present, retry without the column since it's already in notes tag
+      // If payment_screenshot_url or sender_account column is not present, retry without the column since it's already in notes tag
       delete dbInsert.payment_screenshot_url;
+      delete dbInsert.sender_account;
       const retryResult = await supabase
         .from('appointments')
         .insert([dbInsert])

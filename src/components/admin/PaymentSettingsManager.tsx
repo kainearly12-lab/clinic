@@ -38,6 +38,7 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
   // Form State
   const [consultationPrice, setConsultationPrice] = useState<number>(1200);
   const [currency, setCurrency] = useState<string>('ج.م');
+  const [walletMethodName, setWalletMethodName] = useState<string>('فودافون كاش');
   const [isPaymentEnabled, setIsPaymentEnabled] = useState<boolean>(true);
   const [paymentInstructions, setPaymentInstructions] = useState<string>(
     'يرجى تحويل رسوم الكشف الطبي عبر فودافون كاش أو تطبيق إنستاباي وإرفاق سكرين شوت يوضح نجاح التحويل لتأكيد الموعد فوراً.'
@@ -73,6 +74,9 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
       }
       if (data.currency) {
         setCurrency(data.currency);
+      }
+      if (data.wallet_method_name) {
+        setWalletMethodName(data.wallet_method_name);
       }
       if (typeof data.is_payment_enabled === 'boolean') {
         setIsPaymentEnabled(data.is_payment_enabled);
@@ -243,6 +247,7 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
       const res = await updateClinicPaymentSettings({
         consultation_price: Number(consultationPrice),
         currency: currency.trim() || 'ج.م',
+        wallet_method_name: walletMethodName.trim() || 'فودافون كاش',
         vodafone_cash_number: primaryVoda,
         instapay_address: primaryInsta,
         instapay_number: primaryVoda,
@@ -458,7 +463,7 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
         </div>
       </div>
 
-      {/* SECTION 2: Vodafone Cash Multi-Account Manager */}
+      {/* SECTION 2: Wallet Accounts Manager */}
       <div className="p-6 rounded-3xl bg-slate-900/50 border border-red-500/20 backdrop-blur-xl shadow-lg space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -467,10 +472,10 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
             </div>
             <div>
               <h3 className="text-base font-black text-white">
-                إدارة محافظ فودافون كاش (Vodafone Cash Accounts)
+                إدارة حسابات {walletMethodName || 'المحافظ الإلكترونية'} ({walletMethodName || 'Vodafone Cash'})
               </h3>
               <p className="text-xs text-slate-400">
-                يمكنك تسجيل أكثر من محفظة وتحديد المحفظة النشطة لتوزيع التحويلات وتسهيل السداد
+                يمكنك تسجيل أكثر من محفظة وتخصيص الاسم المعروض للمرضى وتحديد الحسابات النشطة
               </p>
             </div>
           </div>
@@ -480,7 +485,50 @@ export const PaymentSettingsManager = React.memo(function PaymentSettingsManager
           </span>
         </div>
 
-        {/* List of Existing Vodafone Cash Accounts */}
+        {/* Dynamic Wallet Method Label Field */}
+        <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <label className="block text-xs font-black text-white mb-0.5">
+                اسم طريقة دفع المحافظ الإلكترونية <span className="text-red-400">*</span>
+              </label>
+              <p className="text-[11px] text-slate-400">
+                الاسم المخصص المعروض للمريض في شاشة الحجز وسداد الرسوم (افتراضي: فودافون كاش)
+              </p>
+            </div>
+            <span className="text-[10px] font-mono text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-white/10 self-start sm:self-auto">
+              الاسم النشط: {walletMethodName || 'فودافون كاش'}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+            <input
+              type="text"
+              value={walletMethodName}
+              onChange={(e) => setWalletMethodName(e.target.value)}
+              placeholder="فودافون كاش"
+              className="w-full sm:flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold placeholder:text-slate-500 focus:outline-none focus:border-red-500"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {['فودافون كاش', 'إتصالات كاش', 'أورنج كاش', 'المحافظ الإلكترونية', 'وي باي'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setWalletMethodName(preset)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition border cursor-pointer ${
+                    walletMethodName === preset
+                      ? 'bg-red-500/20 text-red-300 border-red-500/50'
+                      : 'bg-slate-800 text-slate-400 hover:text-white border-white/5 hover:border-white/20'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* List of Existing Wallet Accounts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {vodafoneAccounts.map((acc, idx) => (
             <div

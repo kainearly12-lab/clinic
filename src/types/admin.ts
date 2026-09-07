@@ -72,6 +72,8 @@ export interface AppointmentRecord {
   price?: number | string;
   payment_screenshot_url?: string | null;
   payment_method?: 'vodafone_cash' | 'instapay' | 'cash' | string;
+  sender_account?: string | null;
+  payment_notes?: string | null;
   notes?: string | null;
   medical_notes?: string | null; // Doctor's preliminary diagnosis, prescription, or clinical plan
   created_at: string;
