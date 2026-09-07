@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
@@ -23,6 +23,8 @@ import {
   ChevronLeft,
   X,
   RefreshCw,
+  Smartphone,
+  Calendar,
 } from 'lucide-react';
 import { branches } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
@@ -38,6 +40,15 @@ import {
   createAppointment,
   getTodayConfirmedQueueCount,
 } from '@/services/appointmentService';
+import {
+  getScheduledBranchForDate,
+  resolveBranchUuid,
+  getIsoDateString,
+  subscribeScheduleChanges,
+  ARABIC_DAYS,
+} from '@/services/scheduleService';
+import { getSupabaseClient } from '@/lib/supabase';
+import { NormalizedBranch } from '@/types/schedule';
 
 export interface BookingPageProps {
   initialService?: string;
@@ -66,6 +77,34 @@ export function BookingPage({
 
   // Multi-step State: 1 = Patient Info, 2 = Payment & Receipt, 3 = Confirmation
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  // Dynamic Date Mode: 'today' vs 'tomorrow'
+  const [bookingMode, setBookingMode] = useState<'today' | 'tomorrow'>('today');
+  const [activeScheduledBranch, setActiveScheduledBranch] = useState<NormalizedBranch | null>(null);
+  const [scheduleLoading, setScheduleLoading] = useState<boolean>(true);
+  const [isClosedOnSelectedDate, setIsClosedOnSelectedDate] = useState<boolean>(false);
+  const [closureReason, setClosureReason] = useState<string | null>(null);
+
+  // Calculate Dates for Today and Tomorrow
+  const todayDate = useMemo(() => new Date(), []);
+  const tomorrowDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d;
+  }, []);
+
+  const selectedDate = bookingMode === 'today' ? todayDate : tomorrowDate;
+  const selectedDateIso = useMemo(() => getIsoDateString(selectedDate), [selectedDate]);
+  const selectedDayIndex = selectedDate.getDay();
+  const selectedDayNameAr = ARABIC_DAYS[selectedDayIndex] || 'اليوم';
+
+  const formatShortDate = (date: Date) => {
+    return new Intl.DateTimeFormat('ar-EG', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+    }).format(date);
+  };
 
   // Form Fields (Step 1)
   const [selectedBranchId, setSelectedBranchId] = useState<string>(
@@ -105,6 +144,83 @@ export function BookingPage({
   const [bookingRefId, setBookingRefId] = useState<string>('');
   const [submissionTimestamp, setSubmissionTimestamp] = useState<string>('');
 
+  // Dynamic Branch Working Schedules & Auto-Locking
+  useEffect(() => {
+    let isMounted = true;
+    setScheduleLoading(true);
+
+    async function resolveBranchSchedule() {
+      try {
+        // 1. Query schedule service (evaluates Supabase weekly_schedule, daily_branch_overrides, and schedule_exceptions)
+        const scheduled = await getScheduledBranchForDate(selectedDateIso);
+
+        // 2. Fetch Supabase branches to check any working_days column or branch configuration
+        const client = getSupabaseClient();
+        if (client) {
+          try {
+            await client.from('branches').select('id, name, working_days, is_active');
+          } catch {
+            // Non-blocking fallback
+          }
+        }
+
+        if (!isMounted) return;
+
+        if (scheduled.isHoliday || scheduled.isClosed) {
+          setIsClosedOnSelectedDate(true);
+          setClosureReason(scheduled.reason || 'إجازة رسمية');
+          setActiveScheduledBranch(null);
+        } else {
+          setIsClosedOnSelectedDate(false);
+          setClosureReason(null);
+          setActiveScheduledBranch(scheduled.branch);
+
+          // Auto-Select: Automatically pre-select the active branch where the doctor is available for that specific day
+          if (scheduled.branch) {
+            const matchedStatic = branches.find(
+              (b) =>
+                resolveBranchUuid(b.id) === resolveBranchUuid(scheduled.branch!.id) ||
+                b.nameAr === scheduled.branch!.nameAr
+            );
+            if (matchedStatic) {
+              setSelectedBranchId(matchedStatic.id);
+            } else {
+              setSelectedBranchId(scheduled.branch.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error resolving branch schedule:', err);
+      } finally {
+        if (isMounted) {
+          setScheduleLoading(false);
+        }
+      }
+    }
+
+    resolveBranchSchedule();
+
+    const unsubscribe = subscribeScheduleChanges(() => {
+      resolveBranchSchedule();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [selectedDateIso]);
+
+  // Helper to determine if a branch is active for the selected date
+  const isBranchActiveForDate = (branchId: string, branchNameAr?: string) => {
+    if (isClosedOnSelectedDate) return false;
+    if (!activeScheduledBranch) return true; // If schedule not loaded yet, don't block
+
+    const bUuid = resolveBranchUuid(branchId);
+    const activeUuid = resolveBranchUuid(activeScheduledBranch.id);
+
+    return bUuid === activeUuid || (Boolean(branchNameAr) && branchNameAr === activeScheduledBranch.nameAr);
+  };
+
   // Load Payment Settings
   useEffect(() => {
     let isMounted = true;
@@ -124,11 +240,10 @@ export function BookingPage({
     };
   }, []);
 
-  // Sync initial props
+  // Sync initial service prop
   useEffect(() => {
     if (initialService) setSelectedService(initialService);
-    if (initialBranch) setSelectedBranchId(initialBranch);
-  }, [initialService, initialBranch]);
+  }, [initialService]);
 
   // Selected Branch Object
   const currentBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
@@ -261,8 +376,8 @@ export function BookingPage({
         setIsUploading(false);
       }
 
-      // 2. Prepare appointment payload
-      const todayIso = new Date().toISOString().split('T')[0];
+      // 2. Prepare appointment payload with dynamic appointment_date (Today vs Tomorrow)
+      const appointmentDateIso = selectedDateIso;
       const timeStr = new Date().toLocaleTimeString('ar-EG', {
         hour: '2-digit',
         minute: '2-digit',
@@ -275,7 +390,7 @@ export function BookingPage({
         visit_type: 'كشف جديد',
         branch_id: selectedBranchId,
         branch_name_ar: currentBranch?.nameAr || 'الفرع المختار',
-        appointment_date: todayIso,
+        appointment_date: appointmentDateIso,
         appointment_time: timeStr || '12:00 PM',
         status: 'pending' as const,
         payment_status: 'معلق' as const,
@@ -293,11 +408,11 @@ export function BookingPage({
         throw new Error(createRes.error || 'فشل تسجيل الموعد');
       }
 
-      // 4. Query confirmed queue count for today and calculate position
+      // 4. Query confirmed queue count for the appointment date and calculate position
       // Position = confirmed count + 1 (excluding pending/cancelled)
       let confirmedCount = 0;
       try {
-        confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, todayIso);
+        confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, appointmentDateIso);
       } catch (countErr) {
         console.warn('Queue count lookup fallback:', countErr);
       }
@@ -325,7 +440,8 @@ export function BookingPage({
   // WhatsApp Link for Confirmation
   const generateWhatsAppMessage = () => {
     const senderInfo = senderAccount.trim() ? ` [محوّل من: ${senderAccount.trim()}]` : '';
-    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز المؤكد اليوم: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
+    const dateLabel = bookingMode === 'today' ? `اليوم (${formatShortDate(selectedDate)})` : `غداً (${formatShortDate(selectedDate)})`;
+    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] بتاريخ: ${dateLabel} باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
     const targetPhone = currentBranch?.phones[0]?.number || clinicPhone || '201154021247';
     const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.startsWith('0') ? `2${cleanPhone}` : cleanPhone;
@@ -467,58 +583,172 @@ export function BookingPage({
                       اختر الفرع وسجل بياناتك الطبية
                     </h1>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                      نظام حجز مبسط ومباشر دون الحاجة لاختيار تواريخ معقدة — يتم تسجيلك في قائمة اليوم المعتمدة فوراً.
+                      نظام حجز ذكي ومباشر — اختر الكشف اليوم أو لليوم التالي لتثبيت موعدك في الفرع المتاح فوراً.
                     </p>
                   </div>
 
                   {/* 1. Branch Selection Interactive Cards */}
                   <div>
+                    {/* Toggle Switch (Today vs Tomorrow) */}
+                    <div className="mb-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <CalendarCheck className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                          موعد الكشف الطبي:
+                        </span>
+                        <span className="text-xs font-bold text-teal-700 dark:text-teal-400">
+                          {selectedDayNameAr} ({formatShortDate(selectedDate)})
+                        </span>
+                      </div>
+
+                      <div className="p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800/90 grid grid-cols-2 gap-1.5 shadow-inner">
+                        <button
+                          type="button"
+                          onClick={() => setBookingMode('today')}
+                          className={`py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                            bookingMode === 'today'
+                              ? 'bg-white dark:bg-[#161a22] text-teal-700 dark:text-teal-400 shadow-md shadow-slate-300/40 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-700'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <CalendarCheck className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                            حجز الكشف اليوم
+                          </span>
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            ({formatShortDate(todayDate)})
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setBookingMode('tomorrow')}
+                          className={`py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                            bookingMode === 'tomorrow'
+                              ? 'bg-white dark:bg-[#161a22] text-teal-700 dark:text-teal-400 shadow-md shadow-slate-300/40 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-700'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                            حجز لليوم التالي
+                          </span>
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            ({formatShortDate(tomorrowDate)})
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Holiday or Closure Alert if applicable */}
+                    {isClosedOnSelectedDate && (
+                      <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
+                        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>
+                          العيادة في إجازة {bookingMode === 'today' ? 'اليوم' : 'غداً'} ({closureReason || 'عطلة رسمية'}). يرجى التبديل لليوم الآخر للمتابعة.
+                        </span>
+                      </div>
+                    )}
+
                     <label className="block text-sm font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                         اختر فرع العيادة الأنسب لك:
                       </span>
-                      <span className="text-xs text-teal-600 dark:text-teal-400 font-semibold">
-                        (متاح في كافة الفروع)
+                      <span className="text-xs text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1.5">
+                        {scheduleLoading ? (
+                          <>
+                            <RefreshCw className="h-3 w-3 animate-spin text-teal-600 dark:text-teal-400" />
+                            <span>جاري فحص المواعيد المتاحة...</span>
+                          </>
+                        ) : activeScheduledBranch ? (
+                          `(المواعيد متاحة في ${activeScheduledBranch.nameAr})`
+                        ) : (
+                          '(متاح حسب الجدول الطبي)'
+                        )}
                       </span>
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {branches.map((b) => {
                         const isSelected = selectedBranchId === b.id;
+                        const isBranchActive = isBranchActiveForDate(b.id, b.nameAr);
+
                         return (
                           <button
                             key={b.id}
                             type="button"
-                            onClick={() => setSelectedBranchId(b.id)}
+                            disabled={!isBranchActive}
+                            onClick={() => {
+                              if (isBranchActive) {
+                                setSelectedBranchId(b.id);
+                              }
+                            }}
                             className={`group relative text-start p-4 rounded-2xl border-2 transition-all duration-200 flex flex-col justify-between ${
-                              isSelected
-                                ? 'border-teal-600 dark:border-teal-500 bg-teal-50/50 dark:bg-teal-950/30 shadow-md shadow-teal-500/10'
-                                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800/70'
+                              !isBranchActive
+                                ? 'opacity-55 grayscale-[30%] bg-slate-100/70 dark:bg-slate-900/30 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed select-none'
+                                : isSelected
+                                ? 'border-teal-600 dark:border-teal-500 bg-teal-50/60 dark:bg-teal-950/30 shadow-md shadow-teal-500/10 cursor-pointer'
+                                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800/70 cursor-pointer'
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div>
-                                <span className="font-bold text-base text-slate-900 dark:text-white block">
-                                  {b.nameAr}
-                                </span>
-                                <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">
-                                  {b.cityAr}
-                                </span>
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                  <span className="font-bold text-base text-slate-900 dark:text-white block">
+                                    {b.nameAr}
+                                  </span>
+                                  <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">
+                                    {b.cityAr}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                                    !isBranchActive
+                                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                                      : isSelected
+                                      ? 'bg-teal-600 text-white'
+                                      : 'border border-slate-300 dark:border-slate-700 text-transparent'
+                                  }`}
+                                >
+                                  {!isBranchActive ? (
+                                    <Lock className="h-3 w-3" />
+                                  ) : (
+                                    <Check className="h-3 w-3 stroke-[3]" />
+                                  )}
+                                </div>
                               </div>
-                              <div
-                                className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors ${
-                                  isSelected
-                                    ? 'bg-teal-600 text-white'
-                                    : 'border border-slate-300 dark:border-slate-700 text-transparent'
-                                }`}
-                              >
-                                <Check className="h-3 w-3 stroke-[3]" />
-                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                {b.addressAr}
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                              {b.addressAr}
-                            </p>
+
+                            {/* Dynamic Branch Status Badges */}
+                            <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-[11px]">
+                              {!isBranchActive ? (
+                                <>
+                                  <span className="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
+                                    <Lock className="h-3 w-3 text-slate-400 shrink-0" />
+                                    {bookingMode === 'today' ? 'غير متاح اليوم' : 'غير متاح لليوم التالي'}
+                                  </span>
+                                  {activeScheduledBranch && (
+                                    <span className="text-teal-700 dark:text-teal-400 font-semibold truncate max-w-[130px]" title={activeScheduledBranch.nameAr}>
+                                      المواعيد في {activeScheduledBranch.nameAr}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3 text-emerald-600 shrink-0" />
+                                    الفرع النشط {bookingMode === 'today' ? 'اليوم' : 'غداً'}
+                                  </span>
+                                  <span className="text-teal-700 dark:text-teal-400 font-bold">
+                                    حجز معتمد
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </button>
                         );
                       })}
@@ -1053,7 +1283,7 @@ export function BookingPage({
                       موقعك في كشف العيادة المعتمد
                     </span>
                     <div className="text-3xl sm:text-5xl font-black tracking-tight drop-shadow-sm">
-                      رقمك في قائمة الحجز المؤكد اليوم: #{confirmedQueuePosition}
+                      رقمك في قائمة الحجز المؤكد {bookingMode === 'today' ? 'اليوم' : 'لليوم التالي'}: #{confirmedQueuePosition}
                     </div>
                     <p className="text-xs sm:text-sm text-emerald-100/90 font-medium pt-1">
                       (يتم تأكيد هذا الترتيب المتقدم وحجزه لك فور مراجعة قسم الحسابات للإيصال)
@@ -1072,6 +1302,12 @@ export function BookingPage({
                           {bookingRefId}
                         </span>
                       </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">تاريخ الكشف:</span>
+                      <span className="font-bold text-teal-700 dark:text-teal-400">
+                        {bookingMode === 'today' ? 'اليوم' : 'غداً'} ({formatShortDate(selectedDate)})
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600 dark:text-slate-400">الفرع المختار:</span>
@@ -1146,8 +1382,23 @@ export function BookingPage({
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 text-xs font-bold">
                   <CalendarCheck className="h-3.5 w-3.5" />
-                  قائمة كشف اليوم
+                  {bookingMode === 'today' ? 'قائمة كشف اليوم' : 'قائمة كشف الغد'}
                 </span>
+              </div>
+
+              {/* Date Quick Recap */}
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+                    موعد وتاريخ الكشف
+                  </span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white block">
+                    {bookingMode === 'today' ? 'اليوم' : 'غداً'} — {formatShortDate(selectedDate)}
+                  </span>
+                </div>
               </div>
 
               {/* Branch Quick Recap */}
