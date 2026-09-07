@@ -3,6 +3,7 @@ import {
   AlertCircle,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock3,
   Sparkles,
   Upload,
@@ -123,8 +124,10 @@ export function BookingModal({
   const lastSubmitTimeRef = useRef<number>(0);
 
   // UI & Processing States
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -293,21 +296,19 @@ export function BookingModal({
     }
   }, []);
 
-  // Handle Screenshot Upload
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Process uploaded screenshot file (from click or drag-and-drop)
+  const processUploadedFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)');
+      setValidationError('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 10 ميجابايت');
+      setValidationError('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 10 ميجابايت');
       return;
     }
 
+    setValidationError(null);
     setIsUploadingImage(true);
     try {
       setPaymentScreenshotName(file.name);
@@ -315,13 +316,46 @@ export function BookingModal({
       if (res.success && res.url) {
         setPaymentScreenshotUrl(res.url);
       } else {
-        alert('حدث خطأ أثناء معالجة الصورة، يرجى المحاولة مرة أخرى');
+        setValidationError('حدث خطأ أثناء معالجة الصورة، يرجى المحاولة مرة أخرى');
       }
     } catch (err) {
       console.error('Error uploading screenshot:', err);
-      alert('حدث خطأ أثناء رفع الصورة');
+      setValidationError('حدث خطأ أثناء رفع الصورة');
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  // Handle Screenshot File Change from Input
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processUploadedFile(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and drop events for receipt upload
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processUploadedFile(file);
     }
   };
 
@@ -336,9 +370,66 @@ export function BookingModal({
       setPaymentScreenshotUrl('');
       setPaymentScreenshotName('');
       setHasRestoredDraft(false);
+      setCurrentStep(1);
     } catch {
       // Ignore
     }
+  };
+
+  // Step 1 -> Step 2 Validation & Transition Handler
+  const handleProceedToPayment = async (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) e.preventDefault();
+    setValidationError(null);
+
+    // 1. Bot Honeypot Protection
+    if (honeypotValue && honeypotValue.trim().length > 0) {
+      setValidationError('تعذر المتابعة في الوقت الحالي');
+      return;
+    }
+
+    // 2. Sanitization & Form Validations
+    const trimmedName = sanitizeInput(name);
+    const rawPhone = sanitizeInput(phone).replace(/[^\d+]/g, '');
+    const trimmedService = sanitizeInput(service);
+
+    if (!trimmedName || trimmedName.length < 3) {
+      setValidationError('يرجى كتابة اسم المريض بالكامل (3 أحرف على الأقل)');
+      return;
+    }
+
+    // Egyptian Mobile & Universal Phone Format Check (010, 011, 012, 015 or international with 10+ digits)
+    const egPhoneRegex = /^(010|011|012|015)[0-9]{8}$/;
+    const cleanDigits = rawPhone.replace(/\D/g, '');
+    const isValidEg = egPhoneRegex.test(cleanDigits);
+    const isValidGeneral = cleanDigits.length >= 10 && cleanDigits.length <= 15;
+
+    if (!isValidEg && !isValidGeneral) {
+      setValidationError('يرجى إدخال رقم هاتف محمول صحيح (مثال: 011xxxxxxxx)');
+      return;
+    }
+
+    if (!trimmedService) {
+      setValidationError('يرجى اختيار أو كتابة نوع الخدمة أو الكشف المطلوب');
+      return;
+    }
+
+    if (!preferredDate) {
+      setValidationError('يرجى تحديد تاريخ الحجز المفضل');
+      return;
+    }
+
+    try {
+      const validation = await validateBookingDate(preferredDate, branch);
+      if (!validation.isValid || validation.isHoliday) {
+        setValidationError(validation.errorMessageAr || 'عذراً، العيادة مغلقة في هذا اليوم');
+        return;
+      }
+    } catch (err) {
+      console.warn('Schedule validation warning:', err);
+    }
+
+    setValidationError(null);
+    setCurrentStep(2);
   };
 
   // Direct Supabase Booking Insertion Handler
@@ -482,6 +573,7 @@ export function BookingModal({
       setCompletedAppointment(null);
       setValidationError(null);
       setHasRestoredDraft(false);
+      setCurrentStep(1);
     }, 300);
   };
 
@@ -621,6 +713,60 @@ export function BookingModal({
             </p>
           </div>
 
+          {/* 2-Step Wizard Progress Bar */}
+          <div className="grid grid-cols-2 gap-2 p-1.5 rounded-xl bg-slate-950/70 border border-white/10 mb-4">
+            {/* Step 1 Tab Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setValidationError(null);
+                setCurrentStep(1);
+              }}
+              className={`py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                currentStep === 1
+                  ? 'bg-[#00B8A9] text-slate-950 shadow-md'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  currentStep === 1
+                    ? 'bg-slate-950 text-[#00B8A9]'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                1
+              </span>
+              <span>بيانات المريض والموعد</span>
+            </button>
+
+            {/* Step 2 Tab Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (currentStep === 1) {
+                  handleProceedToPayment();
+                }
+              }}
+              className={`py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                currentStep === 2
+                  ? 'bg-[#00B8A9] text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  currentStep === 2
+                    ? 'bg-slate-950 text-[#00B8A9]'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                2
+              </span>
+              <span>الدفع وإرفاق الإيصال</span>
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Anti-Bot Honeypot Field (Invisible to human users) */}
             <input
@@ -634,544 +780,634 @@ export function BookingModal({
               aria-hidden="true"
             />
 
-            {/* Section 1: Clinic Branch Selection with Smart Day-to-Branch Matching */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="booking-branch" className="block text-xs font-bold text-slate-200 flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5 text-[#00B8A9]" />
-                  <span>اختر الفرع المناسب</span>
-                </label>
-                {scheduledInfo?.branch && (
-                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#00B8A9]" />
-                    فرع {scheduledInfo.dayNameAr}: <strong className="text-teal-300">{scheduledInfo.branch.nameAr}</strong>
-                  </span>
+            {currentStep === 1 ? (
+              /* ================= STEP 1: PATIENT & APPOINTMENT DETAILS ================= */
+              <div className="space-y-4">
+                {/* Section 1: Clinic Branch Selection with Smart Day-to-Branch Matching */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="booking-branch" className="block text-xs font-bold text-slate-200 flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>اختر الفرع المناسب</span>
+                    </label>
+                    {scheduledInfo?.branch && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#00B8A9]" />
+                        فرع {scheduledInfo.dayNameAr}: <strong className="text-teal-300">{scheduledInfo.branch.nameAr}</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {branches.map((b) => {
+                      const isSelected = branch === b.id;
+                      const isScheduledToday = scheduledInfo?.branch?.id === b.id;
+
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => setBranch(b.id)}
+                          className={`relative p-2.5 rounded-xl border text-center transition-all text-xs font-bold ${
+                            isSelected
+                              ? 'border-[#00B8A9] bg-[#00B8A9]/20 text-white shadow-[0_0_15px_rgba(0,184,169,0.25)]'
+                              : isScheduledToday
+                              ? 'border-teal-500/50 bg-teal-950/30 text-teal-200 hover:bg-teal-900/40'
+                              : 'border-white/10 bg-slate-800/60 text-slate-300 hover:border-white/25 hover:bg-slate-800'
+                          }`}
+                        >
+                          {isScheduledToday && (
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black tracking-tight shadow-sm whitespace-nowrap">
+                              {scheduledInfo.isOverride ? '⚡ تبديل اليوم' : '✨ مقرر اليوم'}
+                            </span>
+                          )}
+                          <div className="truncate mt-0.5">{b.nameAr}</div>
+                          <div className="text-[10px] font-normal text-slate-400">{b.cityAr}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Section 2: Patient Info (Name & Phone) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="booking-name" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>اسم المريض بالكامل <span className="text-red-400">*</span></span>
+                    </label>
+                    <input
+                      id="booking-name"
+                      required
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
+                      placeholder="مثال: أحمد محمد علي"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="booking-phone" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>رقم الهاتف <span className="text-red-400">*</span></span>
+                    </label>
+                    <input
+                      id="booking-phone"
+                      required
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
+                      placeholder="01xxxxxxxxx"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* Section 3: Service Selection */}
+                <div>
+                  <label htmlFor="booking-service" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-[#00B8A9]" />
+                    <span>نوع الكشف أو الإجراء المطلوب <span className="text-red-400">*</span></span>
+                  </label>
+                  <input
+                    id="booking-service"
+                    required
+                    type="text"
+                    value={service}
+                    onChange={(e) => setService(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
+                    placeholder="اكتب الخدمة أو اختر من الاقتراحات السريعة أدناه"
+                  />
+
+                  {/* Quick service suggestions chips */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {COMMON_SERVICES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setService(s)}
+                        className={`text-[10px] px-2.5 py-1 rounded-lg border transition ${
+                          service === s
+                            ? 'border-[#00B8A9] bg-teal-500/20 text-teal-300 font-bold'
+                            : 'border-white/10 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/20'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 4: Date & Time Picker */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="booking-date" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>تاريخ الموعد المفضل <span className="text-red-400">*</span></span>
+                    </label>
+                    <input
+                      id="booking-date"
+                      required
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={preferredDate}
+                      onChange={(e) => setPreferredDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="booking-time" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
+                      <Clock3 className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>الوقت المفضل</span>
+                    </label>
+                    <select
+                      id="booking-time"
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
+                    >
+                      {TIME_SLOTS.map((t) => (
+                        <option key={t} value={t} className="bg-slate-900 text-white">
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Optional Notes */}
+                <div>
+                  <label htmlFor="booking-notes" className="block text-xs font-bold text-slate-200 mb-1 flex items-center justify-between">
+                    <span>ملاحظات إضافية</span>
+                    <span className="font-normal text-slate-400 text-[10px]">(اختياري)</span>
+                  </label>
+                  <textarea
+                    id="booking-notes"
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9] resize-none"
+                    placeholder="أي استفسارات أو تفاصيل إضافية عن الحالة..."
+                  />
+                </div>
+
+                {/* Calculated Clinic Fee Summary Box */}
+                <div className="rounded-2xl border border-teal-500/30 bg-gradient-to-r from-teal-950/40 via-slate-900/80 to-slate-900 p-4 shadow-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#00B8A9]/20 text-[#00B8A9] flex items-center justify-center border border-[#00B8A9]/30 shrink-0">
+                      <DollarSign className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-white">قيمة الكشف الطبي والاستشارة</h3>
+                      <p className="text-[10px] text-slate-400">تحديث تلقائي ومباشر من إعدادات العيادة</p>
+                    </div>
+                  </div>
+
+                  <div className="text-left font-mono">
+                    <span className="text-lg sm:text-xl font-black text-emerald-400">
+                      {(paymentSettings.consultation_price || 1200).toLocaleString()}
+                    </span>{' '}
+                    <span className="text-xs text-slate-300 font-bold">{paymentSettings.currency || 'ج.م'}</span>
+                  </div>
+                </div>
+
+                {/* Validation Error Alert */}
+                {validationError && (
+                  <div
+                    role="alert"
+                    className="rounded-xl border border-red-500/50 bg-red-950/40 p-3 text-xs font-bold text-red-200 flex items-center gap-2.5 shadow-sm"
+                  >
+                    <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
                 )}
+
+                {/* Step 1 Action Button */}
+                <button
+                  type="button"
+                  onClick={handleProceedToPayment}
+                  className="w-full py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 text-sm cursor-pointer"
+                >
+                  <span>الانتقال لخطوة الدفع</span>
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
               </div>
+            ) : (
+              /* ================= STEP 2: PAYMENT & RECEIPT UPLOAD ================= */
+              <div className="space-y-4">
+                {/* Appointment Summary Bar */}
+                <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>ملخص تفاصيل الحجز:</span>
+                    </span>
+                    <span className="text-xs font-black text-teal-300">
+                      {branches.find((b) => b.id === branch)?.nameAr || 'الفرع المختار'}
+                    </span>
+                  </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {branches.map((b) => {
-                  const isSelected = branch === b.id;
-                  const isScheduledToday = scheduledInfo?.branch?.id === b.id;
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">اسم المريض</span>
+                      <span className="font-bold text-white truncate block">{name}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">رقم الهاتف</span>
+                      <span className="font-mono font-bold text-white block" dir="ltr">{phone}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">نوع الخدمة</span>
+                      <span className="font-bold text-slate-200 truncate block">{service}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">الموعد المحدد</span>
+                      <span className="font-bold text-teal-300 block">{preferredDate} ({preferredTime})</span>
+                    </div>
+                  </div>
 
-                  return (
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <span className="text-xs font-bold text-slate-300">المبلغ المطلوب تحويله:</span>
+                    <span className="font-mono text-sm sm:text-base font-black text-emerald-400">
+                      {(paymentSettings.consultation_price || 1200).toLocaleString()} {paymentSettings.currency || 'ج.م'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment Method Selector Tabs (Vodafone Cash & InstaPay) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">
+                    اختر طريقة التحويل للدفع المسبق:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Vodafone Cash Tab */}
                     <button
-                      key={b.id}
                       type="button"
-                      onClick={() => setBranch(b.id)}
-                      className={`relative p-2.5 rounded-xl border text-center transition-all text-xs font-bold ${
-                        isSelected
-                          ? 'border-[#00B8A9] bg-[#00B8A9]/20 text-white shadow-[0_0_15px_rgba(0,184,169,0.25)]'
-                          : isScheduledToday
-                          ? 'border-teal-500/50 bg-teal-950/30 text-teal-200 hover:bg-teal-900/40'
-                          : 'border-white/10 bg-slate-800/60 text-slate-300 hover:border-white/25 hover:bg-slate-800'
+                      onClick={() => setPaymentMethod('vodafone_cash')}
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-right ${
+                        paymentMethod === 'vodafone_cash'
+                          ? 'border-red-500 bg-red-950/40 text-white shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                          : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/20'
                       }`}
                     >
-                      {isScheduledToday && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black tracking-tight shadow-sm whitespace-nowrap">
-                          {scheduledInfo.isOverride ? '⚡ تبديل اليوم' : '✨ مقرر اليوم'}
-                        </span>
-                      )}
-                      <div className="truncate mt-0.5">{b.nameAr}</div>
-                      <div className="text-[10px] font-normal text-slate-400">{b.cityAr}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Section 2: Patient Info (Name & Phone) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="booking-name" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-[#00B8A9]" />
-                  <span>اسم المريض بالكامل <span className="text-red-400">*</span></span>
-                </label>
-                <input
-                  id="booking-name"
-                  required
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
-                  placeholder="مثال: أحمد محمد علي"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="booking-phone" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-[#00B8A9]" />
-                  <span>رقم الهاتف <span className="text-red-400">*</span></span>
-                </label>
-                <input
-                  id="booking-phone"
-                  required
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
-                  placeholder="01xxxxxxxxx"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
-            {/* Section 3: Service Selection */}
-            <div>
-              <label htmlFor="booking-service" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5 text-[#00B8A9]" />
-                <span>نوع الكشف أو الإجراء المطلوب <span className="text-red-400">*</span></span>
-              </label>
-              <input
-                id="booking-service"
-                required
-                type="text"
-                value={service}
-                onChange={(e) => setService(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9]"
-                placeholder="اكتب الخدمة أو اختر من الاقتراحات السريعة أدناه"
-              />
-
-              {/* Quick service suggestions chips */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {COMMON_SERVICES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setService(s)}
-                    className={`text-[10px] px-2.5 py-1 rounded-lg border transition ${
-                      service === s
-                        ? 'border-[#00B8A9] bg-teal-500/20 text-teal-300 font-bold'
-                        : 'border-white/10 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/20'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Section 4: Date & Time Picker */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="booking-date" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-[#00B8A9]" />
-                  <span>تاريخ الموعد المفضل <span className="text-red-400">*</span></span>
-                </label>
-                <input
-                  id="booking-date"
-                  required
-                  type="date"
-                  min={new Date().toISOString().split('T')[0]}
-                  value={preferredDate}
-                  onChange={(e) => setPreferredDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="booking-time" className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1">
-                  <Clock3 className="w-3.5 h-3.5 text-[#00B8A9]" />
-                  <span>الوقت المفضل</span>
-                </label>
-                <select
-                  id="booking-time"
-                  value={preferredTime}
-                  onChange={(e) => setPreferredTime(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#00B8A9]"
-                >
-                  {TIME_SLOTS.map((t) => (
-                    <option key={t} value={t} className="bg-slate-900 text-white">
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Optional Notes */}
-            <div>
-              <label htmlFor="booking-notes" className="block text-xs font-bold text-slate-200 mb-1 flex items-center justify-between">
-                <span>ملاحظات إضافية</span>
-                <span className="font-normal text-slate-400 text-[10px]">(اختياري)</span>
-              </label>
-              <textarea
-                id="booking-notes"
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00B8A9] resize-none"
-                placeholder="أي استفسارات أو تفاصيل إضافية عن الحالة..."
-              />
-            </div>
-
-            {/* ================= DYNAMIC CONSULTATION PRICING & WALLET PAYMENT BOX ================= */}
-            <div className="rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 via-slate-900/80 to-slate-900/90 p-4 shadow-lg space-y-3.5">
-              {/* Dynamic Consultation Fee Banner */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#00B8A9]/20 text-[#00B8A9] flex items-center justify-center border border-[#00B8A9]/30">
-                    <DollarSign className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-black text-white">قيمة الكشف الطبي والاستشارة</h3>
-                    <p className="text-[10px] text-slate-400">تحديث تلقائي ومباشر من إعدادات العيادة</p>
-                  </div>
-                </div>
-
-                <div className="text-left font-mono">
-                  <span className="text-base sm:text-lg font-black text-emerald-400">
-                    {(paymentSettings.consultation_price || 1200).toLocaleString()}
-                  </span>{' '}
-                  <span className="text-xs text-slate-300 font-bold">{paymentSettings.currency || 'ج.م'}</span>
-                </div>
-              </div>
-
-              {/* Payment Method Selector Tabs (Vodafone Cash & InstaPay) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-2">
-                  اختر طريقة التحويل للدفع المسبق:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Vodafone Cash Tab */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('vodafone_cash')}
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-right ${
-                      paymentMethod === 'vodafone_cash'
-                        ? 'border-red-500 bg-red-950/40 text-white shadow-[0_0_15px_rgba(239,68,68,0.2)]'
-                        : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-red-600/30 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0">
-                      <Smartphone className="w-4 h-4" />
-                    </div>
-                    <div className="overflow-hidden">
-                      <span className="text-xs font-black block">فودافون كاش</span>
-                      <span className="text-[10px] text-slate-400 block truncate">Vodafone Cash</span>
-                    </div>
-                  </button>
-
-                  {/* InstaPay Tab */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('instapay')}
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-right ${
-                      paymentMethod === 'instapay'
-                        ? 'border-purple-500 bg-purple-950/40 text-white shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                        : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4" />
-                    </div>
-                    <div className="overflow-hidden">
-                      <span className="text-xs font-black block">تطبيق إنستاباي</span>
-                      <span className="text-[10px] text-slate-400 block truncate">InstaPay (IPA)</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Active Payment Details & Multi-Account One-Click Copy */}
-              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-white/10 space-y-3">
-                {paymentMethod === 'vodafone_cash' ? (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
-                        <Smartphone className="w-3.5 h-3.5 text-red-400" />
-                        <span>محافظ فودافون كاش المعتمدة للتحويل ({paymentSettings.vodafone_cash_accounts?.filter((a) => a.isActive).length || 1}):</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400">اختر أي رقم وقم بالتحويل إليه</span>
-                    </div>
-
-                    {paymentSettings.vodafone_cash_accounts &&
-                    paymentSettings.vodafone_cash_accounts.filter((a) => a.isActive).length > 0 ? (
-                      <div className="space-y-2">
-                        {paymentSettings.vodafone_cash_accounts
-                          .filter((a) => a.isActive)
-                          .map((acc, idx) => (
-                            <div
-                              key={acc.id || idx}
-                              className="p-2.5 rounded-xl bg-slate-900/80 border border-red-500/30 flex items-center justify-between gap-2 hover:border-red-500/60 transition"
-                            >
-                              <div className="overflow-hidden">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-white truncate">{acc.name}</span>
-                                  {idx === 0 && (
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
-                                      رئيسي
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-mono text-xs sm:text-sm font-black text-red-400 block tracking-wider mt-0.5" dir="ltr">
-                                  {acc.value}
-                                </span>
-                                {acc.notes && (
-                                  <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
-                                )}
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(acc.value, `voda-${acc.id || idx}`)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition shrink-0"
-                              >
-                                {copiedField === `voda-${acc.id || idx}` ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span className="text-emerald-400">تم النسخ!</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>نسخ الرقم</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          ))}
+                      <div className="w-7 h-7 rounded-lg bg-red-600/30 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0">
+                        <Smartphone className="w-4 h-4" />
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-mono text-sm font-black text-red-400" dir="ltr">
-                            {paymentSettings.vodafone_cash_number || '01154021247'}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy(paymentSettings.vodafone_cash_number || '01154021247', 'vodafone')
-                          }
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition"
-                        >
-                          {copiedField === 'vodafone' ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-emerald-400">تم النسخ!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>نسخ الرقم</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                        <span>عناوين التحويل عبر تطبيق إنستاباي ({paymentSettings.instapay_accounts?.filter((a) => a.isActive).length || 1}):</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400">حسابات رسمية بدون عمولات</span>
-                    </div>
-
-                    {paymentSettings.instapay_accounts &&
-                    paymentSettings.instapay_accounts.filter((a) => a.isActive).length > 0 ? (
-                      <div className="space-y-2">
-                        {paymentSettings.instapay_accounts
-                          .filter((a) => a.isActive)
-                          .map((acc, idx) => (
-                            <div
-                              key={acc.id || idx}
-                              className="p-2.5 rounded-xl bg-slate-900/80 border border-purple-500/30 flex items-center justify-between gap-2 hover:border-purple-500/60 transition"
-                            >
-                              <div className="overflow-hidden">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-white truncate">{acc.name}</span>
-                                  {idx === 0 && (
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
-                                      رئيسي
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-mono text-xs sm:text-sm font-black text-purple-300 block tracking-wider mt-0.5 truncate" dir="ltr">
-                                  {acc.value}
-                                </span>
-                                {acc.notes && (
-                                  <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
-                                )}
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(acc.value, `insta-${acc.id || idx}`)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition shrink-0"
-                              >
-                                {copiedField === `insta-${acc.id || idx}` ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span className="text-emerald-400">تم النسخ!</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>نسخ العنوان</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-mono text-sm font-black text-purple-300" dir="ltr">
-                            {paymentSettings.instapay_address || 'androderma@instapay'}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy(paymentSettings.instapay_address || 'androderma@instapay', 'instapay')
-                          }
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition"
-                        >
-                          {copiedField === 'instapay' ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-emerald-400">تم النسخ!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>نسخ العنوان</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {paymentSettings.payment_instructions_ar && (
-                  <p className="text-[10px] text-slate-400 leading-normal pt-1 border-t border-white/5">
-                    {paymentSettings.payment_instructions_ar}
-                  </p>
-                )}
-              </div>
-
-              {/* ================= SCREENSHOT UPLOAD INPUT ================= */}
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Upload className="w-3.5 h-3.5 text-[#00B8A9]" />
-                    <span>إرفاق صورة إيصال التحويل (Screenshot) <span className="text-red-400">*</span></span>
-                  </span>
-                  {paymentScreenshotUrl && (
-                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
-                      <Check className="w-3 h-3" /> تم الإرفاق
-                    </span>
-                  )}
-                </label>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-
-                {paymentScreenshotUrl ? (
-                  /* Attached Preview Card */
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/40 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 overflow-hidden">
-                      <img
-                        src={paymentScreenshotUrl}
-                        alt="إيصال التحويل"
-                        className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0 bg-slate-900"
-                      />
                       <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-white truncate">
-                          {paymentScreenshotName || 'إيصال التحويل الناجح'}
-                        </p>
-                        <p className="text-[10px] text-emerald-400">جاهز للتأكيد والحفظ المباشر</p>
+                        <span className="text-xs font-black block">فودافون كاش</span>
+                        <span className="text-[10px] text-slate-400 block truncate">Vodafone Cash</span>
+                      </div>
+                    </button>
+
+                    {/* InstaPay Tab */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('instapay')}
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-right ${
+                        paymentMethod === 'instapay'
+                          ? 'border-purple-500 bg-purple-950/40 text-white shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                          : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="text-xs font-black block">تطبيق إنستاباي</span>
+                        <span className="text-[10px] text-slate-400 block truncate">InstaPay (IPA)</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Active Payment Details & Multi-Account One-Click Copy */}
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-white/10 space-y-3">
+                  {paymentMethod === 'vodafone_cash' ? (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
+                          <Smartphone className="w-3.5 h-3.5 text-red-400" />
+                          <span>محافظ فودافون كاش المعتمدة للتحويل ({paymentSettings.vodafone_cash_accounts?.filter((a) => a.isActive).length || 1}):</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400">اختر أي رقم وقم بالتحويل إليه</span>
+                      </div>
+
+                      {paymentSettings.vodafone_cash_accounts &&
+                      paymentSettings.vodafone_cash_accounts.filter((a) => a.isActive).length > 0 ? (
+                        <div className="space-y-2">
+                          {paymentSettings.vodafone_cash_accounts
+                            .filter((a) => a.isActive)
+                            .map((acc, idx) => (
+                              <div
+                                key={acc.id || idx}
+                                className="p-2.5 rounded-xl bg-slate-900/80 border border-red-500/30 flex items-center justify-between gap-2 hover:border-red-500/60 transition"
+                              >
+                                <div className="overflow-hidden">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-white truncate">{acc.name}</span>
+                                    {idx === 0 && (
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
+                                        رئيسي
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="font-mono text-xs sm:text-sm font-black text-red-400 block tracking-wider mt-0.5" dir="ltr">
+                                    {acc.value}
+                                  </span>
+                                  {acc.notes && (
+                                    <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(acc.value, `voda-${acc.id || idx}`)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition shrink-0"
+                                >
+                                  {copiedField === `voda-${acc.id || idx}` ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span className="text-emerald-400">تم النسخ!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3.5 h-3.5" />
+                                      <span>نسخ الرقم</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-mono text-sm font-black text-red-400" dir="ltr">
+                              {paymentSettings.vodafone_cash_number || '01154021247'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy(paymentSettings.vodafone_cash_number || '01154021247', 'vodafone')
+                            }
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition"
+                          >
+                            {copiedField === 'vodafone' ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400">تم النسخ!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>نسخ الرقم</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-300 block flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                          <span>عناوين التحويل عبر تطبيق إنستاباي ({paymentSettings.instapay_accounts?.filter((a) => a.isActive).length || 1}):</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400">حسابات رسمية بدون عمولات</span>
+                      </div>
+
+                      {paymentSettings.instapay_accounts &&
+                      paymentSettings.instapay_accounts.filter((a) => a.isActive).length > 0 ? (
+                        <div className="space-y-2">
+                          {paymentSettings.instapay_accounts
+                            .filter((a) => a.isActive)
+                            .map((acc, idx) => (
+                              <div
+                                key={acc.id || idx}
+                                className="p-2.5 rounded-xl bg-slate-900/80 border border-purple-500/30 flex items-center justify-between gap-2 hover:border-purple-500/60 transition"
+                              >
+                                <div className="overflow-hidden">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-white truncate">{acc.name}</span>
+                                    {idx === 0 && (
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+                                        رئيسي
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="font-mono text-xs sm:text-sm font-black text-purple-300 block tracking-wider mt-0.5 truncate" dir="ltr">
+                                    {acc.value}
+                                  </span>
+                                  {acc.notes && (
+                                    <span className="text-[10px] text-slate-400 block truncate">{acc.notes}</span>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(acc.value, `insta-${acc.id || idx}`)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition shrink-0"
+                                >
+                                  {copiedField === `insta-${acc.id || idx}` ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span className="text-emerald-400">تم النسخ!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3.5 h-3.5" />
+                                      <span>نسخ العنوان</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-mono text-sm font-black text-purple-300" dir="ltr">
+                              {paymentSettings.instapay_address || 'androderma@instapay'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy(paymentSettings.instapay_address || 'androderma@instapay', 'instapay')
+                            }
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition"
+                          >
+                            {copiedField === 'instapay' ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400">تم النسخ!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>نسخ العنوان</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {paymentSettings.payment_instructions_ar && (
+                    <p className="text-[10px] text-slate-400 leading-normal pt-1 border-t border-white/5">
+                      {paymentSettings.payment_instructions_ar}
+                    </p>
+                  )}
+                </div>
+
+                {/* Section: Payment Receipt Screenshot Upload */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>إرفاق صورة إيصال التحويل (Screenshot) <span className="text-red-400">*</span></span>
+                    </span>
+                    {paymentScreenshotUrl && (
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> تم الإرفاق
+                      </span>
+                    )}
+                  </label>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  {paymentScreenshotUrl ? (
+                    /* Attached Preview Card */
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/40 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 overflow-hidden">
+                        <img
+                          src={paymentScreenshotUrl}
+                          alt="إيصال التحويل"
+                          className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0 bg-slate-900"
+                        />
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-white truncate">
+                            {paymentScreenshotName || 'إيصال التحويل الناجح'}
+                          </p>
+                          <p className="text-[10px] text-emerald-400">جاهز للتأكيد والحفظ المباشر</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-teal-300 hover:text-teal-200 underline px-2 py-1"
+                        >
+                          تغيير
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentScreenshotUrl('');
+                            setPaymentScreenshotName('');
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
+                  ) : (
+                    /* Drag & Drop Upload Zone */
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed p-4 rounded-xl text-center cursor-pointer transition-all duration-200 group ${
+                        isDragging
+                          ? 'border-[#00B8A9] bg-teal-950/40 shadow-[0_0_15px_rgba(0,184,169,0.2)]'
+                          : 'border-white/20 hover:border-[#00B8A9] bg-slate-950/40 hover:bg-slate-950/70'
+                      }`}
+                    >
+                      <div className="w-9 h-9 mx-auto mb-1.5 rounded-full bg-slate-800/80 group-hover:bg-teal-500/20 text-slate-400 group-hover:text-[#00B8A9] flex items-center justify-center transition">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-200 group-hover:text-white">
+                        {isUploadingImage
+                          ? 'جاري رفع ومعالجة صورة الإيصال...'
+                          : isDragging
+                          ? 'أفلت صورة الإيصال هنا الآن'
+                          : 'اضغط لاختيار صورة إيصال التحويل أو اسحبها هنا'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        يدعم ملفات الصور (PNG, JPG, JPEG, WebP) حتى 10 ميجابايت
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-xs text-teal-300 hover:text-teal-200 underline px-2 py-1"
-                      >
-                        تغيير
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPaymentScreenshotUrl('');
-                          setPaymentScreenshotName('');
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Drag & Drop Upload Zone */
+                {/* Validation Error Alert */}
+                {validationError && (
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/20 hover:border-[#00B8A9] bg-slate-950/40 hover:bg-slate-950/70 p-4 rounded-xl text-center cursor-pointer transition-all duration-200 group"
+                    role="alert"
+                    className="rounded-xl border border-red-500/50 bg-red-950/40 p-3 text-xs font-bold text-red-200 flex items-center gap-2.5 shadow-sm"
                   >
-                    <div className="w-9 h-9 mx-auto mb-1.5 rounded-full bg-slate-800/80 group-hover:bg-teal-500/20 text-slate-400 group-hover:text-[#00B8A9] flex items-center justify-center transition">
-                      <Upload className="w-4 h-4" />
-                    </div>
-                    <p className="text-xs font-bold text-slate-200 group-hover:text-white">
-                      {isUploadingImage ? 'جاري معالجة الصورة...' : 'اضغط لاختيار صورة إيصال التحويل أو سكرين شوت'}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      يدعم صيغ الصور (PNG, JPG, JPEG, WebP)
-                    </p>
+                    <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                    <span>{validationError}</span>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Validation Error Alert */}
-            {validationError && (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-500/50 bg-red-950/40 p-3 text-xs font-bold text-red-200 flex items-center gap-2.5 shadow-sm"
-              >
-                <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-                <span>{validationError}</span>
+                {/* Step 2 Action Buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValidationError(null);
+                      setCurrentStep(1);
+                    }}
+                    className="px-4 py-3.5 rounded-xl border border-white/15 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    <span>رجوع</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || isUploadingImage || Boolean(validationError)}
+                    className={`flex-1 py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 text-sm cursor-pointer ${
+                      isSubmitting || isUploadingImage || Boolean(validationError)
+                        ? 'opacity-60 cursor-not-allowed'
+                        : ''
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                        <span>جاري تسجيل وتثبيت الحجز...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>تأكيد وإرسال الحجز</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <p className="flex items-center justify-center gap-1.5 pt-0.5 text-[11px] text-slate-400">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#00B8A9]" />
+                  <span>يتم تسجيل الحجز مباشرة في جدول العيادة وتأكيد الموعد فور مراجعة الإيصال</span>
+                </p>
               </div>
             )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || isUploadingImage || Boolean(validationError)}
-              className={`w-full py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 text-sm ${
-                isSubmitting || isUploadingImage || Boolean(validationError)
-                  ? 'opacity-60 cursor-not-allowed'
-                  : ''
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                  <span>جاري تسجيل وتثبيت الحجز في النظام...</span>
-                </>
-              ) : (
-                <>
-                  <span>تأكيد وتسجيل الحجز في النظام</span>
-                  <ChevronLeft className="h-4 w-4" />
-                </>
-              )}
-            </button>
-
-            <p className="flex items-center justify-center gap-1.5 pt-0.5 text-[11px] text-slate-400">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#00B8A9]" />
-              <span>يتم تسجيل الحجز مباشرة في جدول العيادة وتأكيد الموعد فور مراجعة الإيصال</span>
-            </p>
           </form>
         </div>
       )}

@@ -461,16 +461,25 @@ export function generateAppointmentWhatsAppMessage(
   const visitType = apt.visit_type || 'كشف واستشارة';
 
   switch (templateKey) {
-    case 'confirmation':
-      return `مرحباً أستاذ/ة *${patientName}* 🌸
-نتواصل معك من *عيادات Androderma للجلدية والليزر والتجميل الطبي*.
-يسعدنا تأكيد حجز موعدك:
-📋 *الخدمة:* ${service} (${visitType})
-📍 *الفرع:* ${branchName}
-🗓️ *التاريخ:* ${date}
-⏰ *الوقت:* ${time}
+    case 'confirmation': {
+      const matchBranch = defaultBranches.find(
+        (b) => b.id === apt.branch_id || b.nameAr === apt.branch_name_ar || apt.branch_name_ar?.includes(b.nameAr)
+      );
+      const clinicAddress = matchBranch?.addressAr ? `\n🏢 *العنوان بالتفصيل:* ${matchBranch.addressAr}` : '';
+      const doctorName = apt.doctor_name || 'د. هشام الزمزمي';
 
-برجاء الرد بكلمة *تأكيد* لتثبيت الحجز في الجدول الطبي. في حال وجود أي استفسار يسعدنا دائماً خدمتكم! ✨`;
+      return `مرحباً أستاذ/ة *${patientName}* 🌸
+نتواصل معك من *عيادات أندروديرما (Androderma)* لتأكيد حجز موعدك الطبي.
+
+📋 *بيانات الحجز المؤكد:*
+👨‍⚕️ *الطبيب المعالج:* ${doctorName}
+🩺 *الخدمة:* ${service} (${visitType})
+📍 *الفرع:* ${branchName}${clinicAddress}
+🗓️ *تاريخ الموعد:* ${date}
+⏰ *وقت الموعد:* ${time}
+
+✨ تم تثبيت موعدكم رسمياً في الجدول الطبي للعيادة. نرجو التكرم بالحضور قبل الموعد بـ 10 دقائق. نتطلع لاستقبالكم ونتمنى لكم دوام الصحة والعافية! 🤍`;
+    }
 
     case 'reminder':
       return `تذكير بموعدكم القادم 🌿

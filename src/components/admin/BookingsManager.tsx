@@ -32,6 +32,8 @@ import {
   clearAllAppointments,
   togglePaymentStatus,
   updateConfirmationStatus,
+  formatPhoneForWhatsApp,
+  generateAppointmentWhatsAppMessage,
 } from '@/services/appointmentService';
 import { exportAppointmentsPdfReport } from '@/services/pdfReportService';
 import { branches as defaultBranches } from '@/data/clinicData';
@@ -282,6 +284,24 @@ export const BookingsManager = React.memo(function BookingsManager({
     []
   );
 
+  // Construct and trigger WhatsApp confirmation link with doctor name, date/time, and clinic address
+  const triggerWhatsAppConfirmation = useCallback((apt: AppointmentRecord) => {
+    const rawPhone = apt.patient_phone || '';
+    const formattedPhone = formatPhoneForWhatsApp(rawPhone);
+    const message = generateAppointmentWhatsAppMessage(
+      { ...apt, status: 'confirmed' },
+      'confirmation'
+    );
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.warn('Could not auto-open WhatsApp link:', err);
+    }
+    return url;
+  }, []);
+
   // Handle Save (Create / Update)
   const handleSaveAppointment = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,6 +348,16 @@ export const BookingsManager = React.memo(function BookingsManager({
           await loadData();
 
           if (wasNotConfirmed && isNowConfirmed) {
+            triggerWhatsAppConfirmation({
+              ...editingAppointment,
+              patient_name: formState.patient_name,
+              patient_phone: formState.patient_phone,
+              appointment_date: formState.appointment_date,
+              appointment_time: formState.appointment_time,
+              status: formState.status,
+              payment_status: finalPaymentStatus,
+            });
+
             await triggerN8nConfirmationWebhook({
               ...editingAppointment,
               patient_name: formState.patient_name,
@@ -370,7 +400,7 @@ export const BookingsManager = React.memo(function BookingsManager({
     } catch {
       onNotify('error', 'حدث خطأ غير متوقع');
     }
-  }, [editingAppointment, formState, loadData, onNotify, triggerN8nConfirmationWebhook]);
+  }, [editingAppointment, formState, loadData, onNotify, triggerN8nConfirmationWebhook, triggerWhatsAppConfirmation]);
 
   // Open Edit Modal
   const openEditModal = useCallback((apt: AppointmentRecord) => {
@@ -462,6 +492,13 @@ export const BookingsManager = React.memo(function BookingsManager({
         await loadData();
 
         if (newStatus === 'confirmed') {
+          // Automatically trigger personalized WhatsApp confirmation message to patient
+          triggerWhatsAppConfirmation(apt);
+          onNotify(
+            'success',
+            `تم تأكيد حجز المريض ${apt.patient_name} بنجاح! جاري فتح واتساب لإرسال رسالة التأكيد.`
+          );
+
           const appointment = {
             ...apt,
             status: 'confirmed' as AppointmentStatus,
@@ -992,6 +1029,19 @@ export const BookingsManager = React.memo(function BookingsManager({
                           <option value="cancelled">ملغي</option>
                           <option value="completed">مكتمل</option>
                         </select>
+
+                        {/* 1-Click Send Confirmation WhatsApp Link */}
+                        {apt.status === 'confirmed' && (
+                          <button
+                            type="button"
+                            onClick={() => triggerWhatsAppConfirmation(apt)}
+                            title="إرسال رسالة تأكيد الحجز للمريض عبر واتساب بنقرة واحدة"
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold transition shadow-sm"
+                          >
+                            <MessageCircle className="h-3 w-3 text-emerald-400" />
+                            <span>تأكيد واتساب</span>
+                          </button>
+                        )}
                       </div>
                     </td>
 
