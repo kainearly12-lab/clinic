@@ -39,6 +39,7 @@ import {
   fetchSiteSettings,
   updateSiteSettings,
   fetchActivityLogs,
+  subscribeActivityLogs,
 } from '@/services/adminService';
 import { fetchAppointments } from '@/services/appointmentService';
 import {
@@ -165,6 +166,14 @@ export const AdminDashboard = React.memo(function AdminDashboard({
     const unsubscribe = subscribeScheduleChanges(() => {
       getTodayDynamicSchedule().then((res) => setTodaySchedule(res));
       fetchAllScheduleExceptions().then((exc) => setExceptions(exc));
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to real-time activity log changes
+  useEffect(() => {
+    const unsubscribe = subscribeActivityLogs(() => {
+      fetchActivityLogs().then((newLogs) => setLogs(newLogs));
     });
     return () => unsubscribe();
   }, []);

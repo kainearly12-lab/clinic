@@ -3,10 +3,9 @@ import {
   BranchRecord,
   ScheduleExceptionRecord,
 } from '@/types/schedule';
-import { SiteSettingsRecord, ActivityLogRecord } from '@/types/admin';
+import { SiteSettingsRecord } from '@/types/admin';
 import { branches as defaultBranches } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
-import { getDeviceType } from '@/utils/deviceDetector';
 import {
   notifyScheduleChanged,
   updateWeeklyScheduleDay,
@@ -83,181 +82,23 @@ let localSettings: SiteSettingsRecord = {
   updated_at: new Date().toISOString(),
 };
 
-let localLogs: ActivityLogRecord[] = [];
+import {
+  logAdminActivity,
+  logActivity,
+  fetchActivityLogs,
+  cleanOldActivityLogs,
+  subscribeActivityLogs,
+  notifyActivityLogsChanged,
+} from './activityLogService';
 
-/**
- * Audit Logger: writes directly to Supabase activity_logs table with automatic device detection
- */
-export async function logAdminActivity(
-  actionType: string,
-  description: string,
-  entityType?: string,
-  entityId?: string,
-  metadata?: Record<string, unknown>
-): Promise<void> {
-  const supabase = getSupabaseClient();
-  const detectedDevice = getDeviceType();
-  const performedBy = 'مدير النظام';
-
-  const logEntry: ActivityLogRecord = {
-    id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    action_type: actionType,
-    description,
-    entity_type: entityType,
-    entity_id: entityId,
-    admin_email: performedBy,
-    performed_by: performedBy,
-    device_info: detectedDevice,
-    metadata: metadata || null,
-    created_at: new Date().toISOString(),
-  };
-
-  localLogs = [logEntry, ...localLogs].slice(0, 50);
-
-  if (!supabase) return;
-
-  try {
-    const { error } = await supabase.from('activity_logs').insert([
-      {
-        action_type: actionType,
-        description,
-        performed_by: performedBy,
-        device_info: detectedDevice,
-        metadata: metadata || null,
-      },
-    ]);
-
-    if (error) {
-      // Fallback if schema doesn't have device_info column yet
-      await supabase.from('activity_logs').insert([
-        {
-          action_type: actionType,
-          description,
-          performed_by: performedBy,
-        },
-      ]);
-    }
-  } catch (err) {
-    console.warn('Failed to insert activity log to Supabase:', err);
-  }
-}
-
-/**
- * 30-Day Activity Log Retention Policy & Cleanup
- * Cleans activity logs older than 30 days from live Supabase and local memory.
- * - Attempts to call RPC function `clean_old_activity_logs()`
- * - Falls back to standard Supabase delete query with `.lt('created_at', cutoffDate)`
- * - Cleans in-memory cache to ensure strict 30-day retention
- */
-export async function cleanOldActivityLogs(): Promise<{
-  success: boolean;
-  deletedCount: number;
-  cutoffDate: string;
-  error?: string;
-}> {
-  const supabase = getSupabaseClient();
-  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-  const cutoffTime = Date.now() - thirtyDaysMs;
-  const cutoffDateIso = new Date(cutoffTime).toISOString();
-
-  // 1. In-memory cleanup
-  const beforeCount = localLogs.length;
-  localLogs = localLogs.filter((log) => {
-    const logTime = new Date(log.created_at).getTime();
-    return !isNaN(logTime) ? logTime >= cutoffTime : true;
-  });
-  const localDeleted = beforeCount - localLogs.length;
-
-  if (!supabase) {
-    return {
-      success: true,
-      deletedCount: localDeleted,
-      cutoffDate: cutoffDateIso,
-    };
-  }
-
-  try {
-    // 2. Try Supabase RPC clean_old_activity_logs() first
-    const { data: rpcDeleted, error: rpcError } = await supabase.rpc('clean_old_activity_logs');
-
-    if (!rpcError && typeof rpcDeleted === 'number') {
-      return {
-        success: true,
-        deletedCount: rpcDeleted,
-        cutoffDate: cutoffDateIso,
-      };
-    }
-
-    // 3. Fallback to direct DELETE query via PostgREST
-    const { count, error: deleteError } = await supabase
-      .from('activity_logs')
-      .delete({ count: 'exact' })
-      .lt('created_at', cutoffDateIso);
-
-    if (deleteError) {
-      console.warn('Fallback delete query notice for activity_logs:', deleteError.message);
-      return {
-        success: true,
-        deletedCount: localDeleted,
-        cutoffDate: cutoffDateIso,
-      };
-    }
-
-    return {
-      success: true,
-      deletedCount: typeof count === 'number' ? count : localDeleted,
-      cutoffDate: cutoffDateIso,
-    };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn('cleanOldActivityLogs error (non-fatal):', msg);
-    return {
-      success: true,
-      deletedCount: localDeleted,
-      cutoffDate: cutoffDateIso,
-      error: msg,
-    };
-  }
-}
-
-/**
- * Fetch all activity logs from live Supabase (with automatic 30-day retention filtering)
- */
-export async function fetchActivityLogs(): Promise<ActivityLogRecord[]> {
-  const supabase = getSupabaseClient();
-
-  // Trigger non-blocking background retention cleanup
-  cleanOldActivityLogs().catch(() => {
-    // Silent catch
-  });
-
-  if (!supabase) {
-    return [...localLogs];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('activity_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (error || !data) {
-      return [...localLogs];
-    }
-    return data.map((item) => ({
-      id: item.id,
-      action_type: item.action_type,
-      description: item.description,
-      admin_email: item.performed_by || 'مدير النظام',
-      performed_by: item.performed_by || 'مدير النظام',
-      device_info: item.device_info || getDeviceType(),
-      created_at: item.created_at,
-    })) as ActivityLogRecord[];
-  } catch {
-    return [...localLogs];
-  }
-}
+export {
+  logAdminActivity,
+  logActivity,
+  fetchActivityLogs,
+  cleanOldActivityLogs,
+  subscribeActivityLogs,
+  notifyActivityLogsChanged,
+};
 
 /**
  * Fetch all schedule exceptions directly from live Supabase
@@ -441,14 +282,12 @@ export async function deleteScheduleException(
 
   notifyScheduleChanged();
 
-  if (deletedItem) {
-    await logAdminActivity(
-      'holiday_deleted',
-      `تم إلغاء الاستثناء/العطلة لتاريخ ${deletedItem.exception_date}`,
-      'schedule_exception',
-      deletedItem.id
-    );
-  }
+  await logAdminActivity(
+    'holiday_deleted',
+    `تم إلغاء الاستثناء/العطلة لتاريخ ${deletedItem?.exception_date || dateOrId}`,
+    'schedule_exception',
+    dateOrId
+  );
 
   if (!supabase) {
     return { success: true };

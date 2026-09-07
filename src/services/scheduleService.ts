@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/lib/supabase';
+import { logAdminActivity } from '@/services/activityLogService';
 import { branches as defaultBranches } from '@/data/clinicData';
 import {
   BranchRecord,
@@ -562,12 +563,21 @@ export async function updateWeeklyScheduleDay(
   // 2. Broadcast immediate reactive update across components
   notifyScheduleChanged();
 
+  const targetItem = localWeeklyRotation.find((r) => r.dayIndex === dayIndex);
+
   if (!client) {
+    if (targetItem) {
+      await logAdminActivity(
+        'schedule_updated',
+        `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بفرع ${targetItem.branchNameAr || targetItem.branchId}`,
+        'schedule',
+        String(dayIndex)
+      );
+    }
     return { success: true };
   }
 
   try {
-    const targetItem = localWeeklyRotation.find((r) => r.dayIndex === dayIndex);
     if (!targetItem) return { success: true };
 
     // Resolve row ID for this day from cache or database
@@ -622,6 +632,13 @@ export async function updateWeeklyScheduleDay(
     if (upsertData && upsertData[0]) {
       cachedWeeklyRowIds[dayIndex] = upsertData[0].id;
     }
+
+    await logAdminActivity(
+      'schedule_updated',
+      `تم تعديل مواعيد وجدول يوم (${targetItem.dayNameAr}) بـ ${targetItem.branchNameAr || targetItem.branchId}`,
+      'schedule',
+      String(dayIndex)
+    );
 
     notifyScheduleChanged();
     return { success: true };
@@ -679,6 +696,12 @@ export async function saveFullWeeklySchedule(
   notifyScheduleChanged();
 
   if (!client) {
+    await logAdminActivity(
+      'schedule_updated',
+      `تم حفظ وتحديث جدول التناوب الأسبوعي بالكامل (${items.length} يوم)`,
+      'weekly_schedule',
+      'full_rotation'
+    );
     return { success: true };
   }
 
@@ -737,6 +760,13 @@ export async function saveFullWeeklySchedule(
         cachedWeeklyRowIds[Number(r.day_of_week)] = r.id;
       });
     }
+
+    await logAdminActivity(
+      'schedule_updated',
+      `تم حفظ وتحديث جدول التناوب الأسبوعي بالكامل (${items.length} يوم) في قاعدة البيانات`,
+      'weekly_schedule',
+      'full_rotation'
+    );
 
     notifyScheduleChanged();
     return { success: true };
@@ -1025,6 +1055,13 @@ export async function saveDailyBranchOverride(payload: {
         .insert([excPayload]);
     }
 
+    await logAdminActivity(
+      'branch_swapped',
+      `تم تغيير فرع يوم ${overrideRecord.override_date} إلى ${overrideRecord.branch_name_ar || overrideRecord.override_branch_id}`,
+      'daily_override',
+      overrideRecord.override_date
+    );
+
     notifyScheduleChanged();
     return { success: true, data: overrideRecord };
   } catch (err: unknown) {
@@ -1045,6 +1082,13 @@ export async function deleteDailyBranchOverride(
 
   localDailyOverrides = localDailyOverrides.filter(
     (o) => o.id !== dateOrId && o.override_date !== dateOrId
+  );
+
+  await logAdminActivity(
+    'branch_swapped',
+    `تم إلغاء التغيير اليومي للفرع لتاريخ ${dateStr || dateOrId}`,
+    'daily_override',
+    dateStr || dateOrId
   );
 
   notifyScheduleChanged();

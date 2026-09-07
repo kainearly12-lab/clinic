@@ -55,7 +55,49 @@ export function getSupabaseClient(): SupabaseClient | null {
   return clientInstance;
 }
 
+// Fallback no-op proxy if clientInstance is null
+const safeMockClient = new Proxy(
+  {},
+  {
+    get: (_, prop) => {
+      if (prop === 'auth') {
+        return {
+          getSession: async () => ({ data: { session: null }, error: null }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          signInWithPassword: async () => ({ data: null, error: new Error('Supabase not configured') }),
+          signOut: async () => ({ error: null }),
+        };
+      }
+      if (prop === 'storage') {
+        return {
+          from: () => ({
+            upload: async () => ({ data: null, error: new Error('Supabase storage not configured') }),
+            getPublicUrl: () => ({ data: { publicUrl: '' } }),
+          }),
+        };
+      }
+      if (prop === 'rpc') {
+        return async () => ({ data: null, error: null });
+      }
+      if (prop === 'from') {
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          insert: async () => ({ data: null, error: null }),
+          upsert: async () => ({ data: null, error: null }),
+          update: () => chain,
+          delete: () => chain,
+          eq: () => chain,
+          order: () => chain,
+          single: async () => ({ data: null, error: null }),
+        };
+        return () => chain;
+      }
+      return async () => ({ data: null, error: null });
+    },
+  }
+) as unknown as SupabaseClient;
+
 // Export singleton instance
-export const supabase = getSupabaseClient()!;
+export const supabase = getSupabaseClient() || safeMockClient;
 
 export default supabase;

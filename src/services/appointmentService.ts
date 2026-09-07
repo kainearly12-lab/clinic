@@ -336,11 +336,26 @@ export async function updateAppointment(
     };
   }
 
+  const actionDescription =
+    updates.status === 'confirmed'
+      ? `تم تأكيد حجز المريض (${currentApt?.patient_name || updates.patient_name || appointmentId}) وترقية حالة الدفع إلى مدفوع`
+      : updates.status === 'cancelled'
+      ? `تم إلغاء حجز المريض (${currentApt?.patient_name || updates.patient_name || appointmentId})`
+      : updates.payment_status === 'paid'
+      ? `تم تسجيل سداد حجز المريض (${currentApt?.patient_name || updates.patient_name || appointmentId}) بمبلغ ${updates.amount ?? currentApt?.amount_paid ?? 500} ج.م`
+      : `تم تعديل بيانات الحجز #${appointmentId} (${updates.status || updates.payment_status || updates.visit_type || 'تحديث بيانات'})`;
+
   await logAdminActivity(
     'booking_updated',
-    `تم تعديل بيانات الحجز #${appointmentId} (${updates.status || updates.payment_status || updates.visit_type || 'تحديث بيانات/تشخيص'})`,
+    actionDescription,
     'appointment',
-    appointmentId
+    appointmentId,
+    {
+      patient_name: currentApt?.patient_name || updates.patient_name,
+      status: updates.status,
+      payment_status: updates.payment_status,
+      amount: updates.amount,
+    }
   );
 
   if (!supabase) {
