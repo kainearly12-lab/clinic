@@ -111,16 +111,24 @@ export function GoogleReviewsMarquee() {
               <div
                 key={`rev-card-${review.id}-${idx}`}
                 dir="rtl"
-                className="w-[340px] sm:w-[420px] shrink-0 rounded-3xl bg-white/90 dark:bg-[#181b24]/90 backdrop-blur-md border border-[#00B8A9]/40 hover:border-[#00B8A9] p-6 sm:p-7 shadow-[0_0_15px_rgba(0,184,169,0.15)] hover:shadow-[0_0_25px_rgba(0,184,169,0.25)] hover:-translate-y-1.5 transition-all duration-300 text-right flex flex-col justify-between select-none"
+                className="relative w-[340px] sm:w-[420px] shrink-0 rounded-[16px] bg-[linear-gradient(135deg,#ffffff_0%,#f4f8f7_100%)] dark:bg-[linear-gradient(135deg,#181b24_0%,#252a36_100%)] border border-[rgba(0,184,169,0.25)] hover:border-[rgba(0,184,169,0.5)] p-6 sm:p-7 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:-translate-y-1.5 transition-all duration-300 text-right flex flex-col justify-between select-none overflow-hidden"
               >
-                <div>
+                {/* Watermark Quote Mark in Top-Right RTL Corner */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-1 right-3 font-serif text-[80px] leading-none text-[#00B8A9]/10 dark:text-[#00B8A9]/10 select-none z-0"
+                >
+                  "
+                </span>
+
+                <div className="relative z-10">
                   {/* Card Header: Google Badge & Stars */}
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-black text-xs font-sans">
+                    <div className="flex items-center gap-2">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-black text-xs font-sans shrink-0">
                         G
                       </span>
-                      <span className="text-[11px] font-bold text-slate-500 dark:text-gray-400">
+                      <span className="inline-flex items-center rounded-full bg-[rgba(0,184,169,0.12)] text-[11px] font-bold text-teal-800 dark:text-teal-300 px-2.5 py-1">
                         {review.branchAr ?? 'عيادات Androderma'}
                       </span>
                     </div>
@@ -138,19 +146,25 @@ export function GoogleReviewsMarquee() {
                   </p>
                 </div>
 
-                {/* Card Footer: Patient Name & Verification */}
-                <div className="mt-6 flex items-center justify-between border-t border-slate-100 dark:border-gray-800/80 pt-4">
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
-                      {review.author}
-                    </h4>
-                    <span className="text-[10px] sm:text-[11px] font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>{review.roleAr ?? 'مراجعة موثقة'}</span>
-                    </span>
+                {/* Card Footer: Reviewer Avatar, Patient Name & Verification */}
+                <div className="relative z-10 mt-6 flex items-center justify-between border-t border-slate-100 dark:border-gray-800/80 pt-4">
+                  <div className="flex items-center gap-3">
+                    {/* Reviewer Initial Avatar Circle */}
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-[rgba(0,184,169,0.15)] flex items-center justify-center font-bold text-sm sm:text-base text-teal-700 dark:text-[#00B8A9] select-none">
+                      {review.author?.trim().charAt(0) || 'م'}
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                        {review.author}
+                      </h4>
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>{review.roleAr ?? 'مراجعة موثقة'}</span>
+                      </span>
+                    </div>
                   </div>
 
-                  <span className="text-[10px] font-medium text-slate-600 dark:text-gray-400">
+                  <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">
                     {review.dateAr}
                   </span>
                 </div>
