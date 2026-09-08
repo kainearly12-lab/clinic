@@ -124,12 +124,12 @@ export function BentoFAQAccordion() {
           <div className="space-y-6">
             
             {/* 1. Figma-Grade Category Tabs (Segmented Control Container) */}
-            <div className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/60 border border-slate-200/90 dark:border-white/10 rounded-2xl p-2 shadow-sm space-y-1">
-              <div className="px-3 py-1.5 flex items-center justify-between">
+            <div className="backdrop-blur-xl bg-white/95 dark:bg-[#12161f]/90 border border-slate-200/90 dark:border-white/10 rounded-3xl p-2.5 shadow-sm space-y-1.5">
+              <div className="px-3.5 py-2 flex items-center justify-between border-b border-slate-100 dark:border-white/5 mb-1">
                 <span className="text-[11px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   تصنيفات الاستفسارات
                 </span>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/60 px-2.5 py-0.5 rounded-full border border-teal-200/80 dark:border-teal-700/50">
                   {faqs.length} سؤال متاح
                 </span>
               </div>
@@ -140,28 +140,29 @@ export function BentoFAQAccordion() {
                 return (
                   <button
                     key={cat.key}
+                    type="button"
                     onClick={() => setActiveCategory(cat.key)}
-                    className={`relative flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-right text-xs sm:text-sm font-bold transition-all duration-300 ease-out z-10 ${
+                    className={`group relative flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-right text-xs sm:text-sm font-bold transition-all duration-300 ease-out z-10 cursor-pointer ${
                       isActive
                         ? 'text-white'
-                        : 'text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/5'
+                        : 'text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
                     }`}
                   >
-                    {/* Floating Active Background Pill Indicator */}
+                    {/* Floating Active Background Pill Indicator with Gradient Glow */}
                     {isActive && (
                       <motion.div
                         layoutId="activeFaqCategoryPill"
-                        className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-700 to-[#00B8A9] dark:from-teal-800 dark:to-emerald-600 shadow-md shadow-emerald-500/20 -z-10"
+                        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 shadow-lg shadow-teal-500/25 ring-1 ring-teal-400/40 -z-10"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 relative z-10">
                       <div
-                        className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+                        className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
                           isActive
-                            ? 'bg-white/20 text-white'
-                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400'
+                            ? 'bg-white/20 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 group-hover:bg-teal-50 dark:group-hover:bg-teal-950/50 group-hover:text-teal-700 dark:group-hover:text-teal-300'
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -171,7 +172,7 @@ export function BentoFAQAccordion() {
 
                     {/* Translucent Glass Pill Badge */}
                     <span
-                      className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition-all ${
+                      className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition-all relative z-10 ${
                         isActive
                           ? 'bg-white/20 border border-white/30 text-white shadow-xs'
                           : 'bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-gray-400'
@@ -185,9 +186,9 @@ export function BentoFAQAccordion() {
             </div>
 
             {/* 3. Live Consultation Glass Card with Doctor Avatar & Concierge Sheen */}
-            <div className="group relative rounded-3xl bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/90 dark:border-emerald-500/30 p-6 shadow-[0_15px_35px_rgba(0,184,169,0.12)] text-right overflow-hidden transition-all duration-300 hover:border-emerald-500/50">
+            <div className="group relative rounded-3xl bg-white/95 dark:bg-[#12161f]/90 backdrop-blur-xl border border-slate-200/90 dark:border-emerald-500/30 p-6 shadow-[0_15px_35px_rgba(0,184,169,0.08)] text-right overflow-hidden transition-all duration-300 hover:border-emerald-500/50">
               {/* Ambient radial lighting */}
-              <div className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-emerald-500/20 blur-3xl" />
+              <div className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-emerald-500/15 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-teal-500/15 blur-2xl" />
 
               {/* Status Header with Live Pulsing Green Badge */}
@@ -199,7 +200,7 @@ export function BentoFAQAccordion() {
                   </span>
                   <span>الاستقبال الطبي متاح الآن</span>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-gray-400">
+                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-gray-400">
                   <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-emerald-400" />
                   <span>استجابة فورية</span>
                 </div>
@@ -263,47 +264,54 @@ export function BentoFAQAccordion() {
           </div>
 
           {/* 2. Main Dynamic Accordion Column */}
-          <div ref={accordionContainerRef} className="space-y-3.5 text-right">
+          <div ref={accordionContainerRef} className="space-y-4 sm:space-y-4.5 text-right">
             {filteredFaqs.map((faq) => {
               const isOpen = openId === faq.id;
               return (
                 <div
                   key={faq.id}
-                  className={`faq-item-card overflow-hidden rounded-2xl transition-all duration-300 backdrop-blur-md ${
+                  className={`faq-item-card group relative overflow-hidden rounded-2xl transition-all duration-300 backdrop-blur-md ${
                     isOpen
-                      ? 'bg-gradient-to-l from-teal-50/90 via-emerald-50/40 to-white dark:bg-gradient-to-r dark:from-emerald-950/30 dark:via-slate-900/90 dark:to-slate-900 border-r-4 border-[#00B8A9] dark:border-emerald-400 border-t border-b border-l border-emerald-500/20 shadow-[0_10px_30px_-10px_rgba(0,184,169,0.15)]'
-                      : 'border border-slate-200/80 dark:border-white/5 bg-white/80 dark:bg-slate-900/40 hover:border-emerald-500/30 shadow-xs'
+                      ? 'bg-white/95 dark:bg-[#12161f]/95 border-slate-200/90 dark:border-white/10 border-t-2 border-t-teal-600 dark:border-t-teal-400 shadow-[0_12px_32px_-8px_rgba(20,184,166,0.18)] dark:shadow-[0_12px_32px_-8px_rgba(20,184,166,0.22)]'
+                      : 'border border-slate-200/80 dark:border-white/5 bg-white/80 dark:bg-slate-900/40 hover:border-teal-500/40 dark:hover:border-teal-500/30 hover:bg-white dark:hover:bg-slate-900/60 shadow-xs'
                   }`}
                 >
                   <button
+                    type="button"
                     onClick={() => toggleFAQ(faq.id)}
-                    className="flex w-full items-center justify-between gap-4 p-5 sm:p-6 text-right"
+                    className="flex w-full items-center justify-between gap-4 p-5 sm:p-6 text-right cursor-pointer"
                   >
                     <div className="flex flex-1 flex-col items-start gap-1">
-                      {/* 2. Popular Badge Upgrade */}
+                      {/* 2. Popular Badge with subtle pulse/shimmer animation */}
                       {faq.isPopular && (
-                        <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-xs rounded-full text-xs px-3 py-1 font-black mb-1 backdrop-blur-xs">
-                          <Flame className="h-3.5 w-3.5 text-amber-500" />
-                          <span>الأكثر استفساراً</span>
+                        <span className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-amber-500/15 via-amber-400/25 to-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs px-3 py-1 font-black mb-1.5 shadow-xs backdrop-blur-xs">
+                          {/* Shimmer line */}
+                          <span className="pointer-events-none absolute inset-0 -translate-x-full animate-shimmer-slide bg-gradient-to-r from-transparent via-white/30 dark:via-white/20 to-transparent" />
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                          </span>
+                          <Flame className="h-3.5 w-3.5 text-amber-500 animate-pulse shrink-0" />
+                          <span className="relative z-10">الأكثر استفساراً</span>
                         </span>
                       )}
                       <span
                         className={`text-sm sm:text-base font-bold leading-relaxed transition-colors ${
                           isOpen
-                            ? 'text-teal-800 dark:text-[#00B8A9]'
-                            : 'text-slate-900 dark:text-white'
+                            ? 'text-teal-800 dark:text-teal-300'
+                            : 'text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300'
                         }`}
                       >
                         {faq.q}
                       </span>
                     </div>
 
-                    {/* Icon Micro-Interaction: Smooth 135deg rotation & scale with emerald backdrop */}
+                    {/* Icon Micro-Interaction: Smooth 135deg rotation & scale with teal backdrop */}
                     <div
                       className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-all duration-300 ease-out ${
                         isOpen
-                          ? 'bg-[#00B8A9] text-slate-950 shadow-[0_0_15px_rgba(0,184,169,0.5)] scale-110 rotate-[135deg]'
-                          : 'bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:bg-teal-50 dark:hover:bg-white/10 hover:text-emerald-400 rotate-0 scale-100'
+                          ? 'bg-teal-600 dark:bg-teal-500 text-white shadow-[0_0_15px_rgba(20,184,166,0.4)] scale-110 rotate-[135deg]'
+                          : 'bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-slate-600 dark:text-gray-400 group-hover:bg-teal-50 dark:group-hover:bg-white/10 group-hover:text-teal-600 dark:group-hover:text-teal-400 rotate-0 scale-100'
                       }`}
                     >
                       <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -313,14 +321,28 @@ export function BentoFAQAccordion() {
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
+                        key="content"
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        animate={{
+                          height: 'auto',
+                          opacity: 1,
+                          transition: {
+                            height: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+                            opacity: { duration: 0.28, delay: 0.08, ease: 'easeOut' },
+                          },
+                        }}
+                        exit={{
+                          height: 0,
+                          opacity: 0,
+                          transition: {
+                            height: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
+                            opacity: { duration: 0.18, ease: 'easeIn' },
+                          },
+                        }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-emerald-500/15 dark:border-emerald-500/20 px-5 pb-6 pt-4 sm:px-6">
-                          <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-700 dark:text-gray-300">
+                        <div className="border-t border-slate-100 dark:border-white/5 px-5 pb-6 pt-4 sm:px-6">
+                          <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-600 dark:text-gray-300">
                             {faq.a}
                           </p>
                         </div>
