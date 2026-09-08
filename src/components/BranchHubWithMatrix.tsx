@@ -500,7 +500,7 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
                 <button
                   key={b.id}
                   onClick={() => setActiveBranchId(b.id)}
-                  className={`relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-colors duration-200 sm:text-sm z-10 ${
+                  className={`group relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-xs font-bold transition-colors duration-200 sm:text-sm z-10 overflow-hidden ${
                     isActive
                       ? 'text-white'
                       : 'text-slate-700 dark:text-gray-300 hover:text-teal-800 dark:hover:text-white'
@@ -514,8 +514,40 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
                       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
+
+                  {/* Soft Radial Glow Interior Illumination (lit window effect) */}
+                  <div
+                    className={`pointer-events-none absolute inset-0 rounded-xl transition-opacity duration-300 ease-out z-[5] ${
+                      isActive
+                        ? 'opacity-100'
+                        : 'opacity-0 [@media(hover:hover)]:group-hover:opacity-100'
+                    }`}
+                    style={{
+                      background: isActive
+                        ? 'radial-gradient(110px circle at 75% 50%, rgba(255, 255, 255, 0.22) 0%, rgba(45, 212, 191, 0.15) 50%, transparent 80%)'
+                        : 'radial-gradient(110px circle at 75% 50%, rgba(0, 184, 169, 0.18) 0%, rgba(13, 148, 136, 0.08) 50%, transparent 80%)',
+                      filter: 'blur(6px)',
+                    }}
+                  />
+
                   <span className="relative z-10 flex items-center gap-2">
-                    <MapPin className={`h-4 w-4 shrink-0 ${isActive ? 'text-teal-200' : 'text-teal-700 dark:text-teal-400'}`} />
+                    <span className="relative flex items-center justify-center">
+                      {/* Concentrated Pin Glow */}
+                      <span
+                        className={`pointer-events-none absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-full transition-opacity duration-300 ease-out ${
+                          isActive
+                            ? 'opacity-100'
+                            : 'opacity-0 [@media(hover:hover)]:group-hover:opacity-100'
+                        }`}
+                        style={{
+                          background: isActive
+                            ? 'radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, rgba(94, 234, 212, 0.2) 55%, transparent 75%)'
+                            : 'radial-gradient(circle, rgba(0, 184, 169, 0.35) 0%, rgba(13, 148, 136, 0.15) 55%, transparent 75%)',
+                          filter: 'blur(4px)',
+                        }}
+                      />
+                      <MapPin className={`relative z-10 h-4 w-4 shrink-0 ${isActive ? 'text-teal-200' : 'text-teal-700 dark:text-teal-400'}`} />
+                    </span>
                     <span>{b.nameAr}</span>
                   </span>
                 </button>
