@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Stethoscope,
@@ -18,8 +18,15 @@ if (typeof window !== 'undefined') {
 }
 
 export function MedicalPhilosophyBento() {
+  const sectionRef = useRef<HTMLElement | null>(null);
   const pillarsRef = useRef<HTMLDivElement | null>(null);
   const progressLineRef = useRef<HTMLDivElement | null>(null);
+  const centerLineRef = useRef<HTMLDivElement | null>(null);
+
+  const card1Ref = useRef<HTMLDivElement | null>(null);
+  const card2Ref = useRef<HTMLDivElement | null>(null);
+  const [card1Active, setCard1Active] = useState(false);
+  const [card2Active, setCard2Active] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -40,9 +47,56 @@ export function MedicalPhilosophyBento() {
           }
         );
       }
-    }, pillarsRef);
+
+      // Vertical connecting line growing from scaleY(0) to scaleY(1) when section enters viewport
+      if (centerLineRef.current && sectionRef.current) {
+        gsap.fromTo(
+          centerLineRef.current,
+          { scaleY: 0, transformOrigin: 'top' },
+          {
+            scaleY: 1,
+            duration: 0.8,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: 'top 75%',
+              toggleActions: 'play none none none',
+            },
+          }
+        );
+      }
+    }, sectionRef);
 
     return () => ctx.revert();
+  }, []);
+
+  // IntersectionObserver for the two sub-cards with 150ms stagger delay
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === card1Ref.current) {
+              setCard1Active(true);
+              observer.unobserve(entry.target);
+            } else if (entry.target === card2Ref.current) {
+              setTimeout(() => {
+                setCard2Active(true);
+              }, 150);
+              observer.unobserve(entry.target);
+            }
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (card1Ref.current) observer.observe(card1Ref.current);
+    if (card2Ref.current) observer.observe(card2Ref.current);
+
+    return () => observer.disconnect();
   }, []);
 
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -55,14 +109,40 @@ export function MedicalPhilosophyBento() {
 
   return (
     <section
+      ref={sectionRef}
       id="about"
       className="relative overflow-hidden bg-white/80 dark:bg-[#0e1014] py-20 sm:py-28 transition-colors duration-300 border-b border-slate-200/80 dark:border-gray-800/80"
+      style={{
+        '--primary-teal': '#00B8A9',
+        '--teal-accent': '#00B8A9',
+        '--teal-40': 'rgba(0, 184, 169, 0.4)',
+      } as React.CSSProperties}
     >
+      {/* Keyframes for floating badge */}
+      <style>{`
+        @keyframes float-badge {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-4px); }
+          100% { transform: translateY(0px); }
+        }
+      `}</style>
+
       {/* Soft Ambient Light Blobs */}
       <div className="pointer-events-none absolute -right-24 top-1/4 h-96 w-96 rounded-full bg-teal-400/10 dark:bg-teal-500/5 blur-[120px]" />
       <div className="pointer-events-none absolute -left-24 bottom-1/4 h-96 w-96 rounded-full bg-emerald-400/10 dark:bg-emerald-500/5 blur-[120px]" />
 
       <div className="container-px relative mx-auto max-w-7xl">
+        {/* 1. Connecting line element: 2px wide, at horizontal midpoint between text and image columns, hidden below 1024px */}
+        <div
+          ref={centerLineRef}
+          className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 hidden lg:block z-10"
+          style={{
+            backgroundColor: 'var(--primary-teal, #00B8A9)',
+            transformOrigin: 'top',
+            transform: 'scaleY(0)',
+          }}
+        />
+
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           
           {/* Right Column (Visual Bento with Parallax & Floating Luxury Glass Badge) */}
@@ -91,7 +171,7 @@ export function MedicalPhilosophyBento() {
                 </div>
               </div>
 
-              {/* Floating Top-Left Glass Badge: "معايير تعقيم وعناية فائقة" */}
+              {/* Floating Top-Left Glass Badge: "معايير تعقيم وعناية فائقة" with float-badge motion */}
               <motion.div
                 initial={{ opacity: 0, y: -20, x: -20 }}
                 whileInView={{ opacity: 1, y: 0, x: 0 }}
@@ -99,6 +179,9 @@ export function MedicalPhilosophyBento() {
                 transition={{ delay: 0.35, duration: 0.7 }}
                 whileHover={{ scale: 1.03 }}
                 className="absolute -top-6 -left-4 sm:-left-6 max-w-[210px] rounded-2xl bg-white/95 dark:bg-[#161a22]/95 border border-emerald-900/15 dark:border-emerald-500/30 p-4 shadow-xl backdrop-blur-xl text-right"
+                style={{
+                  animation: 'float-badge 3s ease-in-out infinite',
+                }}
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
@@ -144,12 +227,21 @@ export function MedicalPhilosophyBento() {
 
               <Stagger className="space-y-4" stagger={0.1}>
                 
-                {/* Bento Card 1: Detailed Consultation */}
+                {/* Bento Card 1: Detailed Consultation with 3px teal border-left and box-shadow animation */}
                 <motion.div
+                  ref={card1Ref}
                   variants={staggerItem}
                   whileHover={{ x: -6 }}
                   onMouseMove={handleCardMouseMove}
                   className="group relative flex items-start gap-4 sm:gap-5 rounded-2xl bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-xs transition-all duration-300 hover:border-[#00B8A9]/40 hover:bg-teal-50/20 dark:hover:bg-slate-900/60 group-hover:shadow-[0_10px_30px_-10px_rgba(0,184,169,0.1)] overflow-hidden"
+                  style={{
+                    borderLeft: '3px solid var(--primary-teal, #00B8A9)',
+                    borderLeftColor: card1Active ? 'var(--primary-teal, #00B8A9)' : 'transparent',
+                    boxShadow: card1Active
+                      ? '0 0 12px var(--teal-40, rgba(0, 184, 169, 0.4))'
+                      : '0 0 12px rgba(0, 184, 169, 0)',
+                    transition: 'border-left-color 500ms ease, box-shadow 500ms ease',
+                  }}
                 >
                   {/* Timeline Connection Indicator Dot */}
                   <span className="absolute -right-[27px] sm:-right-[31px] top-8 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
@@ -178,12 +270,21 @@ export function MedicalPhilosophyBento() {
                   </div>
                 </motion.div>
 
-                {/* Bento Card 2: Advanced Technologies */}
+                {/* Bento Card 2: Advanced Technologies with 3px teal border-left and box-shadow animation */}
                 <motion.div
+                  ref={card2Ref}
                   variants={staggerItem}
                   whileHover={{ x: -6 }}
                   onMouseMove={handleCardMouseMove}
                   className="group relative flex items-start gap-4 sm:gap-5 rounded-2xl bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-6 sm:p-8 shadow-xs transition-all duration-300 hover:border-[#00B8A9]/40 hover:bg-teal-50/20 dark:hover:bg-slate-900/60 group-hover:shadow-[0_10px_30px_-10px_rgba(0,184,169,0.1)] overflow-hidden"
+                  style={{
+                    borderLeft: '3px solid var(--primary-teal, #00B8A9)',
+                    borderLeftColor: card2Active ? 'var(--primary-teal, #00B8A9)' : 'transparent',
+                    boxShadow: card2Active
+                      ? '0 0 12px var(--teal-40, rgba(0, 184, 169, 0.4))'
+                      : '0 0 12px rgba(0, 184, 169, 0)',
+                    transition: 'border-left-color 500ms ease, box-shadow 500ms ease',
+                  }}
                 >
                   {/* Timeline Connection Indicator Dot */}
                   <span className="absolute -right-[27px] sm:-right-[31px] top-8 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#0e1014] bg-[#00B8A9] shadow-[0_0_8px_rgba(0,184,169,0.6)] z-20 group-hover:scale-125 transition-transform" />
