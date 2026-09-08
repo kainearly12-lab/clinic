@@ -179,9 +179,12 @@ const ServiceCard = React.forwardRef<HTMLElement, ServiceCardProps>(function Ser
           src={service.image}
           alt={service.titleAr}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out [@media(hover:hover)]:group-hover:scale-[1.08]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
+        <div
+          className="absolute inset-0 transition-opacity duration-500 ease-out opacity-70 [@media(hover:hover)]:group-hover:opacity-100 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0.1))' }}
+        />
 
         {/* Top Badges: Number & Floating Micro Tag */}
         <div className="absolute top-4 inset-x-4 flex items-center justify-between pointer-events-none">
@@ -192,7 +195,12 @@ const ServiceCard = React.forwardRef<HTMLElement, ServiceCardProps>(function Ser
           </div>
 
           {/* Number Badge */}
-          <div className="flex items-center justify-center h-7 w-7 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-xs font-black text-slate-800 dark:text-teal-300 border border-white/20 dark:border-teal-500/30 shadow-xs">
+          <div
+            className="text-3xl sm:text-4xl lg:text-5xl font-black font-mono tracking-tighter text-white select-none leading-none drop-shadow-sm"
+            style={{
+              textShadow: '0 0 20px var(--primary-teal, #00B8A9)',
+            }}
+          >
             <span>{service.number}</span>
           </div>
         </div>
@@ -300,6 +308,10 @@ export function ServicesGrid({ onBookService }: ServicesGridProps) {
       ref={sectionRef}
       id="services"
       className="relative overflow-hidden bg-[#F8FAF9] dark:bg-[#101318] py-24 sm:py-32 transition-colors duration-300 border-b border-slate-200/80 dark:border-gray-800/80"
+      style={{
+        '--primary-teal': '#00B8A9',
+        '--teal-accent': '#00B8A9',
+      } as React.CSSProperties}
     >
       {/* Soft Ambient Light Glows */}
       <div className="pointer-events-none absolute -right-24 top-20 h-[450px] w-[450px] rounded-full bg-teal-400/10 dark:bg-teal-500/5 blur-[130px]" />
@@ -359,7 +371,7 @@ export function ServicesGrid({ onBookService }: ServicesGridProps) {
           className={`grid gap-6 ${
             displayedServices.length === 1
               ? 'max-w-md mx-auto grid-cols-1'
-              : 'sm:grid-cols-2 lg:grid-cols-4'
+              : 'sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]'
           }`}
         >
           <AnimatePresence mode="popLayout">
