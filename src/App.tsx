@@ -262,7 +262,9 @@ function App() {
   // Determine initial route based on window pathname and hash
   const isInitialAdminPath = typeof window !== 'undefined' && (
     window.location.pathname.startsWith('/admin') ||
-    window.location.hash === '#admin'
+    window.location.hash === '#admin' ||
+    window.location.hash.includes('type=recovery') ||
+    window.location.search.includes('type=recovery')
   );
   const isInitialAboutPath = typeof window !== 'undefined' && (
     window.location.pathname.startsWith('/about') ||
@@ -355,7 +357,12 @@ function App() {
       const path = window.location.pathname;
       const hash = window.location.hash;
 
-      if (path.startsWith('/admin') || hash === '#admin') {
+      if (
+        path.startsWith('/admin') ||
+        hash === '#admin' ||
+        hash.includes('type=recovery') ||
+        window.location.search.includes('type=recovery')
+      ) {
         setActiveTab('admin');
         if (!isAdminAuthenticated) {
           setIsAdminAuthModalOpen(true);
@@ -401,8 +408,14 @@ function App() {
   useEffect(() => {
     const path = location.pathname;
     const hash = location.hash || window.location.hash;
+    const search = location.search || window.location.search;
 
-    if (path.startsWith('/admin') || hash === '#admin') {
+    if (
+      path.startsWith('/admin') ||
+      hash === '#admin' ||
+      hash.includes('type=recovery') ||
+      search.includes('type=recovery')
+    ) {
       setActiveTab('admin');
       if (!isAdminAuthenticated) {
         setIsAdminAuthModalOpen(true);
@@ -420,7 +433,7 @@ function App() {
       setActiveTab('home');
       setIsAdminAuthModalOpen(false);
     }
-  }, [location.pathname, location.hash, isAdminAuthenticated]);
+  }, [location.pathname, location.hash, location.search, isAdminAuthenticated]);
 
   // Auth Success Handler from Modal
   const handleAuthSuccess = (email: string) => {

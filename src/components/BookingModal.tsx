@@ -23,10 +23,11 @@ import {
   MessageCircle,
   MapPin,
 } from 'lucide-react';
-import { branches } from '@/data/clinicData';
+import { branches as defaultBranches } from '@/data/clinicData';
+import { useBranches } from '@/hooks/useBranches';
+import { getBranchWhatsAppNumber, validateBookingDate } from '@/services/bookingValidationService';
 import { Modal } from './ui/Modal';
 import { MagneticButton } from './ui/MagneticButton';
-import { validateBookingDate } from '@/services/bookingValidationService';
 import { getScheduledBranchForDate } from '@/services/scheduleService';
 import { NormalizedBranch } from '@/types/schedule';
 import { createAppointment } from '@/services/appointmentService';
@@ -58,6 +59,7 @@ interface BookingDraft {
   branch: string;
   notes: string;
   paymentMethod: 'vodafone_cash' | 'instapay';
+  senderAccount?: string;
   paymentScreenshotUrl: string;
   paymentScreenshotName: string;
   savedAt: number;
@@ -113,10 +115,14 @@ export function BookingModal({
   });
   const [preferredTime, setPreferredTime] = useState('06:00 مساءً');
   const [notes, setNotes] = useState('');
-  const [branch, setBranch] = useState(initialBranch || branches[0]?.id || 'nasr-city');
+  const [branch, setBranch] = useState(initialBranch || defaultBranches[0]?.id || 'nasr-city');
   const [paymentMethod, setPaymentMethod] = useState<'vodafone_cash' | 'instapay'>('vodafone_cash');
+  const [senderAccount, setSenderAccount] = useState('');
   const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
   const [paymentScreenshotName, setPaymentScreenshotName] = useState('');
+
+  const { branches: dynamicBranches } = useBranches();
+  const branchList = dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
 
   // Security & Bot Mitigation State
   const [honeypotValue, setHoneypotValue] = useState('');
@@ -196,11 +202,12 @@ export function BookingModal({
             else if (initialBranch) setBranch(initialBranch);
             if (draft.notes) setNotes(draft.notes);
             if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
+            if (draft.senderAccount) setSenderAccount(draft.senderAccount);
             if (draft.paymentScreenshotUrl) {
               setPaymentScreenshotUrl(draft.paymentScreenshotUrl);
               setPaymentScreenshotName(draft.paymentScreenshotName || 'إيصال التحويل المحفوظ');
             }
-            if (draft.name || draft.phone || draft.paymentScreenshotUrl) {
+            if (draft.name || draft.phone || draft.paymentScreenshotUrl || draft.senderAccount) {
               setHasRestoredDraft(true);
             }
           }
@@ -229,6 +236,7 @@ export function BookingModal({
       branch,
       notes,
       paymentMethod,
+      senderAccount,
       paymentScreenshotUrl,
       paymentScreenshotName,
       savedAt: Date.now(),
@@ -249,6 +257,7 @@ export function BookingModal({
     branch,
     notes,
     paymentMethod,
+    senderAccount,
     paymentScreenshotUrl,
     paymentScreenshotName,
     completedAppointment,
@@ -486,6 +495,11 @@ export function BookingModal({
       return;
     }
 
+    if (!senderAccount.trim()) {
+      setValidationError('يرجى إدخال رقم المحفظة أو عنوان InstaPay المحوّل منه');
+      return;
+    }
+
     if (!paymentScreenshotUrl) {
       setValidationError('يرجى إرفاق صورة إيصال التحويل (Screenshot) لإتمام طلب الحجز');
       return;
@@ -505,10 +519,10 @@ export function BookingModal({
       const targetBranchId = validation.targetBranch?.id || branch;
       const targetBranchName =
         validation.targetBranch?.nameAr ||
-        branches.find((b) => b.id === targetBranchId)?.nameAr ||
+        branchList.find((b) => b.id === targetBranchId)?.nameAr ||
         'الفرع المختار';
 
-      // Insert directly into Supabase 'appointments' table
+      // Insert directly into Supabase 'appointments' table with atomic queue number
       const res = await createAppointment({
         patient_name: trimmedName,
         patient_phone: rawPhone,
@@ -523,6 +537,8 @@ export function BookingModal({
         amount: paymentSettings.consultation_price || 1200,
         payment_screenshot_url: paymentScreenshotUrl,
         payment_method: paymentMethod,
+        sender_account: senderAccount.trim() ? senderAccount.trim() : null,
+        payment_notes: senderAccount.trim() ? `المحوّل منه: ${senderAccount.trim()}` : null,
         notes: trimmedNotes ? trimmedNotes : null,
       });
 
@@ -603,10 +619,18 @@ export function BookingModal({
           {/* Appointment Reference Card */}
           <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4.5 backdrop-blur-xl shadow-xl space-y-3 mb-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-xs text-slate-400 font-medium">رقم الحجز المرجعي</span>
-              <span className="font-mono text-sm font-black text-[#00B8A9] bg-teal-500/10 px-2.5 py-0.5 rounded-lg border border-teal-500/30">
-                #{completedAppointment.id.replace('apt-', '').slice(0, 8).toUpperCase()}
-              </span>
+              <div>
+                <span className="text-xs text-slate-400 font-medium block">رقم الحجز المرجعي</span>
+                <span className="font-mono text-sm font-black text-[#00B8A9]">
+                  #{completedAppointment.id.replace('apt-', '').slice(0, 8).toUpperCase()}
+                </span>
+              </div>
+              <div className="text-left">
+                <span className="text-xs text-amber-400 font-medium block">رقمك في قائمة الحجز</span>
+                <span className="font-mono text-base font-black text-amber-300 bg-amber-500/10 px-3 py-0.5 rounded-lg border border-amber-500/30">
+                  #{completedAppointment.queue_number || 1}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
@@ -662,21 +686,23 @@ export function BookingModal({
           <div className="space-y-3">
             <button
               onClick={handleClose}
-              className="w-full py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-lg hover:shadow-[0_0_20px_rgba(0,184,169,0.35)] transition-all text-sm"
+              className="w-full py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-lg hover:shadow-[0_0_20px_rgba(0,184,169,0.35)] transition-all text-sm cursor-pointer"
             >
               تم والعودة للموقع
             </button>
 
             <a
-              href={`https://wa.me/201154021247?text=${encodeURIComponent(
-                `مرحباً عيادات أندرو ديرما، لقد قمت بحجز موعد باسم ${completedAppointment.patient_name} برقم مرجعي #${completedAppointment.id.slice(0, 8)}.`
+              href={`https://wa.me/${getBranchWhatsAppNumber(
+                completedAppointment.branch_id
+              )}?text=${encodeURIComponent(
+                `مرحباً عيادات أندرو ديرما، لقد قمت بحجز موعد باسم ${completedAppointment.patient_name} لفرع ${completedAppointment.branch_name_ar}. رقم الحجز: #${completedAppointment.id.slice(0, 8)}، رقمي في القائمة: #${completedAppointment.queue_number || 1}.`
               )}`}
               target="_blank"
               rel="noreferrer"
-              className="w-full py-2.5 rounded-xl font-bold border border-white/15 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center gap-2 text-xs transition"
+              className="w-full py-2.5 rounded-xl font-bold border border-white/15 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center gap-2 text-xs transition cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 text-emerald-400" />
-              <span>تواصل مع خدمة العملاء عبر واتساب للاستفسارات السريعة (اختياري)</span>
+              <span>تواصل مع الفرع عبر واتساب لتأكيد الحجز والاستفسارات (مباشر)</span>
             </a>
           </div>
         </div>
@@ -800,7 +826,7 @@ export function BookingModal({
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {branches.map((b) => {
+                    {branchList.map((b) => {
                       const isSelected = branch === b.id;
                       const isScheduledToday = scheduledInfo?.branch?.id === b.id;
 
@@ -1007,7 +1033,7 @@ export function BookingModal({
                       <span>ملخص تفاصيل الحجز:</span>
                     </span>
                     <span className="text-xs font-black text-teal-300">
-                      {branches.find((b) => b.id === branch)?.nameAr || 'الفرع المختار'}
+                      {branchList.find((b) => b.id === branch)?.nameAr || 'الفرع المختار'}
                     </span>
                   </div>
 
@@ -1272,6 +1298,38 @@ export function BookingModal({
                   )}
                 </div>
 
+                {/* Section: Sender Wallet / InstaPay ID */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Smartphone className="w-3.5 h-3.5 text-[#00B8A9]" />
+                      <span>رقم المحفظة أو عنوان InstaPay المحوّل منه <span className="text-red-400">*</span></span>
+                    </span>
+                    {senderAccount.trim() && (
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> تم الإدخال
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    value={senderAccount}
+                    onChange={(e) => {
+                      setSenderAccount(e.target.value);
+                      if (validationError) setValidationError(null);
+                    }}
+                    placeholder={
+                      paymentMethod === 'vodafone_cash'
+                        ? 'مثال: رقم فودافون كاش 010xxxxxxxx المحوّل منه'
+                        : 'مثال: username@instapay أو رقم الهاتف المحوّل منه'
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 focus:border-[#00B8A9] text-white text-xs placeholder:text-slate-500 outline-none transition"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    مطلوب لمطابقة وتأكيد عملية التحويل في كشف الحساب فوراً
+                  </p>
+                </div>
+
                 {/* Section: Payment Receipt Screenshot Upload */}
                 <div>
                   <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
@@ -1388,11 +1446,21 @@ export function BookingModal({
 
                   <button
                     type="submit"
-                    disabled={isSubmitting || isUploadingImage || Boolean(validationError)}
-                    className={`flex-1 py-3.5 rounded-xl font-bold bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 text-sm cursor-pointer ${
-                      isSubmitting || isUploadingImage || Boolean(validationError)
-                        ? 'opacity-60 cursor-not-allowed'
-                        : ''
+                    disabled={
+                      isSubmitting ||
+                      isUploadingImage ||
+                      !senderAccount.trim() ||
+                      !paymentScreenshotUrl ||
+                      Boolean(validationError)
+                    }
+                    className={`flex-1 py-3.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm ${
+                      isSubmitting ||
+                      isUploadingImage ||
+                      !senderAccount.trim() ||
+                      !paymentScreenshotUrl ||
+                      Boolean(validationError)
+                        ? 'bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed'
+                        : 'bg-[#00B8A9] hover:bg-[#00d6c4] text-slate-950 shadow-md hover:shadow-[0_0_20px_rgba(0,184,169,0.4)] hover:-translate-y-0.5 cursor-pointer'
                     }`}
                   >
                     {isSubmitting ? (

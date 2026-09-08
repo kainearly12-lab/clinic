@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight, Zap } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, X, AlertCircle, CheckCircle2, ArrowRight, Zap, Eye, EyeOff } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { logAdminActivity } from '@/services/adminService';
 import { ToastContainer } from '@/components/admin/ToastContainer';
@@ -24,9 +24,46 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isResettingPasswordMode, setIsResettingPasswordMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      return hash.includes('type=recovery') || search.includes('type=recovery');
+    }
+    return false;
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Supabase Auth State Change Listener for Password Recovery Tokens (#type=recovery)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+        setIsResettingPasswordMode(true);
+      }
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPasswordMode(true);
+        setErrorMsg(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   const addToast = (type: 'success' | 'error' | 'info', message: string) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
@@ -73,6 +110,73 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
       addToast('error', message);
     } finally {
       setIsResettingPassword(false);
+    }
+  };
+
+  // Execution: Update Password via Supabase updateUser
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    const cleanNewPass = newPassword.trim();
+    if (!cleanNewPass) {
+      setErrorMsg('يرجى إدخال كلمة المرور الجديدة');
+      return;
+    }
+
+    if (cleanNewPass.length < 6) {
+      setErrorMsg('يجب ألا تقل كلمة المرور الجديدة عن 6 أحرف أو أرقام');
+      return;
+    }
+
+    if (confirmPassword.trim() && cleanNewPass !== confirmPassword.trim()) {
+      setErrorMsg('كلمتا المرور غير متطابقتين. يرجى التأكد وإعادة الإدخال.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        setErrorMsg('خدمة المصادقة وقاعدة البيانات غير متوفرة حالياً. يرجى التواصل مع إدارة النظام.');
+        setIsUpdatingPassword(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: cleanNewPass,
+      });
+
+      if (error) {
+        console.warn('Supabase updateUser error:', error);
+        setErrorMsg(error.message || 'تعذر تحديث كلمة المرور. يرجى المحاولة مرة أخرى.');
+      } else {
+        // Security Directive: Invalidate any other active sessions/devices logged into the same admin account
+        try {
+          await supabase.auth.signOut({ scope: 'others' });
+        } catch (signOutErr) {
+          console.warn('Supabase signOut others notice:', signOutErr);
+        }
+
+        addToast('success', 'تم تحديث كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول.');
+
+        // Clear the URL recovery hash and query
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
+        setNewPassword('');
+        setConfirmPassword('');
+        setIsResettingPasswordMode(false);
+        setPassword('');
+      }
+    } catch (err: unknown) {
+      console.warn('Exception during password update:', err);
+      const message = err instanceof Error ? err.message : 'حدث خطأ غير متوقع أثناء تحديث كلمة المرور';
+      setErrorMsg(message);
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -221,19 +325,25 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-3">
                 <div className="h-16 w-16 rounded-2xl bg-teal-950/60 border border-teal-500/40 flex items-center justify-center text-[#00B8A9] shadow-[0_0_20px_rgba(0,184,169,0.3)]">
-                  <Shield className="h-8 w-8" />
+                  {isResettingPasswordMode ? (
+                    <KeyRound className="h-8 w-8 text-[#00B8A9]" />
+                  ) : (
+                    <Shield className="h-8 w-8" />
+                  )}
                 </div>
               </div>
 
               <h2 className="font-display text-xl font-black text-white">
-                بوابة الإدارة الطبية المعتمدة
+                {isResettingPasswordMode ? 'تعيين كلمة المرور الجديدة' : 'بوابة الإدارة الطبية المعتمدة'}
               </h2>
               <p className="mt-1 text-xs text-slate-400 max-w-xs">
-                تسجيل دخول آمن مشفر لإدارة الحجوزات والمصفوفة التشغيلية لعيادات Androderma
+                {isResettingPasswordMode
+                  ? 'أدخل كلمة المرور الجديدة لحساب الإدارة المعتمد لحماية وتأمين بيانات العيادة'
+                  : 'تسجيل دخول آمن مشفر لإدارة الحجوزات والمصفوفة التشغيلية لعيادات Androderma'}
               </p>
 
-              {/* Preview Environment Banner & Direct Bypass Button */}
-              {isPreview && (
+              {/* Preview Environment Banner & Direct Bypass Button (Only when not resetting password) */}
+              {isPreview && !isResettingPasswordMode && (
                 <div className="mt-3 w-full p-2.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 flex flex-col items-center gap-1.5 text-xs">
                   <div className="flex items-center gap-1.5 font-bold">
                     <Zap className="w-3.5 h-3.5 text-[#00B8A9]" />
@@ -274,98 +384,183 @@ export function AdminAuthModal({ isOpen, onClose, onSuccess, onBackToSite }: Adm
               </motion.div>
             )}
 
-            {/* Auth Form */}
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  البريد الإلكتروني للمسؤول (Admin Email)
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="kainearly12@gmail.com"
-                    dir="ltr"
-                    className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
-                  />
-                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-300">
-                    كلمة المرور (Password)
+            {/* 1. RESET PASSWORD VIEW */}
+            {isResettingPasswordMode ? (
+              <form onSubmit={handleUpdatePassword} className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    كلمة المرور الجديدة (New Password)
                   </label>
-                  <span className="text-[10px] text-teal-400 font-semibold">
-                    {isPreview ? 'مقبولة أي كلمة في المعاينة' : 'تحقق أمني صارم'}
-                  </span>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      dir="ltr"
+                      className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 pr-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
+                    />
+                    <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white transition-colors"
+                      tabIndex={-1}
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={isPreview ? 'أي كلمة مرور للمعاينة' : '••••••••'}
-                    dir="ltr"
-                    className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
-                  />
-                  <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    تأكيد كلمة المرور الجديدة (Confirm Password)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      dir="ltr"
+                      className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
+                    />
+                    <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
-                {/* Forgot Password Action */}
-                <div className="flex items-center justify-end mt-1.5">
+
+                <div className="pt-2 space-y-2">
                   <button
-                    id="admin-forgot-password-btn"
-                    type="button"
-                    onClick={handleForgotPassword}
-                    disabled={isResettingPassword || isLoading}
-                    className="text-xs text-slate-400 hover:text-[#00B8A9] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#00B8A9] hover:bg-[#009b8e] active:scale-[0.99] text-slate-950 font-black text-xs transition-all shadow-[0_0_20px_rgba(0,184,169,0.3)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                   >
-                    {isResettingPassword ? (
-                      <>
-                        <span className="h-3 w-3 rounded-full border-2 border-[#00B8A9] border-t-transparent animate-spin shrink-0" />
-                        <span>جاري إرسال الرابط...</span>
-                      </>
+                    {isUpdatingPassword ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                        جاري تحديث كلمة المرور...
+                      </span>
                     ) : (
-                      <span>نسيت كلمة المرور؟</span>
+                      <span className="flex items-center gap-2">
+                        <KeyRound className="h-4 w-4" />
+                        تحديث كلمة المرور
+                      </span>
                     )}
                   </button>
-                </div>
-              </div>
 
-              <div className="pt-2 space-y-2">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#00B8A9] hover:bg-[#009b8e] active:scale-[0.99] text-slate-950 font-black text-xs transition-all shadow-[0_0_20px_rgba(0,184,169,0.3)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                      جاري الدخول الفوري...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Lock className="h-4 w-4" />
-                      تسجيل الدخول المشفر للوحة التحكم
-                    </span>
-                  )}
-                </button>
-
-                {onBackToSite && (
                   <button
                     type="button"
-                    onClick={onBackToSite}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all border border-white/5"
+                    onClick={() => {
+                      setIsResettingPasswordMode(false);
+                      if (typeof window !== 'undefined') {
+                        window.history.replaceState(null, '', window.location.pathname);
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all border border-white/5 cursor-pointer"
                   >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                    <span>العودة إلى الموقع الرئيسي للعيادة</span>
+                    <span>العودة لشاشة تسجيل الدخول</span>
                   </button>
-                )}
-              </div>
-            </form>
+                </div>
+              </form>
+            ) : (
+              /* 2. REGULAR LOGIN FORM */
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    البريد الإلكتروني للمسؤول (Admin Email)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="kainearly12@gmail.com"
+                      dir="ltr"
+                      className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
+                    />
+                    <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-300">
+                      كلمة المرور (Password)
+                    </label>
+                    <span className="text-[10px] text-teal-400 font-semibold">
+                      {isPreview ? 'مقبولة أي كلمة في المعاينة' : 'تحقق أمني صارم'}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={isPreview ? 'أي كلمة مرور للمعاينة' : '••••••••'}
+                      dir="ltr"
+                      className="w-full rounded-xl bg-slate-900/80 border border-slate-700/80 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#00B8A9] focus:outline-none focus:ring-1 focus:ring-[#00B8A9] transition-all font-mono text-left"
+                    />
+                    <KeyRound className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                  {/* Forgot Password Action */}
+                  <div className="flex items-center justify-end mt-1.5">
+                    <button
+                      id="admin-forgot-password-btn"
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={isResettingPassword || isLoading}
+                      className="text-xs text-slate-400 hover:text-[#00B8A9] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      {isResettingPassword ? (
+                        <>
+                          <span className="h-3 w-3 rounded-full border-2 border-[#00B8A9] border-t-transparent animate-spin shrink-0" />
+                          <span>جاري إرسال الرابط...</span>
+                        </>
+                      ) : (
+                        <span>نسيت كلمة المرور؟</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 space-y-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#00B8A9] hover:bg-[#009b8e] active:scale-[0.99] text-slate-950 font-black text-xs transition-all shadow-[0_0_20px_rgba(0,184,169,0.3)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                        جاري الدخول الفوري...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        تسجيل الدخول المشفر للوحة التحكم
+                      </span>
+                    )}
+                  </button>
+
+                  {onBackToSite && (
+                    <button
+                      type="button"
+                      onClick={onBackToSite}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all border border-white/5 cursor-pointer"
+                    >
+                      <ArrowRight className="h-3.5 w-3.5" />
+                      <span>العودة إلى الموقع الرئيسي للعيادة</span>
+                    </button>
+                  )}
+                </div>
+              </form>
+            )}
 
             {/* Modal Footer Note */}
             <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">

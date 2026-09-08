@@ -99,7 +99,7 @@ export const branches: Branch[] = [
     cityAr: 'المعادي',
     addressAr: '1/5 شارع اللاسلكي عمارة جوهرة الشمس الدور الأول',
     phones: [
-      { number: '01154021249', display: '01154021249' },
+      { number: '01015563395', display: '01015563395' },
     ],
     mapSrc: '',
     mapsUrl: 'https://maps.app.goo.gl/x7igMWPDExcBsBuV8',

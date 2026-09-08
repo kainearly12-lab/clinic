@@ -76,6 +76,7 @@ export interface AppointmentRecord {
   payment_notes?: string | null;
   notes?: string | null;
   medical_notes?: string | null; // Doctor's preliminary diagnosis, prescription, or clinical plan
+  queue_number?: number; // Atomic sequential queue number per branch per day
   created_at: string;
   updated_at?: string;
 }

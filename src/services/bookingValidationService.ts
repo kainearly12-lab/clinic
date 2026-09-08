@@ -15,14 +15,20 @@ import { branches as defaultBranches, clinic } from '@/data/clinicData';
 export const BRANCH_WHATSAPP_NUMBERS: Record<string, string> = {
   'nasr-city': '201154021247',
   'fifth-settlement': '201223371075',
-  'maadi': '201154021249',
+  'maadi': '201015563395',
   'new-giza': '201154021248',
 };
 
 /**
- * Returns the verified WhatsApp phone number for a branch ID
+ * Returns the verified WhatsApp phone number for a branch ID or dynamic phone string
  */
-export function getBranchWhatsAppNumber(branchId?: string | null): string {
+export function getBranchWhatsAppNumber(branchId?: string | null, customPhone?: string | null): string {
+  if (customPhone && customPhone.trim()) {
+    const clean = customPhone.replace(/[^0-9]/g, '');
+    if (clean.length >= 10) {
+      return clean.startsWith('0') ? `2${clean}` : clean.startsWith('20') ? clean : `20${clean}`;
+    }
+  }
   if (!branchId) return clinic.whatsapp || '201154021247';
   return BRANCH_WHATSAPP_NUMBERS[branchId] || clinic.whatsapp || '201154021247';
 }

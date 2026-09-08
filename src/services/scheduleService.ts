@@ -308,6 +308,67 @@ export function calculateOpenStatus(
 }
 
 /**
+ * Fetches all branches directly from Supabase branches table, falling back to static config
+ */
+export async function fetchAllBranches(): Promise<NormalizedBranch[]> {
+  const client = getSupabaseClient();
+  const fallbackBranches = defaultBranches.map((b) => ({
+    id: b.id,
+    nameAr: b.nameAr,
+    cityAr: b.cityAr,
+    addressAr: b.addressAr,
+    phone: b.phones[0]?.number || '01154021247',
+    displayPhone: b.phones[0]?.display || b.phones[0]?.number || '01154021247',
+    phones: b.phones,
+    mapSrc: b.mapSrc,
+    mapsUrl: b.mapsUrl,
+    isActive: true,
+  }));
+
+  if (!client) {
+    return fallbackBranches;
+  }
+
+  try {
+    const { data, error } = await client
+      .from('branches')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return fallbackBranches;
+    }
+
+    return data.map((b) => {
+      const fb = defaultBranches.find((def) => def.id === b.id || def.nameAr === b.name || def.nameAr === b.name_ar);
+      const contactPhone = b.contact_number || b.phone || fb?.phones[0]?.number || '01154021247';
+      const displayPhone = b.display_phone || b.contact_number || b.phone || fb?.phones[0]?.display || contactPhone;
+
+      return {
+        id: b.id,
+        nameAr: b.name_ar || b.name || fb?.nameAr || 'فرع العيادة',
+        cityAr: b.city_ar || fb?.cityAr || 'القاهرة',
+        addressAr: b.address_ar || b.address || fb?.addressAr || '',
+        phone: contactPhone,
+        displayPhone,
+        phones: [
+          {
+            number: contactPhone,
+            display: displayPhone,
+          },
+        ],
+        mapSrc: b.map_src || fb?.mapSrc || '',
+        mapsUrl: b.google_maps_url || b.maps_url || fb?.mapsUrl || '',
+        isActive: b.is_active ?? true,
+      };
+    });
+  } catch (err) {
+    console.warn('Failed to fetch branches from Supabase:', err);
+    return fallbackBranches;
+  }
+}
+
+/**
  * 1. Query branches and weekly_schedule tables from live Supabase
  */
 export async function fetchWeeklyScheduleWithBranches(): Promise<{

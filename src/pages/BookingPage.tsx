@@ -26,7 +26,9 @@ import {
   Smartphone,
   Calendar,
 } from 'lucide-react';
-import { branches } from '@/data/clinicData';
+import { branches as defaultBranches } from '@/data/clinicData';
+import { useBranches } from '@/hooks/useBranches';
+import { getBranchWhatsAppNumber } from '@/services/bookingValidationService';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import {
@@ -73,6 +75,8 @@ export function BookingPage({
   onNavigateHome,
 }: BookingPageProps) {
   const { logoUrl, clinicName, phone: clinicPhone, contactPhone } = useSiteSettings();
+  const { branches: dynamicBranches } = useBranches();
+  const branchList = dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
   const effectiveClinicPhone = contactPhone || clinicPhone || '01154021247';
 
   // Multi-step State: 1 = Patient Info, 2 = Payment & Receipt, 3 = Confirmation
@@ -246,10 +250,16 @@ export function BookingPage({
   }, [initialService]);
 
   // Selected Branch Object
-  const currentBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
+  const currentBranch =
+    branchList.find((b) => b.id === selectedBranchId) ||
+    branchList[0] ||
+    defaultBranches[0];
+
   const activeService = selectedService === 'أخرى' && customService.trim()
     ? customService.trim()
     : selectedService;
+
+  const isPaymentFormValid = Boolean(senderAccount.trim().length > 0 && receiptFile);
 
   const consultationPrice = paymentSettings?.consultation_price || 1200;
   const currency = paymentSettings?.currency || 'ج.م';
@@ -360,6 +370,16 @@ export function BookingPage({
 
   // Submit Booking (Step 2)
   const handleSubmitBooking = async () => {
+    // Mandatory Payment Validation
+    if (!senderAccount.trim()) {
+      setErrors({ receipt: 'يرجى إدخال رقم المحفظة أو عنوان InstaPay المحوّل منه' });
+      return;
+    }
+    if (!receiptFile) {
+      setErrors({ receipt: 'يرجى إرفاق صورة إيصال التحويل (Screenshot) لإتمام طلب الحجز' });
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
 
@@ -402,22 +422,24 @@ export function BookingPage({
         notes: notes.trim() ? notes.trim() : null,
       };
 
-      // 3. Insert into appointments
+      // 3. Insert into appointments (with atomic DB-level queue number via RPC)
       const createRes = await createAppointment(appointmentPayload);
       if (!createRes.success) {
         throw new Error(createRes.error || 'فشل تسجيل الموعد');
       }
 
-      // 4. Query confirmed queue count for the appointment date and calculate position
-      // Position = confirmed count + 1 (excluding pending/cancelled)
-      let confirmedCount = 0;
-      try {
-        confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, appointmentDateIso);
-      } catch (countErr) {
-        console.warn('Queue count lookup fallback:', countErr);
+      // 4. Use atomic queue number assigned by database or fallback to count
+      let assignedQueue = createRes.data?.queue_number;
+      if (!assignedQueue) {
+        try {
+          const confirmedCount = await getTodayConfirmedQueueCount(selectedBranchId, appointmentDateIso);
+          assignedQueue = confirmedCount + 1;
+        } catch (countErr) {
+          console.warn('Queue count lookup fallback:', countErr);
+          assignedQueue = 1;
+        }
       }
-      const calculatedQueuePosition = confirmedCount + 1;
-      setConfirmedQueuePosition(calculatedQueuePosition);
+      setConfirmedQueuePosition(assignedQueue);
 
       // Generate friendly reference
       const randomSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -437,15 +459,17 @@ export function BookingPage({
     }
   };
 
-  // WhatsApp Link for Confirmation
+  // WhatsApp Link for Confirmation with dynamic branch phone
   const generateWhatsAppMessage = () => {
     const senderInfo = senderAccount.trim() ? ` [محوّل من: ${senderAccount.trim()}]` : '';
     const dateLabel = bookingMode === 'today' ? `اليوم (${formatShortDate(selectedDate)})` : `غداً (${formatShortDate(selectedDate)})`;
     const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] بتاريخ: ${dateLabel} باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
-    const targetPhone = currentBranch?.phones[0]?.number || clinicPhone || '201154021247';
-    const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
-    const formattedPhone = cleanPhone.startsWith('0') ? `2${cleanPhone}` : cleanPhone;
-    return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(rawMsg)}`;
+    const branchPhone =
+      currentBranch && 'phone' in currentBranch
+        ? (currentBranch as { phone?: string }).phone
+        : currentBranch?.phones?.[0]?.number || clinicPhone;
+    const dynamicWhatsApp = getBranchWhatsAppNumber(currentBranch?.id, branchPhone);
+    return `https://wa.me/${dynamicWhatsApp}?text=${encodeURIComponent(rawMsg)}`;
   };
 
   return (
@@ -1232,9 +1256,13 @@ export function BookingPage({
 
                     <button
                       type="button"
-                      disabled={isSubmitting || isUploading}
+                      disabled={isSubmitting || isUploading || !isPaymentFormValid}
                       onClick={handleSubmitBooking}
-                      className="flex-1 py-4 px-6 rounded-2xl bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-black text-base shadow-lg shadow-teal-600/25 hover:shadow-teal-600/35 transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer"
+                      className={`flex-1 py-4 px-6 rounded-2xl font-black text-base transition-all duration-300 flex items-center justify-center gap-3 ${
+                        isSubmitting || isUploading || !isPaymentFormValid
+                          ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                          : 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/25 hover:shadow-teal-600/35 cursor-pointer hover:-translate-y-0.5'
+                      }`}
                     >
                       {isSubmitting || isUploading ? (
                         <>

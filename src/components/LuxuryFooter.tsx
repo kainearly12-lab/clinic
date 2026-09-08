@@ -1,9 +1,10 @@
 import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ArrowUpLeft, ArrowUpRight, Lock, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { clinic, branches, navLinks } from '@/data/clinicData';
+import { clinic, navLinks, branches as defaultBranches } from '@/data/clinicData';
 import { CLINIC_LOGO } from '@/data/clinicLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useBranches } from '@/hooks/useBranches';
 
 interface LuxuryFooterProps {
   onOpenAdmin?: () => void;
@@ -12,6 +13,8 @@ interface LuxuryFooterProps {
 export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
   const { logoUrl, clinicName, phone: dynamicPhone, contactPhone, email: dynamicEmail, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl, vezeetaUrl, settings } = useSiteSettings();
   const { language, t, isRTL } = useLanguage();
+  const { branches: dynamicBranches } = useBranches();
+  const branchList = dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
   const ArrowIcon = isRTL ? ArrowUpLeft : ArrowUpRight;
 
   const displayPhone = (contactPhone && contactPhone.trim().length > 0)
@@ -195,7 +198,7 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
               {t('footer.branchesTitle')}
             </h3>
             <div className="grid grid-cols-1 gap-3 text-xs">
-              {branches.map((b) => (
+              {branchList.map((b) => (
                 <div
                   key={b.id}
                   className="p-3 rounded-xl bg-white/[0.03] border border-white/10 dark:border-emerald-500/20 hover:border-sage-500/40 dark:hover:border-emerald-500/50 dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] hover:bg-white/[0.06] transition-all duration-300"
@@ -203,11 +206,15 @@ export function LuxuryFooter({ onOpenAdmin }: LuxuryFooterProps) {
                   <div className="flex items-center justify-between font-bold text-white mb-1">
                     <span className="flex items-center gap-1.5 text-sage-300">
                       <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      {language === 'en' ? (b.id === 'nasr-city' ? 'Nasr City' : b.id === 'fifth-settlement' ? 'Fifth Settlement' : b.id === 'maadi' ? 'Maadi' : 'New Giza') : b.nameAr}
+                      {language === 'en' ? (b.id === 'nasr-city' ? 'Nasr City' : b.id === 'fifth-settlement' ? 'Fifth Settlement' : b.id === 'maadi' ? 'Maadi' : b.id === 'new-giza' ? 'New Giza' : b.nameAr) : b.nameAr}
                     </span>
-                    <span className="text-[11px] font-mono text-gray-300" dir="ltr">
-                      {b.phones[0]?.display}
-                    </span>
+                    <a
+                      href={`tel:${b.phone || b.displayPhone}`}
+                      className="text-[11px] font-mono text-gray-300 hover:text-teal-300 transition-colors"
+                      dir="ltr"
+                    >
+                      {b.displayPhone || b.phone || b.phones?.[0]?.display || b.phones?.[0]?.number}
+                    </a>
                   </div>
                   <p className="text-gray-400 line-clamp-1 text-[11px] leading-relaxed">
                     {b.addressAr}

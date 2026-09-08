@@ -16,10 +16,11 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { branches, clinic } from '@/data/clinicData';
+import { branches as defaultBranches, clinic } from '@/data/clinicData';
 import { BookingButton } from '@/components/BookingModal';
 import { GsapTextReveal } from '@/components/ui/GsapTextReveal';
 import { useTodaySchedule, useWeeklySchedule } from '@/hooks/useSchedule';
+import { useBranches } from '@/hooks/useBranches';
 import { getBranchWhatsAppNumber, validateBookingDate } from '@/services/bookingValidationService';
 import {
   formatTime12h,
@@ -48,6 +49,9 @@ interface MatrixItemDisplay {
 export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) {
   const { schedule } = useTodaySchedule();
   const { scheduleList } = useWeeklySchedule();
+  const { branches: dynamicBranches } = useBranches();
+
+  const branchList = dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
 
   // Get current day of week (0-6)
   const currentDayIndex = useMemo(() => new Date().getDay(), []);
@@ -82,8 +86,8 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
       dayIndex: currentDayIndex,
       dayNameAr: 'اليوم',
       dayNameEn: 'Today',
-      branchId: branches[0]?.id || 'nasr-city',
-      branchNameAr: branches[0]?.nameAr || 'فرع مدينة نصر',
+      branchId: defaultBranches[0]?.id || 'nasr-city',
+      branchNameAr: defaultBranches[0]?.nameAr || 'فرع مدينة نصر',
       hoursAr: '1:00 م — 9:00 م',
       isSpecialDay: false,
       isHoliday: false,
@@ -209,13 +213,18 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
 
   // Active selected branch for the detailed card
   const [activeBranchId, setActiveBranchId] = useState<string>(
-    todaySchedule.branchId || branches[0].id
+    todaySchedule.branchId || defaultBranches[0].id
   );
 
   const currentBranch =
-    branches.find((b) => b.id === activeBranchId) || branches[0];
+    branchList.find((b) => b.id === activeBranchId) || branchList[0] || defaultBranches[0];
 
-  const targetWhatsApp = getBranchWhatsAppNumber(currentBranch.id);
+  const currentBranchPhone =
+    'phone' in currentBranch
+      ? (currentBranch as { phone?: string }).phone
+      : currentBranch.phones?.[0]?.number;
+
+  const targetWhatsApp = getBranchWhatsAppNumber(currentBranch.id, currentBranchPhone);
 
   const waLink = `https://wa.me/${targetWhatsApp}?text=${encodeURIComponent(
     `مرحبًا عيادات Androderma، أرغب بالاستفسار عن حجز كشف مع د. أحمد زغلول بفرع (${currentBranch.nameAr})`
@@ -485,7 +494,7 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
           </div>
 
           <div className="flex flex-wrap gap-2.5 rounded-2xl border border-slate-200/90 dark:border-gray-800 bg-white/90 dark:bg-[#181b22]/90 p-2 shadow-xs sm:gap-3">
-            {branches.map((b) => {
+            {branchList.map((b) => {
               const isActive = b.id === currentBranch.id;
               return (
                 <button
@@ -561,17 +570,34 @@ export function BranchHubWithMatrix({ onBookBranch }: BranchHubWithMatrixProps) 
                         أرقام الهاتف المباشرة (اضغط للاتصال الفوري)
                       </span>
                       <div className="flex flex-wrap gap-2.5 pt-1">
-                        {currentBranch.phones.map((p) => (
+                        {'phones' in currentBranch && currentBranch.phones && currentBranch.phones.length > 0 ? (
+                          currentBranch.phones.map((p) => (
+                            <a
+                              key={p.number}
+                              href={`tel:${p.number}`}
+                              dir="ltr"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-teal-700/20 bg-teal-50/80 dark:bg-charcoal-800/90 px-3.5 py-1.5 font-bold text-teal-900 dark:text-teal-200 transition hover:border-teal-600 hover:bg-teal-700 hover:text-white"
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                              <span>{p.display}</span>
+                            </a>
+                          ))
+                        ) : (
                           <a
-                            key={p.number}
-                            href={`tel:${p.number}`}
+                            href={`tel:${'phone' in currentBranch ? currentBranch.phone : '01154021247'}`}
                             dir="ltr"
                             className="inline-flex items-center gap-1.5 rounded-xl border border-teal-700/20 bg-teal-50/80 dark:bg-charcoal-800/90 px-3.5 py-1.5 font-bold text-teal-900 dark:text-teal-200 transition hover:border-teal-600 hover:bg-teal-700 hover:text-white"
                           >
                             <Phone className="h-3.5 w-3.5" />
-                            <span>{p.display}</span>
+                            <span>
+                              {'displayPhone' in currentBranch
+                                ? currentBranch.displayPhone
+                                : 'phone' in currentBranch
+                                ? currentBranch.phone
+                                : '01154021247'}
+                            </span>
                           </a>
-                        ))}
+                        )}
                       </div>
                     </div>
                   </div>
