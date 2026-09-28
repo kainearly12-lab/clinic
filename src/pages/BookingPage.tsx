@@ -76,7 +76,8 @@ export function BookingPage({
 }: BookingPageProps) {
   const { logoUrl, clinicName, phone: clinicPhone, contactPhone } = useSiteSettings();
   const { branches: dynamicBranches } = useBranches();
-  const branchList = dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
+  const branches = dynamicBranches && dynamicBranches.length > 0 ? dynamicBranches : defaultBranches;
+  const branchList = branches;
   const effectiveClinicPhone = contactPhone || clinicPhone || '01154021247';
 
   // Multi-step State: 1 = Patient Info, 2 = Payment & Receipt, 3 = Confirmation
@@ -88,6 +89,22 @@ export function BookingPage({
   const [scheduleLoading, setScheduleLoading] = useState<boolean>(true);
   const [isClosedOnSelectedDate, setIsClosedOnSelectedDate] = useState<boolean>(false);
   const [closureReason, setClosureReason] = useState<string | null>(null);
+
+  // Time Slots for Step 1
+  const TIME_SLOTS = useMemo(
+    () => [
+      '02:00 م - 03:00 م',
+      '03:00 م - 04:00 م',
+      '04:00 م - 05:00 م',
+      '05:00 م - 06:00 م',
+      '06:00 م - 07:00 م',
+      '07:00 م - 08:00 م',
+      '08:00 م - 09:00 م',
+      '09:00 م - 10:00 م',
+    ],
+    []
+  );
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('06:00 م - 07:00 م');
 
   // Calculate Dates for Today and Tomorrow
   const todayDate = useMemo(() => new Date(), []);
@@ -111,16 +128,23 @@ export function BookingPage({
   };
 
   // Form Fields (Step 1)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(
-    initialBranch || branches[0]?.id || 'nasr-city'
-  );
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    return initialBranch || defaultBranches[0]?.id || 'nasr-city';
+  });
   const [patientName, setPatientName] = useState<string>('');
   const [patientPhone, setPatientPhone] = useState<string>('');
   const [selectedService, setSelectedService] = useState<string>(
-    initialService || COMMON_SERVICES[0]
+    initialService || COMMON_SERVICES[0] || 'كشف واستشارة جلدية عامة'
   );
   const [customService, setCustomService] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+
+  // Sync initial branch if passed as prop
+  useEffect(() => {
+    if (initialBranch) {
+      setSelectedBranchId(initialBranch);
+    }
+  }, [initialBranch]);
 
   // Form Validation Errors
   const [errors, setErrors] = useState<{
@@ -181,7 +205,7 @@ export function BookingPage({
 
           // Auto-Select: Automatically pre-select the active branch where the doctor is available for that specific day
           if (scheduled.branch) {
-            const matchedStatic = branches.find(
+            const matchedStatic = (branches ?? []).find(
               (b) =>
                 resolveBranchUuid(b.id) === resolveBranchUuid(scheduled.branch!.id) ||
                 b.nameAr === scheduled.branch!.nameAr
@@ -212,7 +236,7 @@ export function BookingPage({
       isMounted = false;
       unsubscribe();
     };
-  }, [selectedDateIso]);
+  }, [selectedDateIso, branches]);
 
   // Helper to determine if a branch is active for the selected date
   const isBranchActiveForDate = (branchId: string, branchNameAr?: string) => {
@@ -251,9 +275,20 @@ export function BookingPage({
 
   // Selected Branch Object
   const currentBranch =
-    branchList.find((b) => b.id === selectedBranchId) ||
-    branchList[0] ||
+    (branches ?? []).find((b) => b.id === selectedBranchId) ||
+    (branchList ?? []).find((b) => b.id === selectedBranchId) ||
+    branches?.[0] ||
     defaultBranches[0];
+
+  const branchContactNumber =
+    (currentBranch && 'phone' in currentBranch && typeof currentBranch.phone === 'string' && currentBranch.phone) ||
+    currentBranch?.phones?.[0]?.number ||
+    effectiveClinicPhone;
+
+  const branchDisplayNumber =
+    (currentBranch && 'displayPhone' in currentBranch && typeof currentBranch.displayPhone === 'string' && currentBranch.displayPhone) ||
+    currentBranch?.phones?.[0]?.display ||
+    branchContactNumber;
 
   const activeService = selectedService === 'أخرى' && customService.trim()
     ? customService.trim()
@@ -411,7 +446,7 @@ export function BookingPage({
         branch_id: selectedBranchId,
         branch_name_ar: currentBranch?.nameAr || 'الفرع المختار',
         appointment_date: appointmentDateIso,
-        appointment_time: timeStr || '12:00 PM',
+        appointment_time: selectedTimeSlot || timeStr || '06:00 م',
         status: 'pending' as const,
         payment_status: 'معلق' as const,
         amount: consultationPrice,
@@ -463,9 +498,10 @@ export function BookingPage({
   const generateWhatsAppMessage = () => {
     const senderInfo = senderAccount.trim() ? ` [محوّل من: ${senderAccount.trim()}]` : '';
     const dateLabel = bookingMode === 'today' ? `اليوم (${formatShortDate(selectedDate)})` : `غداً (${formatShortDate(selectedDate)})`;
-    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] بتاريخ: ${dateLabel} باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
+    const slotInfo = selectedTimeSlot ? ` (التوقيت: ${selectedTimeSlot})` : '';
+    const rawMsg = `مرحباً عيادات Androderma، قمت بحجز موعد جديد [رقم الحجز: ${bookingRefId || 'مؤكد'}] بتاريخ: ${dateLabel}${slotInfo} باسم: ${patientName} لفرع: ${currentBranch?.nameAr} لخدمة: ${activeService}${senderInfo}. رقمي في قائمة الحجز: #${confirmedQueuePosition}. يرجى تأكيد استلام التحويل والموعد.`;
     const branchPhone =
-      currentBranch && 'phone' in currentBranch
+      currentBranch && 'phone' in currentBranch && currentBranch.phone
         ? (currentBranch as { phone?: string }).phone
         : currentBranch?.phones?.[0]?.number || clinicPhone;
     const dynamicWhatsApp = getBranchWhatsAppNumber(currentBranch?.id, branchPhone);
@@ -694,7 +730,7 @@ export function BookingPage({
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {branches.map((b) => {
+                      {(branches ?? []).map((b) => {
                         const isSelected = selectedBranchId === b.id;
                         const isBranchActive = isBranchActiveForDate(b.id, b.nameAr);
 
@@ -890,7 +926,40 @@ export function BookingPage({
                     )}
                   </div>
 
-                  {/* 4. Additional Notes (Optional) */}
+                  {/* 4. Time Slot Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Clock3 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                        توقيت وموعد الحضور المفضل:
+                      </label>
+                      <span className="text-xs text-teal-700 dark:text-teal-400 font-semibold">
+                        (أوقات العمل المسائية)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(TIME_SLOTS ?? []).map((slot) => {
+                        const isSelected = selectedTimeSlot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border flex items-center justify-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? 'bg-teal-600 text-white border-teal-600 shadow-sm shadow-teal-600/25 ring-2 ring-teal-500/20'
+                                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                            }`}
+                          >
+                            <Clock3 className={`h-3.5 w-3.5 ${isSelected ? 'text-white' : 'text-teal-600 dark:text-teal-400'}`} />
+                            <span dir="ltr">{slot}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 5. Additional Notes (Optional) */}
                   <div>
                     <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
                       <FileText className="h-4 w-4 text-teal-600 dark:text-teal-400" />
@@ -1346,6 +1415,12 @@ export function BookingPage({
                       <span className="font-bold text-slate-900 dark:text-white">{activeService}</span>
                     </div>
                     <div className="flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">التوقيت المفضل:</span>
+                      <span className="font-bold text-teal-700 dark:text-teal-400" dir="ltr">
+                        {selectedTimeSlot}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
                       <span className="text-slate-600 dark:text-slate-400">وسيلة الدفع:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
                         {paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : `${walletMethodName} (المحفظة الإلكترونية)`}
@@ -1462,6 +1537,21 @@ export function BookingPage({
                 </div>
               </div>
 
+              {/* Time Slot Quick Recap */}
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Clock3 className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+                    التوقيت المفضل
+                  </span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white block" dir="ltr">
+                    {selectedTimeSlot}
+                  </span>
+                </div>
+              </div>
+
               {/* Fee Breakdown */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
@@ -1553,11 +1643,11 @@ export function BookingPage({
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-slate-600 dark:text-slate-400">
                 <span>للاستفسار السريع عبر الهاتف:</span>
                 <a
-                  href={`tel:${currentBranch?.phones[0]?.number || effectiveClinicPhone}`}
+                  href={`tel:${branchContactNumber}`}
                   className="font-bold text-teal-700 dark:text-teal-400"
                   dir="ltr"
                 >
-                  {currentBranch?.phones[0]?.display || effectiveClinicPhone}
+                  {branchDisplayNumber}
                 </a>
               </div>
             </div>

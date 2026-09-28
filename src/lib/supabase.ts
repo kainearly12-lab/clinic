@@ -9,16 +9,30 @@ export const SUPABASE_ANON_KEY =
 function getEnv(key: string): string {
   try {
     if (typeof import.meta !== 'undefined' && import.meta.env) {
-      return (import.meta.env[key] as string) || '';
+      if (import.meta.env[key]) return (import.meta.env[key] as string) || '';
     }
   } catch {
     // Ignore environment access errors in sandboxed runtimes
   }
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env[key]) return (process.env[key] as string) || '';
+    }
+  } catch {
+    // Ignore
+  }
   return '';
 }
 
-export const activeSupabaseUrl = getEnv('VITE_SUPABASE_URL').trim() || SUPABASE_URL;
-export const activeSupabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY').trim() || SUPABASE_ANON_KEY;
+export const activeSupabaseUrl =
+  getEnv('VITE_SUPABASE_URL').trim() ||
+  getEnv('NEXT_PUBLIC_SUPABASE_URL').trim() ||
+  SUPABASE_URL;
+
+export const activeSupabaseAnonKey =
+  getEnv('VITE_SUPABASE_ANON_KEY').trim() ||
+  getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY').trim() ||
+  SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(
   activeSupabaseUrl &&

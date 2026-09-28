@@ -99,7 +99,11 @@ export interface NormalizedBranch {
   cityAr: string;
   addressAr: string;
   phone: string;
+  displayPhone?: string;
+  phones?: { number: string; display: string }[];
+  mapSrc?: string;
   mapsUrl: string;
+  isActive?: boolean;
 }
 
 /**
